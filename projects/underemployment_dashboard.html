@@ -1,15 +1,53 @@
-<!DOCTYPE HTML>
-<html>
-	<body class="is-preload">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SVG Map Dashboard</title>
+    <link rel="stylesheet" href="style.css"> <!-- External CSS -->
+    <script src="https://d3js.org/d3.v7.min.js"></script> <!-- Load D3.js -->
+</head>
+<body>
 
-				<!-- Main -->
-					<div id="main">
-						<div class="inner">
-							<header>
-								<h1>This Page is Under Construction</h1>
-                            </header>
-						</div>
-					</div>
+    <div class="dashboard">
+        <!-- Filters -->
+        <div class="filters">
+            <label for="industry">Industry</label>
+            <select id="industry">
+                <option value="">All Industries</option>
+                <!-- Options will be added dynamically -->
+            </select>
 
-	</body>
+            <label for="nativity">Nativity</label>
+            <select id="nativity">
+                <option value="">All Nativities</option>
+                <!-- Options will be added dynamically -->
+            </select>
+        </div>
+
+        <!-- Map container -->
+        <div class="map-container">
+            <svg id="mapSVG" width="1000" height="1745" xmlns="http://www.w3.org/2000/svg">
+                <!-- Your SVG map paths will go here -->
+            </svg>
+        </div>
+
+        <!-- Data Table -->
+        <div class="data-table">
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th>Industry</th>
+                        <th>Nativity</th>
+                        <th>Additional Data</th> <!-- Customize this as needed -->
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Table rows will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="script.js"></script> <!-- Link to your JS file -->
+</body>
 </html>
