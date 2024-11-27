@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <title>Dashboard 2</title>
@@ -25,19 +24,6 @@
             margin-right: 20px;
             padding: 5px;
         }
-        .map-container {
-            position: relative;
-        }
-        .map-region {
-            fill: #cccccc;
-            stroke: #000000;
-            stroke-width: 0.5;
-            cursor: pointer;
-            transition: fill 0.3s ease;
-        }
-        .map-region.hovered {
-            fill: #ff6347;
-        }
         .data-table {
             margin-top: 20px;
             max-height: 400px;
@@ -58,54 +44,132 @@
             background-color: #f9f9f9;
         }
     </style>
-    <script src="https://d3js.org/d3.v7.min.js"></script> <!-- Load D3.js -->
 </head>
-
 <body>
+    <div class="dashboard">
+        <div class="filters">
+            <label for="industryFilter">Industry:</label>
+            <select id="industryFilter">
+                <option value="">All</option>
+            </select>
 
-    <!-- Table for displaying CSV data -->
-    <table id="dataTable">
-        <thead>
-            <tr>
-                <th>Industry</th>
-                <th>Nativity</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Table rows will be populated by JavaScript -->
-        </tbody>
-    </table>
+            <label for="nativityFilter">Nativity:</label>
+            <select id="nativityFilter">
+                <option value="">All</option>
+            </select>
+        </div>
 
-    <!-- JAVASCRIPT PORTION -->
+        <div class="data-table">
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th>State</th>
+                        <th>Industry</th>
+                        <th>Nativity</th>
+                        <th>Mean Wage</th>
+                        <th>Mean Other Income</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Data rows will go here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <script>
-        // Load the CSV data
-        d3.csv('aggregated_data.csv').then(data => {
-            console.log("Loaded Data: ", data);  // Check if data is loaded correctly
-            
-            // Get reference to table body
-            const dataTable = document.getElementById('dataTable').querySelector('tbody');
-            dataTable.innerHTML = '';  // Clear any existing rows
+        // Function to load CSV data and filter it based on slicers
+        function loadCSVData() {
+            fetch('aggregated_data.csv')
+                .then(response => response.text())
+                .then(data => {
+                    const parsedData = parseCSV(data);
+                    populateFilters(parsedData);
+                    displayData(parsedData);
+                });
+        }
 
-            // Log the data to ensure it is loaded properly
-            console.log("Rendering Table with Data:", data);
-
-            // Loop through each row in the data and insert it into the table
-            data.forEach(d => {
-                console.log(d);  // Log each row of data to see if it contains the expected values
-
-                // Insert a new row in the table
-                const row = dataTable.insertRow();
-
-                // Add data to the row (assumes 'IND' and 'NATIVITY' are columns in the CSV)
-                row.innerHTML = `
-                    <td>${d.IND || 'N/A'}</td>
-                    <td>${d.NATIVITY || 'N/A'}</td>
-                `;
+        // Parse CSV string into an array of objects
+        function parseCSV(data) {
+            const rows = data.split('\n');
+            const headers = rows[0].split(',');
+            const parsedData = rows.slice(1).map(row => {
+                const values = row.split(',');
+                let obj = {};
+                headers.forEach((header, index) => {
+                    obj[header.trim()] = values[index].trim();
+                });
+                return obj;
             });
-        }).catch(error => {
-            console.error("Error loading the CSV: ", error);
-        });
-    </script>
+            return parsedData;
+        }
 
+        // Populate the industry and nativity filters dynamically
+        function populateFilters(data) {
+            const industryFilter = document.getElementById('industryFilter');
+            const nativityFilter = document.getElementById('nativityFilter');
+            
+            const industries = [...new Set(data.map(item => item.IND))];
+            industries.forEach(industry => {
+                const option = document.createElement('option');
+                option.value = industry;
+                option.textContent = industry;
+                industryFilter.appendChild(option);
+            });
+
+            const nativities = [...new Set(data.map(item => item.NATIVITY))];
+            nativities.forEach(nativity => {
+                const option = document.createElement('option');
+                option.value = nativity;
+                option.textContent = nativity;
+                nativityFilter.appendChild(option);
+            });
+        }
+
+        // Display data in the table
+        function displayData(data) {
+            const tableBody = document.getElementById('dataTable').getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = '';  // Clear existing table rows
+
+            data.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.STATE}</td>
+                    <td>${item.IND}</td>
+                    <td>${item.NATIVITY}</td>
+                    <td>${item.MEAN_WAGE}</td>
+                    <td>${item.MEAN_OTHER_INCOME}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Filter data based on the selected slicers
+        function filterData(data) {
+            const industryFilterValue = document.getElementById('industryFilter').value;
+            const nativityFilterValue = document.getElementById('nativityFilter').value;
+
+            const filteredData = data.filter(item => {
+                return (
+                    (industryFilterValue === '' || item.IND === industryFilterValue) &&
+                    (nativityFilterValue === '' || item.NATIVITY === nativityFilterValue)
+                );
+            });
+
+            displayData(filteredData);
+        }
+
+        // Event listeners for filter changes
+        document.getElementById('industryFilter').addEventListener('change', () => {
+            loadCSVData();
+        });
+
+        document.getElementById('nativityFilter').addEventListener('change', () => {
+            loadCSVData();
+        });
+
+        // Initialize data loading and filtering
+        loadCSVData();
+    </script>
 </body>
 </html>
