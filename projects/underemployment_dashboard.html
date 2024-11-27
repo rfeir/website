@@ -3834,23 +3834,30 @@
         }
 
         function populateSlicers(data) {
-            populateDropdown('ind-slicer', getUniqueValues(data, 'IND'));
-            populateDropdown('nativity-slicer', getUniqueValues(data, 'NATIVITY'));
+            // Populate IND slicer dynamically
+            const indValues = getUniqueValues(data, 'IND');
+
+            // Populate NATIVITY slicer with predefined categories
+            const nativityValues = ['Category1', 'Category2', 'Category3']; // Replace with actual categories
+
+            populateDropdown('ind-slicer', indValues);
+            populateDropdown('nativity-slicer', nativityValues);
+        }
+
+        function getUniqueValues(data, key) {
+            // Extract unique values for the specified key
+            return Array.from(new Set(data.map(row => row[key]))).filter(value => value.trim() !== '');
         }
 
         function populateDropdown(elementId, values) {
             const dropdown = document.getElementById(elementId);
-            dropdown.innerHTML = '<option value="All">All</option>';
+            dropdown.innerHTML = '<option value="All">All</option>'; // Default "All" option
             values.forEach(value => {
                 const option = document.createElement('option');
                 option.value = value;
                 option.textContent = value;
                 dropdown.appendChild(option);
             });
-        }
-
-        function getUniqueValues(data, key) {
-            return Array.from(new Set(data.map(row => row[key])));
         }
 
         function applyFilters(data) {
