@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Power BI Dashboard Mirror</title>
+    <title>Dashboard</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -51,38 +51,22 @@
             padding: 20px;
             display: none; /* Hidden by default, will display once data is loaded */
         }
-        .loading-icon {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 24px;
-            font-weight: bold;
-            color: #555;
-            display: none;
-        }
-        .loading-visible {
-            display: block;
-        }
     </style>
 </head>
 <body>
     <script>
-        document.addEventListener("DOMContentLoaded", async function() {
-            // Define your JavaScript functions here that need to interact with HTML elements
-            async function fetchData() {
-                const loadingIcon = document.getElementById('map-loading');
-                loadingIcon.classList.add('loading-visible'); // Show loading icon
-                try {
-                    const response = await fetch('aggregated_data.csv');
-                    const text = await response.text();
-                    const data = parseCSV(text);
+        document.addEventListener("DOMContentLoaded", function() {
+            let data = [];
+            
+            // Fetch and parse the CSV
+            fetch('aggregated_data.csv')
+                .then(response => response.text())
+                .then(csvText => {
+                    data = parseCSV(csvText);
                     populateSlicers(data);
-                    applyFilters(data);
-                } finally {
-                    loadingIcon.classList.remove('loading-visible'); // Hide loading icon
-                }
-            }
+                    updateTable(data);  // Initially show the full table
+                    updateMap(data);    // Initially show the map for all data
+                });
 
             function parseCSV(csv) {
                 const lines = csv.trim().split('\n');
@@ -97,14 +81,12 @@
             }
 
             function populateSlicers(data) {
-                const indValues = getUniqueValues(data, 'IND');
-                const nativityValues = getUniqueValues(data, 'NATIVITY');
+                // Populate slicers with unique values
+                const indValues = [...new Set(data.map(row => row.IND))];
+                const nativityValues = [...new Set(data.map(row => row.NATIVITY))];
+
                 populateDropdown('ind-slicer', indValues);
                 populateDropdown('nativity-slicer', nativityValues);
-            }
-
-            function getUniqueValues(data, key) {
-                return Array.from(new Set(data.map(row => row[key]))).filter(value => value.trim() !== '');
             }
 
             function populateDropdown(elementId, values) {
@@ -118,14 +100,18 @@
                 });
             }
 
+            // Handle slicer changes
+            document.getElementById('ind-slicer').addEventListener('change', () => applyFilters(data));
+            document.getElementById('nativity-slicer').addEventListener('change', () => applyFilters(data));
+
             function applyFilters(data) {
                 const indFilter = document.getElementById('ind-slicer').value;
                 const nativityFilter = document.getElementById('nativity-slicer').value;
 
+                // Filter data based on slicer values
                 const filteredData = data.filter(row => {
-                    const indMatch = indFilter === 'All' || row.IND === indFilter;
-                    const nativityMatch = nativityFilter === 'All' || row.NATIVITY === nativityFilter;
-                    return indMatch && nativityMatch;
+                    return (indFilter === 'All' || row.IND === indFilter) &&
+                           (nativityFilter === 'All' || row.NATIVITY === nativityFilter);
                 });
 
                 updateTable(filteredData);
@@ -148,7 +134,6 @@
 
                 filteredData.forEach(row => {
                     const tr = document.createElement('tr');
-
                     const cellData = [
                         row.STATEFIP, row.State, row.GISMATCH_COMBINED, row.COUNTIES,
                         row.IND, row.MEAN_WAGE, row.MEAN_OTHER_INCOME, row.MEAN_AGE,
@@ -169,24 +154,21 @@
             function updateMap(filteredData) {
                 const mapContainer = document.getElementById('map');
                 mapContainer.style.display = filteredData.length > 0 ? 'block' : 'none';
-                const mapElement = document.createElement('div');
-                mapElement.textContent = 'Map data for selected regions:';
 
+                // Here, you would update the map with filteredData. For now, we show IDs.
+                const mapElement = document.createElement('div');
                 filteredData.forEach(row => {
                     const mapDataElement = document.createElement('div');
                     mapDataElement.textContent = `Map data for ID: ${row.ID} - COUNTY: ${row.COUNTIES}`;
                     mapElement.appendChild(mapDataElement);
                 });
 
-                mapContainer.innerHTML = '';
+                mapContainer.innerHTML = ''; // Clear previous map data
                 mapContainer.appendChild(mapElement);
             }
-
-            fetchData(); // Initialize the dashboard
         });
     </script>
 
-    <!-- Main HTML content starts here -->
     <div class="container">
         <div class="slicer-container">
             <div class="slicer">
@@ -203,7 +185,7 @@
             </div>
         </div>
 
-        <!-- Updated Table with all Columns -->
+        <!-- Table -->
         <table id="data-table">
             <thead>
                 <tr>
