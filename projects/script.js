@@ -1,8 +1,8 @@
 // Load the CSV data
 d3.csv('aggregated_data.csv').then(data => {
-    console.log("Loaded Data: ", data); // Log data for debugging
+    console.log("Loaded Data: ", data);
 
-    // Prepare unique filters (IND and NATIVITY)
+    // Prepare unique filters
     const industries = Array.from(new Set(data.map(d => d.IND)));
     const nativities = Array.from(new Set(data.map(d => d.NATIVITY)));
 
@@ -19,11 +19,15 @@ d3.csv('aggregated_data.csv').then(data => {
         dropdown.value = defaultOptionValue;
     }
 
-    // Populate dropdown filters
+    // Get the dropdown elements by their IDs
+    const industryFilter = document.getElementById('industry');
+    const nativityFilter = document.getElementById('nativity');
+
+    // Populate filters
     populateDropdown(industryFilter, industries, 'All');
     populateDropdown(nativityFilter, nativities, 'All');
 
-    // Render the initial map and table
+    // Render initial map and table
     renderMap(data);
     renderTable(data);
 
@@ -35,7 +39,6 @@ d3.csv('aggregated_data.csv').then(data => {
         const selectedIndustry = industryFilter.value;
         const selectedNativity = nativityFilter.value;
 
-        // Filter data based on selected filters
         const filteredData = data.filter(d =>
             (selectedIndustry === 'All' || d.IND === selectedIndustry) &&
             (selectedNativity === 'All' || d.NATIVITY === selectedNativity)
@@ -46,40 +49,40 @@ d3.csv('aggregated_data.csv').then(data => {
     }
 
     function renderMap(data) {
-        // Create a color scale based on Underemployment Level
-        const underemploymentExtent = d3.extent(data, d => +d['Underemployment Level']);
+        // Create a color scale based on 'Underemployment Level'
+        const underemploymentExtent = d3.extent(data, d => +d.UNDEREMPLOYMENT_LEVEL || 0); // Default 0 if missing
         const colorScale = d3.scaleLinear()
             .domain(underemploymentExtent)
             .range(['#ffffff', '#000000']);
-    
-        // Bind data and update paths for the map
+
+        // Bind data and update paths
         const paths = svg.selectAll('path')
-            .data(data, d => d.ID); // Ensure we use 'ID' to match the paths in the map
-    
+            .data(data, d => d.ID);
+
         // Enter and update paths
         paths.join(
             enter => enter.append('path')
                 .attr('id', d => d.ID)
-                .attr('fill', d => colorScale(+d['Underemployment Level']) || '#ccc')
+                .attr('fill', d => colorScale(+d.UNDEREMPLOYMENT_LEVEL || 0)) // Default 0 if missing
                 .attr('stroke', 'none')
                 .on('click', function (event, d) {
-                    // Add click behavior to reduce opacity for unselected regions
+                    // Reduce opacity for unselected regions
                     svg.selectAll('path')
                         .style('opacity', p => p.ID === d.ID ? 1 : 0.5);
                 }),
             update => update
-                .attr('fill', d => colorScale(+d['Underemployment Level']) || '#ccc')
+                .attr('fill', d => colorScale(+d.UNDEREMPLOYMENT_LEVEL || 0)) // Default 0 if missing
                 .attr('stroke', 'none'),
             exit => exit.remove()
         );
     }
-    
-    // Function to render the table
+
+    // Render the table
     function renderTable(data) {
         dataTable.html(''); // Clear previous table rows
-    
+
         data.forEach(d => {
-            // Use 'N/A' or a default placeholder for missing data
+            // Handle missing data with 'N/A'
             dataTable.append('tr')
                 .html(`
                     <td>${d.ID || 'N/A'}</td>
@@ -94,7 +97,6 @@ d3.csv('aggregated_data.csv').then(data => {
                 `);
         });
     }
-    
 }).catch(error => {
-    console.error("Error loading the CSV: ", error); // Show any loading errors
+    console.error("Error loading the CSV: ", error);
 });
