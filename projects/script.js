@@ -4,7 +4,7 @@ d3.csv('aggregated_data.csv').then(data => {
 
     // Prepare unique filters
     const industries = Array.from(new Set(data.map(d => d.IND)));
-    const nativities = Array.from(new Set(data.map(d => d.NATIVITY_PERCENTAGE)));
+    const nativities = Array.from(new Set(data.map(d => d.NATIVITY)));
 
     // Function to populate dropdown
     function populateDropdown(dropdown, options, defaultOptionValue) {
@@ -37,7 +37,7 @@ d3.csv('aggregated_data.csv').then(data => {
 
         const filteredData = data.filter(d =>
             (selectedIndustry === 'All' || d.IND === selectedIndustry) &&
-            (selectedNativity === 'All' || d.NATIVITY_PERCENTAGE === selectedNativity)
+            (selectedNativity === 'All' || d.NATIVITY === selectedNativity)
         );
 
         renderMap(filteredData);
@@ -87,8 +87,10 @@ d3.csv('aggregated_data.csv').then(data => {
                 <td>${d.MEAN_OTHER_INCOME}</td>
                 <td>${d.MEAN_AGE}</td>
                 <td>${d.UNDEREMPLOYMENT_LEVEL}</td>
-                <td>${d.REQUIRED_EDUCATION}</td>
+                <td>${d.EDUCATION_LEVEL}</td>
+                <td>${d.REQUIRED_EDUCAITON}</td>
                 <td>${d.NATIVITY_PERCENTAGE}</td>
+                <td>${d.NATIVITY}</td>
             `);
         });
     }
