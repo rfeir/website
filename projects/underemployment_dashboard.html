@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard 1</title>
+    <title>Dashboard 2</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -50,12 +50,12 @@
         <div class="filters">
             <label for="industryFilter">Industry:</label>
             <select id="industryFilter">
-                <option value="">All</option>
+                <!-- Options will be dynamically populated here -->
             </select>
 
             <label for="nativityFilter">Nativity:</label>
             <select id="nativityFilter">
-                <option value="">All</option>
+                <!-- Options will be dynamically populated here -->
             </select>
         </div>
 
@@ -84,8 +84,12 @@
                 .then(response => response.text())
                 .then(data => {
                     const parsedData = parseCSV(data);
+                    console.log('Parsed Data:', parsedData);  // Debugging line to check data
                     populateFilters(parsedData);
                     displayData(parsedData);
+                })
+                .catch(error => {
+                    console.error('Error loading CSV:', error);
                 });
         }
 
@@ -109,7 +113,15 @@
             const industryFilter = document.getElementById('industryFilter');
             const nativityFilter = document.getElementById('nativityFilter');
             
+            // Extract unique industries and nativities
             const industries = [...new Set(data.map(item => item.IND))];
+            const nativities = [...new Set(data.map(item => item.NATIVITY))];
+
+            // Add "All" option as default
+            industries.unshift("All");
+            nativities.unshift("All");
+
+            // Add industries to the dropdown
             industries.forEach(industry => {
                 const option = document.createElement('option');
                 option.value = industry;
@@ -117,13 +129,17 @@
                 industryFilter.appendChild(option);
             });
 
-            const nativities = [...new Set(data.map(item => item.NATIVITY))];
+            // Add nativities to the dropdown
             nativities.forEach(nativity => {
                 const option = document.createElement('option');
                 option.value = nativity;
                 option.textContent = nativity;
                 nativityFilter.appendChild(option);
             });
+
+            // Set default values (first option in the list)
+            industryFilter.value = industries[0];
+            nativityFilter.value = nativities[0];
         }
 
         // Display data in the table
@@ -151,8 +167,8 @@
 
             const filteredData = data.filter(item => {
                 return (
-                    (industryFilterValue === '' || item.IND === industryFilterValue) &&
-                    (nativityFilterValue === '' || item.NATIVITY === nativityFilterValue)
+                    (industryFilterValue === "All" || item.IND === industryFilterValue) &&
+                    (nativityFilterValue === "All" || item.NATIVITY === nativityFilterValue)
                 );
             });
 
