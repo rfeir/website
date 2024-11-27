@@ -46,20 +46,30 @@ d3.csv('aggregated_data.csv').then(data => {
 
     function renderMap(data) {
         // Create a color scale based on `Underemployment Level`
-        const underemploymentExtent = d3.extent(data, d => +d.UNDEREMPLOYMENT_LEVEL);
+        const underemploymentExtent = d3.extent(data, d => {
+            const underemploymentLevel = +d.UNDEREMPLOYMENT_LEVEL;
+            return isNaN(underemploymentLevel) ? 0 : underemploymentLevel; // default to 0 if NaN
+        });
         const colorScale = d3.scaleLinear()
             .domain(underemploymentExtent)
             .range(['#ffffff', '#000000']);
-
+    
         // Bind data and update paths
         const paths = svg.selectAll('path')
             .data(data, d => d.ID);
-
+    
         // Enter and update paths
         paths.join(
             enter => enter.append('path')
                 .attr('id', d => d.ID)
-                .attr('fill', d => colorScale(+d.UNDEREMPLOYMENT_LEVEL) || '#ccc')
+                .attr('fill', d => {
+                    const underemploymentLevel = +d.UNDEREMPLOYMENT_LEVEL;
+                    // Check if `UNDEREMPLOYMENT_LEVEL` is missing or invalid (NaN)
+                    if (isNaN(underemploymentLevel) || underemploymentLevel === null) {
+                        return '#cccccc'; // Gray for missing or invalid values
+                    }
+                    return colorScale(underemploymentLevel);
+                })
                 .attr('stroke', 'none')
                 .on('click', function (event, d) {
                     // Reduce opacity for unselected regions
@@ -67,11 +77,18 @@ d3.csv('aggregated_data.csv').then(data => {
                         .style('opacity', p => p.ID === d.ID ? 1 : 0.5);
                 }),
             update => update
-                .attr('fill', d => colorScale(+d.UNDEREMPLOYMENT_LEVEL) || '#ccc')
+                .attr('fill', d => {
+                    const underemploymentLevel = +d.UNDEREMPLOYMENT_LEVEL;
+                    if (isNaN(underemploymentLevel) || underemploymentLevel === null) {
+                        return '#cccccc'; // Gray for missing or invalid values
+                    }
+                    return colorScale(underemploymentLevel);
+                })
                 .attr('stroke', 'none'),
             exit => exit.remove()
         );
     }
+    
 
     function renderTable(data) {
         // Clear previous table rows
