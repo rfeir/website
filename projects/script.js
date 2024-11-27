@@ -78,22 +78,20 @@ d3.csv('aggregated_data.csv').then(data => {
     function renderTable(data) {
         dataTable.html(''); // Clear previous table rows
     
-        // Check that the data is not undefined
         data.forEach(d => {
-            if (d.IND && d.NATIVITY) {
-                dataTable.append('tr')
-                    .html(`
-                        <td>${d.ID}</td>
-                        <td>${d.State}</td>
-                        <td>${d.COUNTIES}</td>
-                        <td>${d['Mean Wage']}</td>
-                        <td>${d['Mean Other Income']}</td>
-                        <td>${d['Mean Age']}</td>
-                        <td>${d['Underemployment Level']}</td>
-                        <td>${d['Required Education Level']}</td>
-                        <td>${d['Percent of Workforce']}</td>
-                    `);
-            }
+            // Use 'N/A' or a default placeholder for missing data
+            dataTable.append('tr')
+                .html(`
+                    <td>${d.ID || 'N/A'}</td>
+                    <td>${d.State || 'N/A'}</td>
+                    <td>${d.COUNTIES || 'N/A'}</td>
+                    <td>${d['Underemployment Level'] || 'N/A'}</td>
+                    <td>${d['Required Education Level'] || 'N/A'}</td>
+                    <td>${d['Percent of Workforce'] || 'N/A'}</td>
+                    <td>${d['Mean Wage'] || 'N/A'}</td>
+                    <td>${d['Mean Other Income'] || 'N/A'}</td>
+                    <td>${d['Mean Age'] || 'N/A'}</td>
+                `);
         });
     }
     
