@@ -9,24 +9,36 @@ d3.csv('aggregated_data.csv').then(data => {
     console.log("Loaded Data: ", data);  // Log the data to inspect its structure
 
     // 1. Populate the filters dynamically
-    const industries = new Set(data.map(d => d.IND));
-    const nativities = new Set(data.map(d => d.NATIVITY));
+    const industries = Array.from(new Set(data.map(d => d.IND))); // Extract unique industries
+    const nativities = Array.from(new Set(data.map(d => d.NATIVITY))); // Extract unique nativities
+
+    // Helper function to populate a dropdown
+    function populateDropdown(dropdown, options, defaultOptionValue) {
+        // Ensure "All" is at the top
+        options = [defaultOptionValue, ...options.filter(opt => opt !== defaultOptionValue)];
+        options.sort((a, b) => {
+            if (a === defaultOptionValue) return -1; // Keep "All" at the top
+            if (b === defaultOptionValue) return 1;
+            return a.localeCompare(b); // Alphabetical order
+        });
+
+        // Populate the dropdown
+        options.forEach(option => {
+            const opt = document.createElement('option');
+            opt.value = option;
+            opt.textContent = option;
+            dropdown.appendChild(opt);
+        });
+
+        // Set default value
+        dropdown.value = defaultOptionValue;
+    }
 
     // Populate the industry filter
-    industries.forEach(industry => {
-        const option = document.createElement('option');
-        option.value = industry;
-        option.textContent = industry;
-        industryFilter.appendChild(option);
-    });
-
+    populateDropdown(industryFilter, industries, 'All');
     // Populate the nativity filter
-    nativities.forEach(nativity => {
-        const option = document.createElement('option');
-        option.value = nativity;
-        option.textContent = nativity;
-        nativityFilter.appendChild(option);
-    });
+    populateDropdown(nativityFilter, nativities, 'All');
+
 
     // 2. Render the initial map and table with all data
     renderMap(data);
