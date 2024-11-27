@@ -80,8 +80,13 @@
     <script>
         // Function to load CSV data and filter it based on slicers
         function loadCSVData() {
-            fetch('aggregated_data.csv')
-                .then(response => response.text())
+            fetch('aggregated_data.csv')  // Ensure this path is correct
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('CSV file not found or could not be fetched');
+                    }
+                    return response.text();
+                })
                 .then(data => {
                     const parsedData = parseCSV(data);
                     console.log('Parsed Data:', parsedData);  // Debugging line to check data
@@ -116,6 +121,9 @@
             // Extract unique industries and nativities
             const industries = [...new Set(data.map(item => item.IND))];
             const nativities = [...new Set(data.map(item => item.NATIVITY))];
+
+            console.log('Industries:', industries);  // Debugging to ensure we have correct data
+            console.log('Nativities:', nativities);  // Debugging to ensure we have correct data
 
             // Add "All" option as default
             industries.unshift("All");
