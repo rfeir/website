@@ -51,11 +51,11 @@ d3.csv('aggregated_data.csv').then(data => {
         const colorScale = d3.scaleLinear()
             .domain(underemploymentExtent)
             .range(['#ffffff', '#000000']);
-
+    
         // Bind data and update paths for the map
         const paths = svg.selectAll('path')
-            .data(data, d => d.ID);
-
+            .data(data, d => d.ID); // Ensure we use 'ID' to match the paths in the map
+    
         // Enter and update paths
         paths.join(
             enter => enter.append('path')
@@ -73,26 +73,30 @@ d3.csv('aggregated_data.csv').then(data => {
             exit => exit.remove()
         );
     }
-
+    
     // Function to render the table
     function renderTable(data) {
         dataTable.html(''); // Clear previous table rows
-
+    
+        // Check that the data is not undefined
         data.forEach(d => {
-            dataTable.append('tr')
-                .html(`
-                    <td>${d.ID}</td>
-                    <td>${d.State}</td>
-                    <td>${d.COUNTIES}</td>
-                    <td>${d['Mean Wage']}</td>
-                    <td>${d['Mean Other Income']}</td>
-                    <td>${d['Mean Age']}</td>
-                    <td>${d['Underemployment Level']}</td>
-                    <td>${d['Required Education Level']}</td>
-                    <td>${d['Percent of Workforce']}</td>
-                `);
+            if (d.ID && d.State && d.COUNTIES) {
+                dataTable.append('tr')
+                    .html(`
+                        <td>${d.ID}</td>
+                        <td>${d.State}</td>
+                        <td>${d.COUNTIES}</td>
+                        <td>${d['Mean Wage']}</td>
+                        <td>${d['Mean Other Income']}</td>
+                        <td>${d['Mean Age']}</td>
+                        <td>${d['Underemployment Level']}</td>
+                        <td>${d['Required Education Level']}</td>
+                        <td>${d['Percent of Workforce']}</td>
+                    `);
+            }
         });
     }
+    
 }).catch(error => {
     console.error("Error loading the CSV: ", error); // Show any loading errors
 });
