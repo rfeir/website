@@ -83,13 +83,13 @@ d3.csv('aggregated_data.csv').then(data => {
                 <td>${d.ID}</td>
                 <td>${d.STATE}</td>
                 <td>${d.COUNTIES}</td>
-                <td>${d.MEAN_WAGE}</td>
-                <td>${d.MEAN_OTHER_INCOME}</td>
-                <td>${d.MEAN_AGE}</td>
-                <td>${d.UNDEREMPLOYMENT_LEVEL}</td>
-                <td>${d.EDUCATION_LEVEL}</td>
-                <td>${d.REQUIRED_EDUCAITON}</td>
-                <td>${d.NATIVITY_PERCENTAGE}</td>
+                <td>${d.MEAN_WAGE || 'N/A'}</td>  <!-- Handle missing data -->
+                <td>${d.MEAN_OTHER_INCOME || 'N/A'}</td>  <!-- Handle missing data -->
+                <td>${d.MEAN_AGE || 'N/A'}</td>  <!-- Handle missing data -->
+                <td>${d.UNDEREMPLOYMENT_LEVEL || 'N/A'}</td>  <!-- Handle missing data -->
+                <td>${d.EDUCATION_LEVEL || 'N/A'}</td>  <!-- Handle missing data -->
+                <td>${d.REQUIRED_EDUCAITON || 'N/A'}</td>  <!-- Handle missing data -->
+                <td>${d.NATIVITY_PERCENTAGE || 'N/A'}</td>  <!-- Handle missing data -->
                 <td>${d.NATIVITY}</td>
             `);
         });
