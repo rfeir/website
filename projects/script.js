@@ -4,7 +4,7 @@ d3.csv('aggregated_data.csv').then(data => {
 
     // Prepare unique filters
     const industries = Array.from(new Set(data.map(d => d.IND)));
-    const nativities = Array.from(new Set(data.map(d => d.NATIVITY)));
+    const nativities = Array.from(new Set(data.map(d => d.NATIVITY_PERCENTAGE)));
 
     // Function to populate dropdown
     function populateDropdown(dropdown, options, defaultOptionValue) {
@@ -18,10 +18,6 @@ d3.csv('aggregated_data.csv').then(data => {
         });
         dropdown.value = defaultOptionValue;
     }
-
-    // Get the dropdown elements by their IDs
-    const industryFilter = document.getElementById('industry');
-    const nativityFilter = document.getElementById('nativity');
 
     // Populate filters
     populateDropdown(industryFilter, industries, 'All');
@@ -41,7 +37,7 @@ d3.csv('aggregated_data.csv').then(data => {
 
         const filteredData = data.filter(d =>
             (selectedIndustry === 'All' || d.IND === selectedIndustry) &&
-            (selectedNativity === 'All' || d.NATIVITY === selectedNativity)
+            (selectedNativity === 'All' || d.NATIVITY_PERCENTAGE === selectedNativity)
         );
 
         renderMap(filteredData);
@@ -49,8 +45,8 @@ d3.csv('aggregated_data.csv').then(data => {
     }
 
     function renderMap(data) {
-        // Create a color scale based on 'Underemployment Level'
-        const underemploymentExtent = d3.extent(data, d => +d.UNDEREMPLOYMENT_LEVEL || 0); // Default 0 if missing
+        // Create a color scale based on `Underemployment Level`
+        const underemploymentExtent = d3.extent(data, d => +d.UNDEREMPLOYMENT_LEVEL);
         const colorScale = d3.scaleLinear()
             .domain(underemploymentExtent)
             .range(['#ffffff', '#000000']);
@@ -63,7 +59,7 @@ d3.csv('aggregated_data.csv').then(data => {
         paths.join(
             enter => enter.append('path')
                 .attr('id', d => d.ID)
-                .attr('fill', d => colorScale(+d.UNDEREMPLOYMENT_LEVEL || 0)) // Default 0 if missing
+                .attr('fill', d => colorScale(+d.UNDEREMPLOYMENT_LEVEL) || '#ccc')
                 .attr('stroke', 'none')
                 .on('click', function (event, d) {
                     // Reduce opacity for unselected regions
@@ -71,30 +67,29 @@ d3.csv('aggregated_data.csv').then(data => {
                         .style('opacity', p => p.ID === d.ID ? 1 : 0.5);
                 }),
             update => update
-                .attr('fill', d => colorScale(+d.UNDEREMPLOYMENT_LEVEL || 0)) // Default 0 if missing
+                .attr('fill', d => colorScale(+d.UNDEREMPLOYMENT_LEVEL) || '#ccc')
                 .attr('stroke', 'none'),
             exit => exit.remove()
         );
     }
 
-    // Render the table
     function renderTable(data) {
-        dataTable.html(''); // Clear previous table rows
+        // Clear previous table rows
+        dataTable.html('');
 
+        // Render new table rows with updated column names
         data.forEach(d => {
-            // Handle missing data with 'N/A'
-            dataTable.append('tr')
-                .html(`
-                    <td>${d.ID || 'N/A'}</td>
-                    <td>${d.State || 'N/A'}</td>
-                    <td>${d.COUNTIES || 'N/A'}</td>
-                    <td>${d['Underemployment Level'] || 'N/A'}</td>
-                    <td>${d['Required Education Level'] || 'N/A'}</td>
-                    <td>${d['Percent of Workforce'] || 'N/A'}</td>
-                    <td>${d['Mean Wage'] || 'N/A'}</td>
-                    <td>${d['Mean Other Income'] || 'N/A'}</td>
-                    <td>${d['Mean Age'] || 'N/A'}</td>
-                `);
+            dataTable.append('tr').html(`
+                <td>${d.ID}</td>
+                <td>${d.STATE}</td>
+                <td>${d.COUNTIES}</td>
+                <td>${d.MEAN_WAGE}</td>
+                <td>${d.MEAN_OTHER_INCOME}</td>
+                <td>${d.MEAN_AGE}</td>
+                <td>${d.UNDEREMPLOYMENT_LEVEL}</td>
+                <td>${d.REQUIRED_EDUCATION}</td>
+                <td>${d.NATIVITY_PERCENTAGE}</td>
+            `);
         });
     }
 }).catch(error => {
