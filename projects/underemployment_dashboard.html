@@ -139,7 +139,7 @@
                 if (filteredData.length === 0) {
                     const tr = document.createElement('tr');
                     const td = document.createElement('td');
-                    td.colSpan = 4;
+                    td.colSpan = 14;
                     td.textContent = 'No matching data found.';
                     tr.appendChild(td);
                     tableBody.appendChild(tr);
@@ -148,21 +148,19 @@
 
                 filteredData.forEach(row => {
                     const tr = document.createElement('tr');
-                    const idCell = document.createElement('td');
-                    idCell.textContent = row.ID;
-                    tr.appendChild(idCell);
 
-                    const indCell = document.createElement('td');
-                    indCell.textContent = row.IND;
-                    tr.appendChild(indCell);
+                    const cellData = [
+                        row.STATEFIP, row.State, row.GISMATCH_COMBINED, row.COUNTIES,
+                        row.IND, row.MEAN_WAGE, row.MEAN_OTHER_INCOME, row.MEAN_AGE,
+                        row.UNDEREMPLOYMENT_LEVEL, row.EDUCATION_LEVEL, row.REQUIRED_EDUCATION_LEVEL,
+                        row.NATIVITY_PERCENTAGE, row.ID, row.NATIVITY
+                    ];
 
-                    const nativityCell = document.createElement('td');
-                    nativityCell.textContent = row.NATIVITY;
-                    tr.appendChild(nativityCell);
-
-                    const otherColumnsCell = document.createElement('td');
-                    otherColumnsCell.textContent = `${row.MEAN_WAGE} | ${row.EDUCATION_LEVEL}`;
-                    tr.appendChild(otherColumnsCell);
+                    cellData.forEach(cell => {
+                        const td = document.createElement('td');
+                        td.textContent = cell;
+                        tr.appendChild(td);
+                    });
 
                     tableBody.appendChild(tr);
                 });
@@ -204,13 +202,25 @@
                 </select>
             </div>
         </div>
+
+        <!-- Updated Table with all Columns -->
         <table id="data-table">
             <thead>
                 <tr>
-                    <th>ID</th>
+                    <th>STATEFIP</th>
+                    <th>State</th>
+                    <th>GISMATCH_COMBINED</th>
+                    <th>COUNTIES</th>
                     <th>IND</th>
+                    <th>MEAN_WAGE</th>
+                    <th>MEAN_OTHER_INCOME</th>
+                    <th>MEAN_AGE</th>
+                    <th>UNDEREMPLOYMENT_LEVEL</th>
+                    <th>EDUCATION_LEVEL</th>
+                    <th>REQUIRED_EDUCATION_LEVEL</th>
+                    <th>NATIVITY_PERCENTAGE</th>
+                    <th>ID</th>
                     <th>NATIVITY</th>
-                    <th>Other Columns</th>
                 </tr>
             </thead>
             <tbody></tbody>
