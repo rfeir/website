@@ -80,7 +80,7 @@ d3.csv('aggregated_data.csv').then(data => {
     
         // Check that the data is not undefined
         data.forEach(d => {
-            if (d.ID && d.State && d.COUNTIES) {
+            if (d.IND && d.NATIVITY) {
                 dataTable.append('tr')
                     .html(`
                         <td>${d.ID}</td>
