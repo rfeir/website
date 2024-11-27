@@ -5102,32 +5102,35 @@
             }
 
             function renderTable(data) {
-                const dataTable = document.getElementById('dataTable').querySelector('tbody');
-                dataTable.innerHTML = '';  // Clear the existing table
+            const dataTable = document.getElementById('dataTable').querySelector('tbody');
+            dataTable.innerHTML = '';  // Clear the existing table
+            
+            console.log("Rendering Table with Data:", data);  // Add this to see what data is being passed
 
-                // Loop through each row in the data
-                data.forEach(d => {
-                    console.log(d);  // Debugging: log the row data to the console
-                    
-                    // Insert a row in the table
-                    const row = dataTable.insertRow();
+            // Loop through each row in the data
+            data.forEach(d => {
+                console.log(d);  // Log each row of data to ensure it's correct
 
-                    // Populate the row with all necessary columns, with 'N/A' if a value is missing
-                    row.innerHTML = `
-                        <td>${d.IND || 'N/A'}</td>
-                        <td>${d.NATIVITY || 'N/A'}</td>
-                        <td>${d.GISMATCH_COMBINED || 'N/A'}</td>
-                        <td>${d.COUNTIES || 'N/A'}</td>
-                        <td>${d.MEAN_WAGE || 'N/A'}</td>
-                        <td>${d.MEAN_OTHER_INCOME || 'N/A'}</td>
-                        <td>${d.MEAN_AGE || 'N/A'}</td>
-                        <td>${d.UNDEREMPLOYMENT_LEVEL || 'N/A'}</td>
-                        <td>${d.EDUCATION_LEVEL || 'N/A'}</td>
-                        <td>${d.REQUIRED_EDUCAITON || 'N/A'}</td>
-                        <td>${d.NATIVITY_PERCENTAGE || 'N/A'}</td>
-                    `;
-                });
-            }
+                // Insert a row in the table
+                const row = dataTable.insertRow();
+
+                // Populate the row with all necessary columns, with 'N/A' if a value is missing
+                row.innerHTML = `
+                    <td>${d.IND || 'N/A'}</td>
+                    <td>${d.NATIVITY || 'N/A'}</td>
+                    <td>${d.GISMATCH_COMBINED || 'N/A'}</td>
+                    <td>${d.COUNTIES || 'N/A'}</td>
+                    <td>${d.MEAN_WAGE || 'N/A'}</td>
+                    <td>${d.MEAN_OTHER_INCOME || 'N/A'}</td>
+                    <td>${d.MEAN_AGE || 'N/A'}</td>
+                    <td>${d.UNDEREMPLOYMENT_LEVEL || 'N/A'}</td>
+                    <td>${d.EDUCATION_LEVEL || 'N/A'}</td>
+                    <td>${d.REQUIRED_EDUCAITON || 'N/A'}</td>
+                    <td>${d.NATIVITY_PERCENTAGE || 'N/A'}</td>
+                `;
+            });
+        }
+
         }).catch(error => {
             console.error("Error loading the CSV: ", error);
         });
