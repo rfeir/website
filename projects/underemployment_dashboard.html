@@ -1,11 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<!--- CSS PORTION --->
-
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard 1</title>
+    <title>Dashboard 2</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -63,47 +61,42 @@
     <script src="https://d3js.org/d3.v7.min.js"></script> <!-- Load D3.js -->
 </head>
 
-<!--- HTML PORTION --->
-
 <body>
 
-        <!-- Table for displaying CSV data -->
-        <table id="dataTable">
-            <thead>
-                <tr>
-                    <th>Industry</th>
-                    <th>Nativity</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Table rows will be populated by JavaScript -->
-            </tbody>
-        </table>
-    </div>
+    <!-- Table for displaying CSV data -->
+    <table id="dataTable">
+        <thead>
+            <tr>
+                <th>Industry</th>
+                <th>Nativity</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Table rows will be populated by JavaScript -->
+        </tbody>
+    </table>
 
-<!--- JAVASCRIPT PORTION --->
-
-    <!-- Script section -->
-    <script src="https://d3js.org/d3.v6.min.js"></script> <!-- Ensure you are using the correct D3 version -->
+    <!-- JAVASCRIPT PORTION -->
     <script>
         // Load the CSV data
         d3.csv('aggregated_data.csv').then(data => {
             console.log("Loaded Data: ", data);  // Check if data is loaded correctly
             
+            // Get reference to table body
             const dataTable = document.getElementById('dataTable').querySelector('tbody');
             dataTable.innerHTML = '';  // Clear any existing rows
 
             // Log the data to ensure it is loaded properly
             console.log("Rendering Table with Data:", data);
 
-            // Loop through each row in the data
+            // Loop through each row in the data and insert it into the table
             data.forEach(d => {
                 console.log(d);  // Log each row of data to see if it contains the expected values
 
-                // Insert a new row
+                // Insert a new row in the table
                 const row = dataTable.insertRow();
 
-                // Add data to the row (example assumes 'IND' and 'NATIVITY' are columns)
+                // Add data to the row (assumes 'IND' and 'NATIVITY' are columns in the CSV)
                 row.innerHTML = `
                     <td>${d.IND || 'N/A'}</td>
                     <td>${d.NATIVITY || 'N/A'}</td>
