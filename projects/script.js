@@ -1,9 +1,12 @@
 d3.csv('aggregated_data.csv').then(data => {
     console.log("Loaded Data: ", data);  // Log data to check the structure
 
+    // Ensure that each entry has a valid ID (numeric)
+    const validData = data.filter(d => d.ID && !isNaN(d.ID));
+
     // Prepare unique filters
-    const industries = Array.from(new Set(data.map(d => d.IND)));
-    const nativities = Array.from(new Set(data.map(d => d.NATIVITY)));
+    const industries = Array.from(new Set(validData.map(d => d.IND)));
+    const nativities = Array.from(new Set(validData.map(d => d.NATIVITY)));
 
     // Function to populate dropdown
     function populateDropdown(dropdown, options, defaultOptionValue) {
@@ -23,8 +26,8 @@ d3.csv('aggregated_data.csv').then(data => {
     populateDropdown(nativityFilter, nativities, 'All');
 
     // Render initial map and table
-    renderMap(data);
-    renderTable(data);
+    renderMap(validData);
+    renderTable(validData);
 
     // Update map and table on filter change
     industryFilter.addEventListener('change', filterData);
@@ -34,7 +37,7 @@ d3.csv('aggregated_data.csv').then(data => {
         const selectedIndustry = industryFilter.value;
         const selectedNativity = nativityFilter.value;
 
-        const filteredData = data.filter(d =>
+        const filteredData = validData.filter(d =>
             (selectedIndustry === 'All' || d.IND === selectedIndustry) &&
             (selectedNativity === 'All' || d.NATIVITY === selectedNativity)
         );
@@ -44,9 +47,12 @@ d3.csv('aggregated_data.csv').then(data => {
     }
 
     function renderMap(data) {
-        // Filter out data with missing IDs
+        // Log the filtered data to check for any missing IDs
+        console.log("Filtered Data for Map: ", data);
+
+        // Filter out data with missing IDs (just in case)
         const paths = svg.selectAll('path')
-            .data(data.filter(d => d.ID !== undefined), d => `${d.ID}-${d.IND}-${d.NATIVITY}`);  // Use a composite key
+            .data(data.filter(d => d.ID && !isNaN(d.ID)), d => d.ID);  // Ensure ID is valid and numeric
 
         // Create a color scale based on `Underemployment Level`
         const underemploymentExtent = d3.extent(data, d => +d.UNDEREMPLOYMENT_LEVEL);
@@ -57,7 +63,7 @@ d3.csv('aggregated_data.csv').then(data => {
         // Enter and update paths
         paths.join(
             enter => enter.append('path')
-                .attr('id', d => `${d.ID}-${d.IND}-${d.NATIVITY}`)  // Composite ID for uniqueness
+                .attr('id', d => d.ID)  // Use numeric ID directly
                 .attr('fill', d => colorScale(+d.UNDEREMPLOYMENT_LEVEL) || '#ccc')
                 .attr('stroke', 'none')
                 .on('click', function (event, d) {
