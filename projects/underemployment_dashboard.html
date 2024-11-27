@@ -1,8 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
+
+<!--- CSS PORTION --->
+
 <head>
     <meta charset="UTF-8">
-    <title>SVG Map Dashboard</title>
+    <title>Dashboard 1</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -59,6 +62,9 @@
     </style>
     <script src="https://d3js.org/d3.v7.min.js"></script> <!-- Load D3.js -->
 </head>
+
+<!--- HTML PORTION --->
+
 <body>
 
     <div class="dashboard">
@@ -4993,7 +4999,15 @@
                     <tr>
                         <th>Industry</th>
                         <th>Nativity</th>
-                        <th>Additional Data</th> <!-- Customize this as needed -->
+                        <th>GIS Match Combined</th>
+                        <th>Counties</th>
+                        <th>Mean Wage</th>
+                        <th>Mean Other Income</th>
+                        <th>Mean Age</th>
+                        <th>Underemployment Level</th>
+                        <th>Education Level</th>
+                        <th>Required Education</th>
+                        <th>Nativity Percentage</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -5002,6 +5016,8 @@
             </table>
         </div>
     </div>
+
+<!--- JAVASCRIPT PORTION --->
 
     <script>
         // Load the CSV data
@@ -5086,12 +5102,27 @@
             function renderTable(data) {
                 const dataTable = document.getElementById('dataTable').querySelector('tbody');
                 dataTable.innerHTML = '';  // Clear the existing table
+
+                // Loop through each row in the data
                 data.forEach(d => {
+                    console.log(d);  // Debugging: log the row data to the console
+                    
+                    // Insert a row in the table
                     const row = dataTable.insertRow();
+
+                    // Populate the row with all necessary columns, with 'N/A' if a value is missing
                     row.innerHTML = `
-                        <td>${d.IND}</td>
-                        <td>${d.NATIVITY}</td>
-                        <td>${d.UNDEREMPLOYMENT_LEVEL}</td>
+                        <td>${d.IND || 'N/A'}</td>
+                        <td>${d.NATIVITY || 'N/A'}</td>
+                        <td>${d.GISMATCH_COMBINED || 'N/A'}</td>
+                        <td>${d.COUNTIES || 'N/A'}</td>
+                        <td>${d.MEAN_WAGE || 'N/A'}</td>
+                        <td>${d.MEAN_OTHER_INCOME || 'N/A'}</td>
+                        <td>${d.MEAN_AGE || 'N/A'}</td>
+                        <td>${d.UNDEREMPLOYMENT_LEVEL || 'N/A'}</td>
+                        <td>${d.EDUCATION_LEVEL || 'N/A'}</td>
+                        <td>${d.REQUIRED_EDUCAITON || 'N/A'}</td>
+                        <td>${d.NATIVITY_PERCENTAGE || 'N/A'}</td>
                     `;
                 });
             }
