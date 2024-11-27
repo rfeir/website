@@ -98,5 +98,5 @@ d3.csv('aggregated_data.csv').then(data => {
         });
     }
 }).catch(error => {
-    console.error("Error loading the CSV: ", error);
+    console.error("Error loading the CSV 1: ", error);
 });
