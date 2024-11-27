@@ -5030,15 +5030,17 @@
 
             // Function to populate dropdown
             function populateDropdown(dropdown, options, defaultOptionValue) {
-                options = [defaultOptionValue, ...options.filter(opt => opt !== defaultOptionValue)];
-                options.sort((a, b) => a === defaultOptionValue ? -1 : a.localeCompare(b));
-                options.forEach(option => {
-                    const opt = document.createElement('option');
-                    opt.value = option;
-                    opt.textContent = option;
-                    dropdown.appendChild(opt);
-                });
-                dropdown.value = defaultOptionValue;
+                // Add the default "All" option
+                dropdown.innerHTML = `<option value="${defaultOptionValue}">${defaultOptionValue}</option>`;
+                
+                // Filter out the default option from the list and add the rest
+                options.filter(opt => opt !== defaultOptionValue).sort((a, b) => a.localeCompare(b))
+                    .forEach(option => {
+                        const opt = document.createElement('option');
+                        opt.value = option;
+                        opt.textContent = option;
+                        dropdown.appendChild(opt);
+                    });
             }
 
             // Populate filters
@@ -5130,5 +5132,6 @@
             console.error("Error loading the CSV: ", error);
         });
     </script>
+
 </body>
 </html>
