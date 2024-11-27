@@ -46,7 +46,7 @@ d3.csv('aggregated_data.csv').then(data => {
 
     function renderMap(data) {
         // Create a color scale based on `Underemployment Level`
-        const underemploymentExtent = d3.extent(data, d => +d.UNDEREMPLOYMENT_LEVEL);
+        const underemploymentExtent = d3.extent(data, d => +d.UNDEREMPLOYMENT LEVEL);
         const colorScale = d3.scaleLinear()
             .domain(underemploymentExtent)
             .range(['#ffffff', '#000000']);
@@ -73,14 +73,23 @@ d3.csv('aggregated_data.csv').then(data => {
         );
     }
 
+    // Function to render the table
     function renderTable(data) {
-        dataTable.html('');
+        dataTable.html(''); // Clear previous table rows
+
         data.forEach(d => {
-            dataTable.append('tr').html(`
-                <td>${d.IND}</td>
-                <td>${d.NATIVITY}</td>
-                <td>${d.UNDEREMPLOYMENT_LEVEL}</td>
-            `);
+            dataTable.append('tr')
+                .html(`
+                    <td>${d.ID}</td>
+                    <td>${d.State}</td>
+                    <td>${d.COUNTIES}</td>
+                    <td>${d['Underemployment Level']}</td>
+                    <td>${d['Required Education Level']}</td>
+                    <td>${d['Percent of Workforce']}</td>
+                    <td>${d['Mean Wage']}</td>
+                    <td>${d['Mean Other Income']}</td>
+                    <td>${d['Mean Age']}</td>
+                `);
         });
     }
 }).catch(error => {
