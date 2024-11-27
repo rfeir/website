@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Power BI Dashboard Mirror</title>
+    <title>Optimized Power BI Dashboard Mirror</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -3808,11 +3808,17 @@
 
     <script>
         async function fetchData() {
-            const response = await fetch('aggregated_data.csv');
-            const text = await response.text();
-            const data = parseCSV(text);
-            populateSlicers(data);
-            applyFilters(data);
+            const loadingIcon = document.getElementById('map-loading');
+            loadingIcon.classList.add('loading-visible'); // Show loading icon
+            try {
+                const response = await fetch('aggregated_data.csv');
+                const text = await response.text();
+                const data = parseCSV(text);
+                populateSlicers(data);
+                applyFilters(data);
+            } finally {
+                loadingIcon.classList.remove('loading-visible'); // Hide loading icon
+            }
         }
 
         function parseCSV(csv) {
@@ -3828,28 +3834,23 @@
         }
 
         function populateSlicers(data) {
-            const indSlicer = document.getElementById('ind-slicer');
-            const nativitySlicer = document.getElementById('nativity-slicer');
-            
-            const indValues = Array.from(new Set(data.map(row => row.IND)));
-            const nativityValues = Array.from(new Set(data.map(row => row.NATIVITY)));
+            populateDropdown('ind-slicer', getUniqueValues(data, 'IND'));
+            populateDropdown('nativity-slicer', getUniqueValues(data, 'NATIVITY'));
+        }
 
-            indValues.forEach(value => {
+        function populateDropdown(elementId, values) {
+            const dropdown = document.getElementById(elementId);
+            dropdown.innerHTML = '<option value="All">All</option>';
+            values.forEach(value => {
                 const option = document.createElement('option');
                 option.value = value;
                 option.textContent = value;
-                indSlicer.appendChild(option);
+                dropdown.appendChild(option);
             });
+        }
 
-            nativityValues.forEach(value => {
-                const option = document.createElement('option');
-                option.value = value;
-                option.textContent = value;
-                nativitySlicer.appendChild(option);
-            });
-
-            indSlicer.addEventListener('change', () => applyFilters(data));
-            nativitySlicer.addEventListener('change', () => applyFilters(data));
+        function getUniqueValues(data, key) {
+            return Array.from(new Set(data.map(row => row[key])));
         }
 
         function applyFilters(data) {
@@ -3862,17 +3863,22 @@
                 return indMatch && nativityMatch;
             });
 
-            if (filteredData.length > 0) {
-                updateTable(filteredData);
-                updateMap(filteredData);
-            } else {
-                alert('No data matches the selected filters. Please refine your selection.');
-            }
+            updateTable(filteredData);
         }
 
         function updateTable(filteredData) {
             const tableBody = document.querySelector('#data-table tbody');
-            tableBody.innerHTML = '';
+            tableBody.innerHTML = ''; // Clear previous data
+
+            if (filteredData.length === 0) {
+                const tr = document.createElement('tr');
+                const td = document.createElement('td');
+                td.colSpan = 4;
+                td.textContent = 'No matching data found.';
+                tr.appendChild(td);
+                tableBody.appendChild(tr);
+                return;
+            }
 
             filteredData.forEach(row => {
                 const tr = document.createElement('tr');
@@ -3885,17 +3891,7 @@
             });
         }
 
-        function updateMap(filteredData) {
-            const mapContainer = document.getElementById('map');
-            mapContainer.innerHTML = ''; // Clear previous map data
-
-            filteredData.forEach(row => {
-                const mapElement = document.createElement('div');
-                mapElement.textContent = `Map Element for ID: ${row.ID}`; // Replace with your actual map rendering logic
-                mapContainer.appendChild(mapElement);
-            });
-        }
-
+        // Initialize the dashboard
         fetchData();
     </script>
 </body>
