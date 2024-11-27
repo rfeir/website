@@ -12,14 +12,21 @@
         <!-- Filters -->
         <div class="filters">
             <label for="industry">Industry</label>
-            <select id="industry"></select> <!-- Dynamically populated -->
+            <select id="industry">
+                <option value="">All Industries</option>
+                <!-- Options will be added dynamically -->
+            </select>
+
             <label for="nativity">Nativity</label>
-            <select id="nativity"></select> <!-- Now also dynamically populated -->
+            <select id="nativity">
+                <option value="">All Nativities</option>
+                <!-- Options will be added dynamically -->
+            </select>
         </div>
 
         <!-- Map container -->
         <div class="map-container">
-            <svg id="mapSVG" width="1000" height="800" xmlns="http://www.w3.org/2000/svg">
+            <svg id="mapSVG" width="1000" height="1745" xmlns="http://www.w3.org/2000/svg">
                 <!-- Your SVG map paths will go here -->
             </svg>
         </div>

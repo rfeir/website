@@ -78,7 +78,7 @@ d3.csv('aggregated_data.csv').then(data => {
                 .html(`
                     <td>${d.IND}</td>
                     <td>${d.NATIVITY}</td>
-                    <td>${d.GISMATCH_COMBINED}</td>  <!-- keep working from here -rf -->
+                    <td>${d.additionalData}</td>  <!-- Replace 'additionalData' with real column name -->
                 `);
         });
     }
