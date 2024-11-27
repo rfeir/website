@@ -3834,12 +3834,13 @@
         }
 
         function populateSlicers(data) {
-            // Populate IND slicer dynamically
+            // Populate IND slicer dynamically with unique values
             const indValues = getUniqueValues(data, 'IND');
 
-            // Populate NATIVITY slicer with predefined categories
-            const nativityValues = ['Foreign-Born', 'Native-Born']; // Replace with actual categories
+            // Populate NATIVITY slicer with predefined categories (you can modify this if necessary)
+            const nativityValues = ['Foreign-Born', 'Native-Born']; // Replace with actual categories if needed
 
+            // Populate dropdowns
             populateDropdown('ind-slicer', indValues);
             populateDropdown('nativity-slicer', nativityValues);
         }
@@ -3889,11 +3890,14 @@
 
             filteredData.forEach(row => {
                 const tr = document.createElement('tr');
+
+                // Insert row data
                 Object.keys(row).forEach(key => {
                     const td = document.createElement('td');
                     td.textContent = row[key];
                     tr.appendChild(td);
                 });
+
                 tableBody.appendChild(tr);
             });
         }
