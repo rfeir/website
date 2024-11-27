@@ -4992,127 +4992,48 @@
             </svg>
         </div>
 
-        <!-- Data Table -->
-        <div class="data-table">
-            <table id="dataTable">
-                <thead>
-                    <tr>
-                        <th>Industry</th>
-                        <th>Nativity</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Table rows will be populated by JavaScript -->
-                </tbody>
-            </table>
-        </div>
+        <!-- Table for displaying CSV data -->
+        <table id="dataTable">
+            <thead>
+                <tr>
+                    <th>Industry</th>
+                    <th>Nativity</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Table rows will be populated by JavaScript -->
+            </tbody>
+        </table>
     </div>
 
 <!--- JAVASCRIPT PORTION --->
 
+    <!-- Script section -->
+    <script src="https://d3js.org/d3.v6.min.js"></script> <!-- Ensure you are using the correct D3 version -->
     <script>
         // Load the CSV data
         d3.csv('aggregated_data.csv').then(data => {
-            console.log("Loaded Data: ", data);
-
-            // Prepare unique filters
-            const industries = Array.from(new Set(data.map(d => d.IND)));
-            const nativities = Array.from(new Set(data.map(d => d.NATIVITY)));
-
-            // Function to populate dropdown
-            function populateDropdown(dropdown, options, defaultOptionValue) {
-                // Add the default "All" option
-                dropdown.innerHTML = `<option value="${defaultOptionValue}">${defaultOptionValue}</option>`;
-                
-                // Filter out the default option from the list and add the rest
-                options.filter(opt => opt !== defaultOptionValue).sort((a, b) => a.localeCompare(b))
-                    .forEach(option => {
-                        const opt = document.createElement('option');
-                        opt.value = option;
-                        opt.textContent = option;
-                        dropdown.appendChild(opt);
-                    });
-            }
-
-            // Populate filters
-            const industryFilter = document.getElementById('industry');
-            const nativityFilter = document.getElementById('nativity');
-            populateDropdown(industryFilter, industries, 'All');
-            populateDropdown(nativityFilter, nativities, 'All');
-
-            // Render initial map and table
-            renderMap(data);
-            renderTable(data);
-
-            // Update map and table on filter change
-            industryFilter.addEventListener('change', filterData);
-            nativityFilter.addEventListener('change', filterData);
-
-            function filterData() {
-                const selectedIndustry = industryFilter.value;
-                const selectedNativity = nativityFilter.value;
-
-                const filteredData = data.filter(d =>
-                    (selectedIndustry === 'All' || d.IND === selectedIndustry) &&
-                    (selectedNativity === 'All' || d.NATIVITY === selectedNativity)
-                );
-
-                renderMap(filteredData);
-                renderTable(filteredData);
-            }
-
-            function renderMap(data) {
-                const svg = d3.select("#mapSVG");
-                // Create a color scale based on `Underemployment Level`
-                const underemploymentExtent = d3.extent(data, d => +d.UNDEREMPLOYMENT_LEVEL);
-                const colorScale = d3.scaleLinear()
-                    .domain(underemploymentExtent)
-                    .range(['#ffffff', '#000000']);
-
-                // Bind data and update paths
-                const paths = svg.selectAll('path')
-                    .data(data, d => d.ID);
-
-                // Enter and update paths
-                paths.join(
-                    enter => enter.append('path')
-                        .attr('id', d => d.ID)
-                        .attr('class', 'map-region')
-                        .attr('fill', d => colorScale(+d.UNDEREMPLOYMENT_LEVEL) || '#ccc')
-                        .attr('stroke', 'none')
-                        .on('click', function (event, d) {
-                            // Reduce opacity for unselected regions
-                            svg.selectAll('path')
-                                .style('opacity', p => p.ID === d.ID ? 1 : 0.5);
-                        }),
-                    update => update
-                        .attr('fill', d => colorScale(+d.UNDEREMPLOYMENT_LEVEL) || '#ccc')
-                        .attr('stroke', 'none'),
-                    exit => exit.remove()
-                );
-            }
-
-            function renderTable(data) {
-            const dataTable = document.getElementById('dataTable').querySelector('tbody');
-            dataTable.innerHTML = '';  // Clear the existing table
+            console.log("Loaded Data: ", data);  // Check if data is loaded correctly
             
-            console.log("Rendering Table with Data:", data);  // Add this to see what data is being passed
+            const dataTable = document.getElementById('dataTable').querySelector('tbody');
+            dataTable.innerHTML = '';  // Clear any existing rows
+
+            // Log the data to ensure it is loaded properly
+            console.log("Rendering Table with Data:", data);
 
             // Loop through each row in the data
             data.forEach(d => {
-                console.log(d);  // Log each row of data to ensure it's correct
+                console.log(d);  // Log each row of data to see if it contains the expected values
 
-                // Insert a row in the table
+                // Insert a new row
                 const row = dataTable.insertRow();
 
-                // Populate the row with all necessary columns, with 'N/A' if a value is missing
+                // Add data to the row (example assumes 'IND' and 'NATIVITY' are columns)
                 row.innerHTML = `
                     <td>${d.IND || 'N/A'}</td>
                     <td>${d.NATIVITY || 'N/A'}</td>
                 `;
             });
-        }
-
         }).catch(error => {
             console.error("Error loading the CSV: ", error);
         });
