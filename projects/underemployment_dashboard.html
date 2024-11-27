@@ -157,13 +157,16 @@
 
             data.forEach(item => {
                 const row = document.createElement('tr');
+
+                // Replace empty or null values with a placeholder (e.g., N/A)
                 row.innerHTML = `
-                    <td>${item.STATE}</td>
-                    <td>${item.IND}</td>
-                    <td>${item.NATIVITY}</td>
-                    <td>${item.MEAN_WAGE}</td>
-                    <td>${item.MEAN_OTHER_INCOME}</td>
+                    <td>${item.STATE || 'N/A'}</td>
+                    <td>${item.IND || 'N/A'}</td>
+                    <td>${item.NATIVITY || 'N/A'}</td>
+                    <td>${item.MEAN_WAGE || 'N/A'}</td>
+                    <td>${item.MEAN_OTHER_INCOME || 'N/A'}</td>
                 `;
+
                 tableBody.appendChild(row);
             });
         }
