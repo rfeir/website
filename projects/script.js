@@ -1,3 +1,10 @@
+// Select the elements for the dropdown filters and the SVG container
+const industryFilter = document.getElementById('industry');
+const nativityFilter = document.getElementById('nativity');
+const svg = d3.select("#mapSVG");  // Select the SVG container
+const dataTable = d3.select("#dataTable tbody");
+
+// Load the CSV data
 d3.csv('aggregated_data.csv').then(data => {
     console.log("Loaded Data: ", data);  // Log data to check the structure
 
@@ -98,5 +105,5 @@ d3.csv('aggregated_data.csv').then(data => {
         });
     }
 }).catch(error => {
-    console.error("Error loading the CSV 1: ", error);
+    console.error("Error loading the CSV: ", error);
 });
