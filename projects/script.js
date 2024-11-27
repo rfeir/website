@@ -46,7 +46,7 @@ d3.csv('aggregated_data.csv').then(data => {
 
     function renderMap(data) {
         // Create a color scale based on `Underemployment Level`
-        const underemploymentExtent = d3.extent(data, d => +d.UNDEREMPLOYMENT LEVEL);
+        const underemploymentExtent = d3.extent(data, d => +d.UNDEREMPLOYMENT_LEVEL);
         const colorScale = d3.scaleLinear()
             .domain(underemploymentExtent)
             .range(['#ffffff', '#000000']);
