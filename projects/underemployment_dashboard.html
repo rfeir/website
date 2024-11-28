@@ -118,6 +118,7 @@
                 .then(data => {
                     populateTable(data); // Populate the table with the data
                     populateSlicers(data); // Populate the slicer options
+                    filterTable(); // Apply default filter on page load (NATIVITY: 'Domestic')
                 })
                 .catch(error => console.error('Error loading aggregated_data.json:', error));
 
@@ -164,13 +165,23 @@
                     indSlicer.appendChild(option);
                 });
 
-                // Populate the NATIVITY slicer
+                // Populate the NATIVITY slicer with 'Domestic' as the default and at the top
+                const domesticOption = document.createElement('option');
+                domesticOption.value = 'Domestic';
+                domesticOption.textContent = 'Domestic';
+                nativitySlicer.appendChild(domesticOption);
+
                 uniqueNativity.forEach(nativity => {
-                    const option = document.createElement('option');
-                    option.value = nativity;
-                    option.textContent = nativity;
-                    nativitySlicer.appendChild(option);
+                    if (nativity !== 'Domestic') { // Avoid adding 'Domestic' twice
+                        const option = document.createElement('option');
+                        option.value = nativity;
+                        option.textContent = nativity;
+                        nativitySlicer.appendChild(option);
+                    }
                 });
+
+                // Set default value for NATIVITY slicer to 'Domestic'
+                nativitySlicer.value = 'Domestic';
 
                 // Add event listeners to update table based on slicer selections
                 indSlicer.addEventListener('change', filterTable);
@@ -193,7 +204,7 @@
                         showRow = false;
                     }
 
-                    if (nativity !== nativitySlicerValue) {
+                    if (nativitySlicerValue !== 'Domestic' && nativity !== nativitySlicerValue) {
                         showRow = false;
                     }
 
@@ -248,19 +259,18 @@
                     if (regionData) {
                         const underemploymentLevel = regionData.UNDEREMPLOYMENT_LEVEL;
                         const colorValue = (underemploymentLevel - minUnderemployment) / (maxUnderemployment - minUnderemployment);
-                        const color = `rgb(${255 * (1 - colorValue)}, ${255 * (1 - colorValue)}, ${255 * (1 - colorValue)})`;
+                        const color = `rgb(${Math.floor(colorValue * 255)}, ${Math.floor((1 - colorValue) * 255)}, 255)`;
                         path.style.fill = color;
                     }
                 });
             }
 
-            // Call colorMapBasedOnUnderemployment once data is available
+            // Initialize choropleth map coloring after data is loaded
             fetch('aggregated_data.json')
                 .then(response => response.json())
                 .then(data => {
                     colorMapBasedOnUnderemployment(data);
-                })
-                .catch(error => console.error('Error loading aggregated_data.json for choropleth:', error));
+                });
         });
     </script>
 
