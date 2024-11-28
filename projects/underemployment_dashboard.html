@@ -57,8 +57,8 @@
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             let data = [];
-    
-            // Fetch and parse the JSON
+            
+            // Fetch and parse the JSON data
             fetch('aggregated_data.json')
                 .then(response => response.json())
                 .then(jsonData => {
@@ -67,16 +67,20 @@
                     updateTable(data);  // Initially show the full table
                     updateMap(data);    // Initially show the map for all data
                 });
-    
+
             function populateSlicers(data) {
                 // Populate slicers with unique values
                 const indValues = [...new Set(data.map(row => row.IND))];
                 const nativityValues = [...new Set(data.map(row => row.NATIVITY))];
-    
+
+                // Default values for slicers
+                document.getElementById('ind-slicer').value = 'Accommodation and Food Services';
+                document.getElementById('nativity-slicer').value = 'Domestic';
+
                 populateDropdown('ind-slicer', indValues);
                 populateDropdown('nativity-slicer', nativityValues);
             }
-    
+
             function populateDropdown(elementId, values) {
                 const dropdown = document.getElementById(elementId);
                 dropdown.innerHTML = '<option value="All">All</option>';
@@ -87,29 +91,32 @@
                     dropdown.appendChild(option);
                 });
             }
-    
+
             // Handle slicer changes
             document.getElementById('ind-slicer').addEventListener('change', () => applyFilters(data));
             document.getElementById('nativity-slicer').addEventListener('change', () => applyFilters(data));
-    
+
             function applyFilters(data) {
                 const indFilter = document.getElementById('ind-slicer').value;
                 const nativityFilter = document.getElementById('nativity-slicer').value;
-    
+
                 // Filter data based on slicer values
                 const filteredData = data.filter(row => {
-                    return (indFilter === 'All' || row.IND === indFilter) &&
-                           (nativityFilter === 'All' || row.NATIVITY === nativityFilter);
+                    // If 'All' is selected, only include rows where the value is 'All'
+                    const isIndMatch = (indFilter === 'All') ? row.IND === 'All' : row.IND === indFilter;
+                    const isNativityMatch = (nativityFilter === 'All') ? row.NATIVITY === 'All' : row.NATIVITY === nativityFilter;
+
+                    return isIndMatch && isNativityMatch;
                 });
-    
+
                 updateTable(filteredData);
                 updateMap(filteredData);
             }
-    
+
             function updateTable(filteredData) {
                 const tableBody = document.querySelector('#data-table tbody');
                 tableBody.innerHTML = '';
-    
+
                 if (filteredData.length === 0) {
                     const tr = document.createElement('tr');
                     const td = document.createElement('td');
@@ -119,7 +126,7 @@
                     tableBody.appendChild(tr);
                     return;
                 }
-    
+
                 filteredData.forEach(row => {
                     const tr = document.createElement('tr');
                     const cellData = [
@@ -128,21 +135,21 @@
                         row.UNDEREMPLOYMENT_LEVEL, row.EDUCATION_LEVEL, row.REQUIRED_EDUCATION_LEVEL,
                         row.NATIVITY_PERCENTAGE, row.ID, row.NATIVITY
                     ];
-    
+
                     cellData.forEach(cell => {
                         const td = document.createElement('td');
                         td.textContent = cell;
                         tr.appendChild(td);
                     });
-    
+
                     tableBody.appendChild(tr);
                 });
             }
-    
+
             function updateMap(filteredData) {
                 const mapContainer = document.getElementById('map');
                 mapContainer.style.display = filteredData.length > 0 ? 'block' : 'none';
-    
+
                 // Here, you would update the map with filteredData. For now, we show IDs.
                 const mapElement = document.createElement('div');
                 filteredData.forEach(row => {
@@ -150,13 +157,12 @@
                     mapDataElement.textContent = `Map data for ID: ${row.ID} - COUNTY: ${row.COUNTIES}`;
                     mapElement.appendChild(mapDataElement);
                 });
-    
+
                 mapContainer.innerHTML = ''; // Clear previous map data
                 mapContainer.appendChild(mapElement);
             }
         });
     </script>
-    
 
     <div class="container">
         <div class="slicer-container">
