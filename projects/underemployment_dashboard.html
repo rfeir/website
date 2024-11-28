@@ -47,6 +47,11 @@
                 const indValues = [...new Set(data.map(row => row.IND))];
                 const nativityValues = [...new Set(data.map(row => row.NATIVITY))];
 
+                // Manually ensure "All" is at the top for IND and exclude "All" for NATIVITY
+                if (!indValues.includes('All')) {
+                    indValues.unshift('All');  // Add "All" as the first option for IND
+                }
+
                 // Populate dropdowns with values
                 populateDropdown('ind-slicer', indValues);
                 populateDropdown('nativity-slicer', nativityValues);
@@ -54,7 +59,8 @@
 
             function populateDropdown(elementId, values) {
                 const dropdown = document.getElementById(elementId);
-                dropdown.innerHTML = '<option value="All">All</option>';
+                dropdown.innerHTML = '';  // Clear the existing options
+                
                 values.forEach(value => {
                     const option = document.createElement('option');
                     option.value = value;
@@ -70,13 +76,13 @@
             <div class="slicer">
                 <label for="ind-slicer">IND</label>
                 <select id="ind-slicer">
-                    <option value="All">All</option>
+                    <!-- "All" is added dynamically to the list -->
                 </select>
             </div>
             <div class="slicer">
                 <label for="nativity-slicer">NATIVITY</label>
                 <select id="nativity-slicer">
-                    <option value="All">All</option>
+                    <!-- "All" will not be added here -->
                 </select>
             </div>
         </div>
