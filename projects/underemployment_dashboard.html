@@ -71,8 +71,13 @@
             function parseCSV(csv) {
                 const lines = csv.trim().split('\n');
                 const headers = lines.shift().split(',');
+
                 return lines.map(line => {
-                    const values = line.split(',');
+                    // Use a regex to split the line by commas, but respect quoted values
+                    const values = line.match(/(".*?"|[^",\s]+|(?<=,)(?=,))/g).map(value => 
+                        value.replace(/^"|"$/g, '') // Remove surrounding quotes if they exist
+                    );
+
                     return headers.reduce((obj, header, index) => {
                         obj[header] = values[index];
                         return obj;
@@ -135,7 +140,7 @@
                 filteredData.forEach(row => {
                     const tr = document.createElement('tr');
                     const cellData = [
-                        row.STATEFIP, row.State, row.GISMATCH_COMBINED, row.COUNTIES,
+                        row.STATEFIP, row.STATE, row.GISMATCH_COMBINED, row.COUNTIES,
                         row.IND, row.MEAN_WAGE, row.MEAN_OTHER_INCOME, row.MEAN_AGE,
                         row.UNDEREMPLOYMENT_LEVEL, row.EDUCATION_LEVEL, row.REQUIRED_EDUCATION_LEVEL,
                         row.NATIVITY_PERCENTAGE, row.ID, row.NATIVITY
@@ -190,7 +195,7 @@
             <thead>
                 <tr>
                     <th>STATEFIP</th>
-                    <th>State</th>
+                    <th>STATE</th>
                     <th>GISMATCH_COMBINED</th>
                     <th>COUNTIES</th>
                     <th>IND</th>
