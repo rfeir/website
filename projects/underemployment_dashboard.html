@@ -74,7 +74,6 @@
         <div>
             <label for="ind-slicer">IND:</label>
             <select id="ind-slicer">
-                <option value="all">All</option>
                 <!-- Options will be populated dynamically -->
             </select>
         </div>
@@ -82,7 +81,6 @@
         <div>
             <label for="nativity-slicer">NATIVITY:</label>
             <select id="nativity-slicer">
-                <option value="all">All</option>
                 <!-- Options will be populated dynamically -->
             </select>
         </div>
@@ -191,11 +189,11 @@
 
                     let showRow = true;
 
-                    if (indSlicerValue !== 'all' && ind !== indSlicerValue) {
+                    if (ind !== indSlicerValue) {
                         showRow = false;
                     }
 
-                    if (nativitySlicerValue !== 'all' && nativity !== nativitySlicerValue) {
+                    if (nativity !== nativitySlicerValue) {
                         showRow = false;
                     }
 
