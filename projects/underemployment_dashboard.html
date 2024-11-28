@@ -38,19 +38,71 @@
         .active-region {
             fill: #ff6347; /* Highlight color */
         }
+
+        /* Styling for the slicers */
+        .slicer-container {
+            margin: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        select {
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        /* SVG container styling */
+        #svg-container {
+            width: 80%;
+            max-width: 1000px;
+            margin-top: 20px;
+        }
+
+        #svg-container svg {
+            width: 100%;
+            height: auto;
+        }
     </style>
 </head>
 <body>
 
     <h1>Shapefile and Data Table Interaction</h1>
 
+    <!-- Slicers for IND and NATIVITY -->
+    <div class="slicer-container">
+        <div>
+            <label for="ind-slicer">IND:</label>
+            <select id="ind-slicer">
+                <option value="all">All</option>
+                <!-- Options will be populated dynamically -->
+            </select>
+        </div>
+
+        <div>
+            <label for="nativity-slicer">NATIVITY:</label>
+            <select id="nativity-slicer">
+                <option value="all">All</option>
+                <!-- Options will be populated dynamically -->
+            </select>
+        </div>
+    </div>
+
     <!-- Table to display the aggregated data -->
     <table id="data-table">
         <thead>
             <tr>
                 <th>Region</th>
-                <th>Value</th>
-                <th>Additional Info</th>
+                <th>IND</th>
+                <th>NATIVITY</th>
+                <th>MEAN_WAGE</th>
+                <th>MEAN_OTHER_INCOME</th>
+                <th>MEAN_AGE</th>
+                <th>UNDEREMPLOYMENT_LEVEL</th>
+                <th>EDUCATION_LEVEL</th>
+                <th>REQUIRED_EDUCATION_LEVEL</th>
+                <th>NATIVITY_PERCENTAGE</th>
+                <th>ID</th>
             </tr>
         </thead>
         <tbody>
@@ -62,27 +114,92 @@
         // Wait for the document to be ready
         document.addEventListener('DOMContentLoaded', function () {
             
-            // Load the JSON data for the table (assuming the JSON is structured properly)
+            // Load the JSON data for the table
             fetch('aggregated_data.json')
                 .then(response => response.json())
                 .then(data => {
                     populateTable(data); // Populate the table with the data
+                    populateSlicers(data); // Populate the slicer options
                 })
                 .catch(error => console.error('Error loading aggregated_data.json:', error));
 
             // Function to populate the table
             function populateTable(data) {
                 const table = document.getElementById('data-table').getElementsByTagName('tbody')[0];
+                table.innerHTML = ''; // Clear the table before populating
+
                 // Create table rows dynamically
                 data.forEach(item => {
                     const row = document.createElement('tr');
-                    row.dataset.region = item.region; // Add a data attribute to identify the region
+                    row.dataset.region = item.ID; // Add a data attribute to identify the region
                     row.innerHTML = `
-                        <td>${item.region}</td>
-                        <td>${item.value}</td>
-                        <td>${item.additionalInfo}</td>
+                        <td>${item.STATE}</td>
+                        <td>${item.IND}</td>
+                        <td>${item.NATIVITY}</td>
+                        <td>${item.MEAN_WAGE}</td>
+                        <td>${item.MEAN_OTHER_INCOME}</td>
+                        <td>${item.MEAN_AGE}</td>
+                        <td>${item.UNDEREMPLOYMENT_LEVEL}</td>
+                        <td>${item.EDUCATION_LEVEL}</td>
+                        <td>${item.REQUIRED_EDUCATION_LEVEL}</td>
+                        <td>${item.NATIVITY_PERCENTAGE}</td>
+                        <td>${item.ID}</td>
                     `;
                     table.appendChild(row);
+                });
+            }
+
+            // Function to populate the slicers (IND and NATIVITY)
+            function populateSlicers(data) {
+                const indSlicer = document.getElementById('ind-slicer');
+                const nativitySlicer = document.getElementById('nativity-slicer');
+
+                // Get unique values for IND and NATIVITY
+                const uniqueInd = [...new Set(data.map(item => item.IND))];
+                const uniqueNativity = [...new Set(data.map(item => item.NATIVITY))];
+
+                // Populate the IND slicer
+                uniqueInd.forEach(ind => {
+                    const option = document.createElement('option');
+                    option.value = ind;
+                    option.textContent = ind;
+                    indSlicer.appendChild(option);
+                });
+
+                // Populate the NATIVITY slicer
+                uniqueNativity.forEach(nativity => {
+                    const option = document.createElement('option');
+                    option.value = nativity;
+                    option.textContent = nativity;
+                    nativitySlicer.appendChild(option);
+                });
+
+                // Add event listeners to update table based on slicer selections
+                indSlicer.addEventListener('change', filterTable);
+                nativitySlicer.addEventListener('change', filterTable);
+            }
+
+            // Function to filter the table based on selected slicers
+            function filterTable() {
+                const indSlicerValue = document.getElementById('ind-slicer').value;
+                const nativitySlicerValue = document.getElementById('nativity-slicer').value;
+                const rows = document.querySelectorAll('#data-table tbody tr');
+
+                rows.forEach(row => {
+                    const ind = row.cells[1].textContent;
+                    const nativity = row.cells[2].textContent;
+
+                    let showRow = true;
+
+                    if (indSlicerValue !== 'all' && ind !== indSlicerValue) {
+                        showRow = false;
+                    }
+
+                    if (nativitySlicerValue !== 'all' && nativity !== nativitySlicerValue) {
+                        showRow = false;
+                    }
+
+                    row.style.display = showRow ? '' : 'none';
                 });
             }
 
@@ -119,6 +236,33 @@
                     }
                 });
             }
+
+            // Function to apply choropleth color scale based on UNDEREMPLOYMENT_LEVEL
+            function colorMapBasedOnUnderemployment(data) {
+                const minUnderemployment = Math.min(...data.map(item => item.UNDEREMPLOYMENT_LEVEL));
+                const maxUnderemployment = Math.max(...data.map(item => item.UNDEREMPLOYMENT_LEVEL));
+
+                // Set color scale (from white to black based on UNDEREMPLOYMENT_LEVEL)
+                const svgPaths = document.querySelectorAll('#svg-container svg path');
+                svgPaths.forEach(path => {
+                    const id = path.dataset.region;
+                    const regionData = data.find(item => item.ID === id);
+                    if (regionData) {
+                        const underemploymentLevel = regionData.UNDEREMPLOYMENT_LEVEL;
+                        const colorValue = (underemploymentLevel - minUnderemployment) / (maxUnderemployment - minUnderemployment);
+                        const color = `rgb(${255 * (1 - colorValue)}, ${255 * (1 - colorValue)}, ${255 * (1 - colorValue)})`;
+                        path.style.fill = color;
+                    }
+                });
+            }
+
+            // Call colorMapBasedOnUnderemployment once data is available
+            fetch('aggregated_data.json')
+                .then(response => response.json())
+                .then(data => {
+                    colorMapBasedOnUnderemployment(data);
+                })
+                .catch(error => console.error('Error loading aggregated_data.json for choropleth:', error));
         });
     </script>
 
