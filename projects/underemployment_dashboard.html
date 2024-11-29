@@ -33,7 +33,6 @@
             width: 100%;
         }
 
-        /* Map container styling */
         #svg-container {
             flex: 1;
             min-width: 300px;
@@ -44,12 +43,16 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow: hidden; /* Hide anything that overflows the container */
+            position: relative; /* Make positioning relative to the container */
         }
 
         #svg-container svg {
             width: 100%;
             height: auto;
             display: block;
+            transform-origin: center center; /* Transformations will occur from the center */
+            cursor: grab; /* Provide visual feedback for panning */
         }
 
         /* Table container with its own scrolling */
@@ -4007,9 +4010,17 @@
             svg.addEventListener('mousemove', (e) => {
                 if (!isPanning) return;
 
+                const containerRect = document.querySelector('#svg-container').getBoundingClientRect();
+                const svgRect = svg.getBoundingClientRect();
+
                 panX = e.clientX - startX;
                 panY = e.clientY - startY;
-                svg.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+
+                // Constrain panning within container bounds
+                const offsetX = Math.min(0, Math.max(containerRect.width - svgRect.width * scale, panX));
+                const offsetY = Math.min(0, Math.max(containerRect.height - svgRect.height * scale, panY));
+
+                svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
             });
 
             svg.addEventListener('mouseup', () => {
@@ -4024,12 +4035,31 @@
 
             svg.addEventListener('wheel', (e) => {
                 e.preventDefault();
+
+                const containerRect = document.querySelector('#svg-container').getBoundingClientRect();
+
                 const zoomIntensity = 0.1;
-                scale += e.deltaY < 0 ? zoomIntensity : -zoomIntensity;
-                scale = Math.max(0.5, Math.min(scale, 5)); // Clamp zoom level
+                const zoomDirection = e.deltaY < 0 ? 1 : -1;
+                const newScale = Math.max(0.5, Math.min(scale + zoomDirection * zoomIntensity, 5));
+
+                const rect = svg.getBoundingClientRect();
+                const offsetX = (e.clientX - rect.left) / scale;
+                const offsetY = (e.clientY - rect.top) / scale;
+
+                const newPanX = panX - offsetX * (newScale - scale);
+                const newPanY = panY - offsetY * (newScale - scale);
+
+                scale = newScale;
+
+                // Apply constraints for zoom and panning
+                const constrainedX = Math.min(0, Math.max(containerRect.width - rect.width * scale, newPanX));
+                const constrainedY = Math.min(0, Math.max(containerRect.height - rect.height * scale, newPanY));
+
+                panX = constrainedX;
+                panY = constrainedY;
+
                 svg.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
             });
-
 
 
             // Handle click event on SVG regions
