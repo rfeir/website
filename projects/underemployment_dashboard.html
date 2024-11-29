@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive Map and Data Table</title>
+    <title>Shapefile and Data Table Interaction</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -46,7 +46,7 @@
 
         #svg-container svg {
             width: 100%;
-            height: 100%;
+            height: auto;
             display: block;
             transform-origin: center center;
             cursor: grab;
@@ -81,19 +81,20 @@
 
         #tooltip {
             position: absolute;
-            padding: 10px;
-            background: #fff;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            pointer-events: none;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.9em;
             display: none;
-            z-index: 10;
+            pointer-events: none;
+            z-index: 1000;
         }
     </style>
 </head>
 <body>
 
-    <h1>Interactive Map and Data Table</h1>
+    <h1>Shapefile and Data Table Interaction</h1>
 
     <div class="slicer-container">
         <div>
@@ -140,34 +141,31 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const tooltip = document.getElementById('tooltip');
-            let data = []; // Global data variable to access across functions
+            let data = []; // To store JSON data
 
-            // Load the SVG
+            // Load the SVG paths dynamically
             fetch('paths.svg')
                 .then(response => response.text())
                 .then(svgContent => {
                     document.getElementById('svg-container').innerHTML = svgContent;
-                    initializeMapInteractivity(); // Ensure interactivity after SVG loads
+                    initializeMapInteractivity();
                 })
                 .catch(error => console.error('Error loading paths.svg:', error));
 
-            // Load the data
+            // Fetch and populate data from your JSON (aggregated_data.json)
             fetch('aggregated_data.json')
                 .then(response => response.json())
                 .then(jsonData => {
-                    data = jsonData; // Assign loaded data to the global variable
+                    data = jsonData;
                     populateTable(data);
                     populateSlicers(data);
-                    filterTable(); // Apply initial slicer filter
-                    colorMapBasedOnUnderemployment(data);
                 })
                 .catch(error => console.error('Error loading aggregated_data.json:', error));
 
-            // Populate the table
             function populateTable(data) {
                 const table = document.getElementById('data-table').getElementsByTagName('tbody')[0];
                 table.innerHTML = '';
+
                 data.forEach(item => {
                     const row = document.createElement('tr');
                     row.dataset.region = item.ID;
@@ -188,32 +186,54 @@
                 });
             }
 
-            // Populate slicers
             function populateSlicers(data) {
                 const indSlicer = document.getElementById('ind-slicer');
                 const nativitySlicer = document.getElementById('nativity-slicer');
                 const uniqueInd = [...new Set(data.map(item => item.IND))];
                 const uniqueNativity = [...new Set(data.map(item => item.NATIVITY))];
 
+                const utilitiesOption = document.createElement('option');
+                utilitiesOption.value = 'Utilities';
+                utilitiesOption.textContent = 'Utilities';
+                indSlicer.appendChild(utilitiesOption);
+
                 uniqueInd.forEach(ind => {
-                    const option = document.createElement('option');
-                    option.value = ind;
-                    option.textContent = ind;
-                    indSlicer.appendChild(option);
+                    if (ind !== 'Utilities') {
+                        const option = document.createElement('option');
+                        option.value = ind;
+                        option.textContent = ind;
+                        indSlicer.appendChild(option);
+                    }
                 });
+
+                const domesticOption = document.createElement('option');
+                domesticOption.value = 'Domestic';
+                domesticOption.textContent = 'Domestic';
+                nativitySlicer.appendChild(domesticOption);
 
                 uniqueNativity.forEach(nativity => {
-                    const option = document.createElement('option');
-                    option.value = nativity;
-                    option.textContent = nativity;
-                    nativitySlicer.appendChild(option);
+                    if (nativity !== 'Domestic') {
+                        const option = document.createElement('option');
+                        option.value = nativity;
+                        option.textContent = nativity;
+                        nativitySlicer.appendChild(option);
+                    }
                 });
 
-                indSlicer.addEventListener('change', filterTable);
-                nativitySlicer.addEventListener('change', filterTable);
+                // Default values
+                indSlicer.value = 'Utilities';
+                nativitySlicer.value = 'Domestic';
+
+                indSlicer.addEventListener('change', () => {
+                    filterTable();
+                    colorMapBasedOnUnderemployment(data);
+                });
+                nativitySlicer.addEventListener('change', () => {
+                    filterTable();
+                    colorMapBasedOnUnderemployment(data);
+                });
             }
 
-            // Filter table
             function filterTable() {
                 const indSlicerValue = document.getElementById('ind-slicer').value;
                 const nativitySlicerValue = document.getElementById('nativity-slicer').value;
@@ -222,8 +242,7 @@
                 rows.forEach(row => {
                     const ind = row.cells[1].textContent;
                     const nativity = row.cells[2].textContent;
-                    if ((ind === indSlicerValue || !indSlicerValue) &&
-                        (nativity === nativitySlicerValue || !nativitySlicerValue)) {
+                    if (ind === indSlicerValue && nativity === nativitySlicerValue) {
                         row.style.display = '';
                     } else {
                         row.style.display = 'none';
@@ -231,71 +250,64 @@
                 });
             }
 
-            // Color map based on underemployment
-            function colorMapBasedOnUnderemployment(data) {
-                const regions = document.querySelectorAll('.region');
-                regions.forEach(region => {
-                    const regionData = data.find(item => item.ID === region.id);
-                    if (regionData) {
-                        const underemploymentLevel = regionData.UNDEREMPLOYMENT_LEVEL;
-                        let color = '#FFFFFF';
-                        if (underemploymentLevel > 0 && underemploymentLevel <= 10) {
-                            color = '#FFDDC1';
-                        } else if (underemploymentLevel > 10 && underemploymentLevel <= 20) {
-                            color = '#FFABAB';
-                        } else if (underemploymentLevel > 20) {
-                            color = '#FF8C8C';
-                        }
-                        region.style.fill = color;
-                    }
-                });
-            }
-
-            // Initialize map interactivity
             function initializeMapInteractivity() {
-                const regions = document.querySelectorAll('.region');
-                regions.forEach(region => {
-                    region.addEventListener('mouseenter', (e) => {
-                        const regionData = data.find(item => item.ID === region.id);
-                        if (regionData) {
-                            tooltip.innerHTML = `
-                                <strong>${regionData.STATE}</strong><br>
-                                Underemployment Level: ${regionData.UNDEREMPLOYMENT_LEVEL}%<br>
-                                Mean Wage: ${regionData.MEAN_WAGE}
-                            `;
-                            tooltip.style.display = 'block';
-                            tooltip.style.left = e.pageX + 10 + 'px';
-                            tooltip.style.top = e.pageY + 10 + 'px';
+                const svg = document.querySelector('#svg-container svg');
+                const paths = svg.querySelectorAll('g.regions path');
+
+                paths.forEach(path => {
+                    path.addEventListener('mouseenter', (event) => {
+                        const regionId = path.id;
+                        showTooltip(event, regionId);
+                    });
+
+                    path.addEventListener('mouseleave', hideTooltip);
+
+                    path.addEventListener('click', () => {
+                        const regionId = path.id;
+                        if (regionId) {
+                            highlightRegion(regionId);
+                            filterTableByRegion(regionId);
                         }
-                    });
-
-                    region.addEventListener('mouseleave', () => {
-                        tooltip.style.display = 'none';
-                    });
-
-                    region.addEventListener('click', () => {
-                        highlightRegion(region.id);
-                        filterTableByRegion(region.id);
                     });
                 });
             }
 
-            // Highlight selected region
+            function showTooltip(event, regionId) {
+                const tooltip = document.getElementById('tooltip');
+                const regionData = data.find(item => item.ID === regionId);
+
+                if (regionData) {
+                    tooltip.innerHTML = `
+                        <strong>${regionData.STATE}</strong><br>
+                        Underemployment Level: ${regionData.UNDEREMPLOYMENT_LEVEL}<br>
+                        Mean Age: ${regionData.MEAN_AGE}
+                    `;
+                    tooltip.style.left = `${event.pageX + 10}px`;
+                    tooltip.style.top = `${event.pageY + 10}px`;
+                    tooltip.style.display = 'block';
+                }
+            }
+
+            function hideTooltip() {
+                const tooltip = document.getElementById('tooltip');
+                tooltip.style.display = 'none';
+            }
+
             function highlightRegion(regionId) {
-                const regions = document.querySelectorAll('.region');
-                regions.forEach(region => {
-                    if (region.id === regionId) {
-                        region.style.opacity = '1';
-                        region.style.stroke = 'black';
-                        region.style.strokeWidth = '2px';
+                const paths = document.querySelectorAll('g.regions path');
+
+                paths.forEach(path => {
+                    if (path.id === regionId) {
+                        path.style.opacity = '1';
+                        path.style.stroke = 'black';
+                        path.style.strokeWidth = '2px';
                     } else {
-                        region.style.opacity = '0.3';
-                        region.style.stroke = 'none';
+                        path.style.opacity = '0.3';
+                        path.style.stroke = 'none';
                     }
                 });
             }
 
-            // Filter table by region
             function filterTableByRegion(regionId) {
                 const rows = document.querySelectorAll('#data-table tbody tr');
                 rows.forEach(row => {
@@ -306,8 +318,8 @@
                     }
                 });
             }
+
         });
     </script>
-
 </body>
 </html>
