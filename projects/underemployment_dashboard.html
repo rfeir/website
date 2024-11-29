@@ -146,10 +146,8 @@
             let scale = 1;
             let isDragging = false; // Track the dragging state
 
-            // Variable to keep track of the currently selected region
             let selectedRegion = null;
 
-            // Load SVG file and data
             fetch('paths.svg')
                 .then(response => response.text())
                 .then(svgContent => {
@@ -174,13 +172,16 @@
                 const svg = svgContainer.querySelector('svg');
                 const paths = svg.querySelectorAll('path');
 
+                // Set initial cursor to default
+                svgContainer.style.cursor = 'default';
+
                 // Add pan functionality
                 svg.addEventListener('mousedown', (e) => {
                     if (e.button !== 0) return;
-                    isDragging = true; // Start dragging
+                    isDragging = true;
                     let startX = e.clientX - offsetX;
                     let startY = e.clientY - offsetY;
-                    svgContainer.style.cursor = 'grabbing'; // Change cursor when dragging
+                    svgContainer.style.cursor = 'grabbing'; // Set cursor to grabbing when dragging starts
 
                     const onMouseMove = (moveEvent) => {
                         offsetX = moveEvent.clientX - startX;
@@ -189,7 +190,7 @@
                     };
 
                     const onMouseUp = () => {
-                        svgContainer.style.cursor = 'grab'; // Reset cursor after drag ends
+                        svgContainer.style.cursor = 'default'; // Reset cursor to default after drag ends
                         isDragging = false;
                         window.removeEventListener('mousemove', onMouseMove);
                         window.removeEventListener('mouseup', onMouseUp);
@@ -206,7 +207,7 @@
                     svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
                 });
 
-                // Event listeners for hover and click functionality
+                // Hover and click functionality for regions
                 paths.forEach(path => {
                     path.addEventListener('mouseenter', (e) => {
                         const regionId = path.id;
@@ -227,13 +228,11 @@
                 });
             }
 
-            // Toggle the selection of a region
+            // Select or deselect region
             function toggleRegionSelection(regionId) {
                 if (selectedRegion === regionId) {
-                    // Deselect if the same region is clicked again
                     deselectRegion();
                 } else {
-                    // Select the new region
                     selectRegion(regionId);
                 }
             }
@@ -245,17 +244,15 @@
                 filterTableByRegion(regionId);
             }
 
-            // Deselect the region and reset the table
+            // Deselect region and reset
             function deselectRegion() {
                 selectedRegion = null;
                 resetRegion(selectedRegion);
-                // Reset table visibility to slicer filters
                 filterTable();
-                // Reset all region opacities and borders
                 resetAllRegions();
             }
 
-            // Highlight the selected region on hover
+            // Highlight region when hovered or selected
             function highlightRegion(regionId) {
                 const paths = document.querySelectorAll('g.regions path');
                 paths.forEach(path => {
@@ -270,7 +267,7 @@
                 });
             }
 
-            // Reset the region appearance
+            // Reset hover style on region
             function resetRegion(regionId) {
                 const paths = document.querySelectorAll('g.regions path');
                 paths.forEach(path => {
@@ -282,7 +279,7 @@
                 });
             }
 
-            // Reset all regions to normal state (no opacity or borders)
+            // Reset all regions to normal state
             function resetAllRegions() {
                 const paths = document.querySelectorAll('g.regions path');
                 paths.forEach(path => {
@@ -292,7 +289,7 @@
                 });
             }
 
-            // Show tooltip with region information
+            // Show tooltip
             function showTooltip(event, regionId) {
                 const tooltip = document.getElementById('tooltip');
                 tooltip.textContent = `Region: ${regionId}`;
@@ -301,13 +298,13 @@
                 tooltip.style.top = `${event.pageY + 10}px`;
             }
 
-            // Hide the tooltip
+            // Hide tooltip
             function hideTooltip() {
                 const tooltip = document.getElementById('tooltip');
                 tooltip.style.display = 'none';
             }
 
-            // Filter table based on selected region
+            // Filter table by selected region
             function filterTableByRegion(regionId) {
                 const rows = document.querySelectorAll('#data-table tbody tr');
                 rows.forEach(row => {
@@ -319,7 +316,7 @@
                 });
             }
 
-            // Populate the table with data
+            // Populate table with data
             function populateTable(data) {
                 const table = document.getElementById('data-table').getElementsByTagName('tbody')[0];
                 table.innerHTML = '';
@@ -389,7 +386,6 @@
                 });
             }
 
-            // Listen for slicer changes
             document.getElementById('ind-slicer').addEventListener('change', filterTable);
             document.getElementById('nativity-slicer').addEventListener('change', filterTable);
         });
