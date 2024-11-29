@@ -157,6 +157,12 @@
                 const uniqueInd = [...new Set(data.map(item => item.IND))];
                 const uniqueNativity = [...new Set(data.map(item => item.NATIVITY))];
 
+                // Populate the IND slicer with 'Utilities' as the default and at the top
+                const utilitiesOption = document.createElement('option');
+                utilitiesOption.value = 'Utilities';
+                utilitiesOption.textContent = 'Utilities';
+                indSlicer.appendChild(utilitiesOption);
+
                 // Populate the IND slicer
                 uniqueInd.forEach(ind => {
                     const option = document.createElement('option');
