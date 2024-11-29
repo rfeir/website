@@ -34,23 +34,24 @@
             flex: 1;
             min-width: 300px;
             max-width: 600px;
-            height: 500px;
+            height: 100%; /* Adjust to fit container height */
             border: 1px solid #ddd;
             background: #e8e8e8;
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
+            overflow: hidden; /* Controls cut-off, may be removed if needed */
             position: relative;
         }
 
         #svg-container svg {
             width: 100%;
-            height: auto;
+            height: 100%; /* Ensure SVG scales correctly */
             display: block;
             transform-origin: center center;
-            cursor: grab;
+            cursor: grab; /* Visual cue for panning */
         }
+
 
         .table-container {
             flex: 1;
