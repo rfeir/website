@@ -18,13 +18,13 @@
             margin: 20px;
         }
 
-        .container .left, .container .right {
+        .container .left {
             flex: 1;
             margin-right: 20px;
         }
 
         .container .right {
-            flex: 0.4;
+            flex: 0.5; /* Half the screen size for the table */
         }
 
         #svg-container {
@@ -40,11 +40,11 @@
             overflow: hidden;
             position: relative;
             cursor: grab;
-            user-select: none; /* Prevent text selection when dragging */
+            user-select: none;
         }
 
         #svg-container svg {
-            transition: transform 0.2s ease; /* Smooth transition for zoom */
+            transition: transform 0.2s ease;
             width: 100%;
             height: auto;
         }
@@ -64,7 +64,7 @@
             border-collapse: collapse;
             margin-top: 20px;
             overflow-x: auto;
-            max-height: 500px; /* Restrict table size */
+            max-height: 500px;
             display: block;
             overflow-y: scroll;
         }
@@ -93,12 +93,12 @@
         <div>
             <label for="ind-slicer">IND:</label>
             <select id="ind-slicer">
-                <option value="">Select Industry</option>
+                <option value="Utilities" selected>Utilities</option> <!-- Default selection -->
             </select>
 
             <label for="nativity-slicer">NATIVITY:</label>
             <select id="nativity-slicer">
-                <option value="">Select Nativity</option>
+                <option value="Domestic" selected>Domestic</option> <!-- Default selection -->
             </select>
         </div>
     </div>
