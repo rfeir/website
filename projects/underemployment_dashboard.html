@@ -10,7 +10,7 @@
             margin: 0;
             padding: 0;
         }
-        
+
         .container {
             display: flex;
             flex-direction: row;
@@ -63,6 +63,10 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
+            overflow-x: auto;
+            max-height: 500px; /* Restrict table size */
+            display: block;
+            overflow-y: scroll;
         }
 
         th, td {
@@ -290,7 +294,7 @@
                 });
             }
 
-            // Populate slicer (dropdowns) with data
+            // Populate slicers with options
             function populateSlicers(data) {
                 const indSlicer = document.getElementById('ind-slicer');
                 const nativitySlicer = document.getElementById('nativity-slicer');
