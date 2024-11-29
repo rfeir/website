@@ -246,9 +246,10 @@
             function deselectRegion() {
                 selectedRegion = null;
                 resetRegion(selectedRegion);
-                // Reset table visibility
-                const rows = document.querySelectorAll('#data-table tbody tr');
-                rows.forEach(row => row.style.display = '');
+                // Reset table visibility to slicer filters
+                filterTable();
+                // Reset all region opacities and borders
+                resetAllRegions();
             }
 
             // Highlight the selected region on hover
@@ -275,6 +276,16 @@
                         path.style.stroke = 'none';
                         path.style.strokeWidth = '0';
                     }
+                });
+            }
+
+            // Reset all regions to normal state (no opacity or borders)
+            function resetAllRegions() {
+                const paths = document.querySelectorAll('g.regions path');
+                paths.forEach(path => {
+                    path.style.opacity = '1';
+                    path.style.stroke = 'none';
+                    path.style.strokeWidth = '0';
                 });
             }
 
