@@ -10,17 +10,52 @@
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
             background-color: #f4f4f4;
+        }
+
+        h1 {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        /* Flex container for map and table */
+        .content-container {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        /* Map container styling */
+        #svg-container {
+            flex: 1;
+            min-width: 300px;
+            max-width: 600px;
+        }
+
+        #svg-container svg {
+            width: 100%;
+            height: auto;
+        }
+
+        /* Table container with its own scrolling */
+        .table-container {
+            flex: 1;
+            max-width: 600px;
+            min-width: 300px;
+            overflow: auto;
+            max-height: 500px; /* Adjust height as needed */
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 5px;
         }
 
         /* Table styling */
         table {
-            width: 80%;
+            width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
         }
 
         th, td {
@@ -52,16 +87,17 @@
             font-size: 16px;
         }
 
-        /* SVG container styling */
-        #svg-container {
-            width: 80%;
-            max-width: 1000px;
-            margin-top: 20px;
-        }
+        /* Responsive behavior for small screens */
+        @media (max-width: 800px) {
+            .content-container {
+                flex-direction: column;
+                align-items: center;
+            }
 
-        #svg-container svg {
-            width: 100%;
-            height: auto;
+            #svg-container,
+            .table-container {
+                max-width: 90%;
+            }
         }
     </style>
 </head>
@@ -86,27 +122,39 @@
         </div>
     </div>
 
-    <!-- Table to display the aggregated data -->
-    <table id="data-table">
-        <thead>
-            <tr>
-                <th>Region</th>
-                <th>IND</th>
-                <th>NATIVITY</th>
-                <th>MEAN_WAGE</th>
-                <th>MEAN_OTHER_INCOME</th>
-                <th>MEAN_AGE</th>
-                <th>UNDEREMPLOYMENT_LEVEL</th>
-                <th>EDUCATION_LEVEL</th>
-                <th>REQUIRED_EDUCATION_LEVEL</th>
-                <th>NATIVITY_PERCENTAGE</th>
-                <th>ID</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Table rows will be populated dynamically -->
-        </tbody>
-    </table>
+    <!-- Flex container for map and table -->
+    <div class="content-container">
+        <!-- Map container -->
+        <div id="svg-container">
+            <svg>
+                <!-- SVG content will go here -->
+            </svg>
+        </div>
+
+        <!-- Table container -->
+        <div class="table-container">
+            <table id="data-table">
+                <thead>
+                    <tr>
+                        <th>Region</th>
+                        <th>IND</th>
+                        <th>NATIVITY</th>
+                        <th>MEAN_WAGE</th>
+                        <th>MEAN_OTHER_INCOME</th>
+                        <th>MEAN_AGE</th>
+                        <th>UNDEREMPLOYMENT_LEVEL</th>
+                        <th>EDUCATION_LEVEL</th>
+                        <th>REQUIRED_EDUCATION_LEVEL</th>
+                        <th>NATIVITY_PERCENTAGE</th>
+                        <th>ID</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Table rows will be populated dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
 
     <script>
         // Wait for the document to be ready
