@@ -244,11 +244,11 @@
                     if (regionData) {
                         const underemploymentLevel = regionData.UNDEREMPLOYMENT_LEVEL;
                         let color = '#FFFFFF';
-                        if (underemploymentLevel > 0 && underemploymentLevel <= 1) {
+                        if (underemploymentLevel > 0 && underemploymentLevel <= 10) {
                             color = '#FFDDC1';
-                        } else if (underemploymentLevel > 1 && underemploymentLevel <= 2) {
+                        } else if (underemploymentLevel > 10 && underemploymentLevel <= 20) {
                             color = '#FFABAB';
-                        } else if (underemploymentLevel > 2) {
+                        } else if (underemploymentLevel > 20) {
                             color = '#FF8C8C';
                         }
 
