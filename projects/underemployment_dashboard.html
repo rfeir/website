@@ -42,6 +42,7 @@
             justify-content: center;
             overflow: hidden;
             position: relative;
+            cursor: grab;
         }
 
         #svg-container svg {
@@ -192,37 +193,23 @@
                 const uniqueInd = [...new Set(data.map(item => item.IND))];
                 const uniqueNativity = [...new Set(data.map(item => item.NATIVITY))];
 
-                const utilitiesOption = document.createElement('option');
-                utilitiesOption.value = 'Utilities';
-                utilitiesOption.textContent = 'Utilities';
-                indSlicer.appendChild(utilitiesOption);
-
                 uniqueInd.forEach(ind => {
-                    if (ind !== 'Utilities') {
-                        const option = document.createElement('option');
-                        option.value = ind;
-                        option.textContent = ind;
-                        indSlicer.appendChild(option);
-                    }
+                    const option = document.createElement('option');
+                    option.value = ind;
+                    option.textContent = ind;
+                    indSlicer.appendChild(option);
                 });
 
-                const domesticOption = document.createElement('option');
-                domesticOption.value = 'Domestic';
-                domesticOption.textContent = 'Domestic';
-                nativitySlicer.appendChild(domesticOption);
-
                 uniqueNativity.forEach(nativity => {
-                    if (nativity !== 'Domestic') {
-                        const option = document.createElement('option');
-                        option.value = nativity;
-                        option.textContent = nativity;
-                        nativitySlicer.appendChild(option);
-                    }
+                    const option = document.createElement('option');
+                    option.value = nativity;
+                    option.textContent = nativity;
+                    nativitySlicer.appendChild(option);
                 });
 
                 // Default values
-                indSlicer.value = 'Utilities';
-                nativitySlicer.value = 'Domestic';
+                indSlicer.value = uniqueInd[0];
+                nativitySlicer.value = uniqueNativity[0];
 
                 indSlicer.addEventListener('change', () => {
                     filterTable();
@@ -253,49 +240,63 @@
             function initializeMapInteractivity() {
                 const svg = document.querySelector('#svg-container svg');
                 const paths = svg.querySelectorAll('g.regions path');
+                let isDragging = false;
+                let startX, startY, offsetX = 0, offsetY = 0;
+                let scale = 1;
 
+                // Map zoom and drag logic
+                svg.addEventListener('mousedown', (e) => {
+                    isDragging = true;
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    svg.style.cursor = 'grabbing';
+                });
+
+                svg.addEventListener('mousemove', (e) => {
+                    if (isDragging) {
+                        const dx = e.clientX - startX;
+                        const dy = e.clientY - startY;
+                        offsetX += dx;
+                        offsetY += dy;
+                        svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+                        startX = e.clientX;
+                        startY = e.clientY;
+                    }
+                });
+
+                svg.addEventListener('mouseup', () => {
+                    isDragging = false;
+                    svg.style.cursor = 'grab';
+                });
+
+                svg.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    scale += e.deltaY * -0.01;
+                    scale = Math.min(Math.max(0.5, scale), 3); // limit zoom scale
+                    svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+                });
+
+                // Mouse hover interaction on the regions
                 paths.forEach(path => {
-                    path.addEventListener('mouseenter', (event) => {
+                    path.addEventListener('mouseenter', () => {
                         const regionId = path.id;
-                        showTooltip(event, regionId);
+                        highlightRegion(regionId);
+                        showTooltip(e, regionId);
                     });
-
-                    path.addEventListener('mouseleave', hideTooltip);
-
+                    path.addEventListener('mouseleave', () => {
+                        const regionId = path.id;
+                        resetRegion(regionId);
+                        hideTooltip();
+                    });
                     path.addEventListener('click', () => {
                         const regionId = path.id;
-                        if (regionId) {
-                            highlightRegion(regionId);
-                            filterTableByRegion(regionId);
-                        }
+                        filterTableByRegion(regionId);
                     });
                 });
             }
 
-            function showTooltip(event, regionId) {
-                const tooltip = document.getElementById('tooltip');
-                const regionData = data.find(item => item.ID === regionId);
-
-                if (regionData) {
-                    tooltip.innerHTML = `
-                        <strong>${regionData.STATE}</strong><br>
-                        Underemployment Level: ${regionData.UNDEREMPLOYMENT_LEVEL}<br>
-                        Mean Age: ${regionData.MEAN_AGE}
-                    `;
-                    tooltip.style.left = `${event.pageX + 10}px`;
-                    tooltip.style.top = `${event.pageY + 10}px`;
-                    tooltip.style.display = 'block';
-                }
-            }
-
-            function hideTooltip() {
-                const tooltip = document.getElementById('tooltip');
-                tooltip.style.display = 'none';
-            }
-
             function highlightRegion(regionId) {
                 const paths = document.querySelectorAll('g.regions path');
-
                 paths.forEach(path => {
                     if (path.id === regionId) {
                         path.style.opacity = '1';
@@ -319,6 +320,18 @@
                 });
             }
 
+            function showTooltip(event, regionId) {
+                const tooltip = document.getElementById('tooltip');
+                tooltip.textContent = `Region: ${regionId}`;
+                tooltip.style.display = 'block';
+                tooltip.style.left = `${event.pageX + 10}px`;
+                tooltip.style.top = `${event.pageY + 10}px`;
+            }
+
+            function hideTooltip() {
+                const tooltip = document.getElementById('tooltip');
+                tooltip.style.display = 'none';
+            }
         });
     </script>
 </body>
