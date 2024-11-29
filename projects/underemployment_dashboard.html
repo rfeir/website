@@ -16,15 +16,17 @@
             flex-direction: row;
             justify-content: space-between;
             margin: 20px;
+            gap: 20px; /* Ensures spacing between left and right */
         }
 
         .container .left {
             flex: 1;
-            margin-right: 20px;
+            min-width: 300px;
         }
 
         .container .right {
-            flex: 0.5; /* Half the screen size for the table */
+            flex: 0 0 45%; /* 45% for the table's container width */
+            max-width: 600px; /* Prevents the table from growing too large */
         }
 
         #svg-container {
@@ -85,6 +87,7 @@
             padding: 5px;
             font-size: 14px;
         }
+
     </style>
 </head>
 <body>
@@ -132,6 +135,9 @@
             </table>
         </div>
     </div>
+</body>
+</html>
+
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
