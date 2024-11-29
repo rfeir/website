@@ -303,17 +303,21 @@
                 const nativityOptions = Array.from(new Set(data.map(item => item.NATIVITY)));
 
                 indOptions.forEach(ind => {
-                    const option = document.createElement('option');
-                    option.value = ind;
-                    option.textContent = ind;
-                    indSlicer.appendChild(option);
+                    if (ind !== 'Utilities') {
+                        const option = document.createElement('option');
+                        option.value = ind;
+                        option.textContent = ind;
+                        indSlicer.appendChild(option);
+                    }
                 });
 
                 nativityOptions.forEach(nativity => {
-                    const option = document.createElement('option');
-                    option.value = nativity;
-                    option.textContent = nativity;
-                    nativitySlicer.appendChild(option);
+                    if (nativity !== 'Domestic') {
+                        const option = document.createElement('option');
+                        option.value = nativity;
+                        option.textContent = nativity;
+                        nativitySlicer.appendChild(option);
+                    }
                 });
             }
 
