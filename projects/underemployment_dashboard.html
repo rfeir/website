@@ -145,6 +145,9 @@
             let offsetY = 0;
             let scale = 1;
 
+            // Variable to keep track of the currently selected region
+            let selectedRegion = null;
+
             // Load SVG file and data
             fetch('paths.svg')
                 .then(response => response.text())
@@ -216,9 +219,36 @@
 
                     path.addEventListener('click', () => {
                         const regionId = path.id;
-                        filterTableByRegion(regionId);
+                        toggleRegionSelection(regionId);
                     });
                 });
+            }
+
+            // Toggle the selection of a region
+            function toggleRegionSelection(regionId) {
+                if (selectedRegion === regionId) {
+                    // Deselect if the same region is clicked again
+                    deselectRegion();
+                } else {
+                    // Select the new region
+                    selectRegion(regionId);
+                }
+            }
+
+            // Select a region and filter the table
+            function selectRegion(regionId) {
+                selectedRegion = regionId;
+                highlightRegion(regionId);
+                filterTableByRegion(regionId);
+            }
+
+            // Deselect the region and reset the table
+            function deselectRegion() {
+                selectedRegion = null;
+                resetRegion(selectedRegion);
+                // Reset table visibility
+                const rows = document.querySelectorAll('#data-table tbody tr');
+                rows.forEach(row => row.style.display = '');
             }
 
             // Highlight the selected region on hover
@@ -349,6 +379,7 @@
             document.getElementById('ind-slicer').addEventListener('change', filterTable);
             document.getElementById('nativity-slicer').addEventListener('change', filterTable);
         });
+
     </script>
 </body>
 </html>
