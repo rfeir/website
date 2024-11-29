@@ -3876,6 +3876,7 @@
                     populateTable(data); // Populate the table with the data
                     populateSlicers(data); // Populate the slicer options
                     filterTable(); // Apply default filter on page load (NATIVITY: 'Domestic')
+                    colorMapBasedOnUnderemployment(data); // Color map based on underemployment levels
                 })
                 .catch(error => console.error('Error loading aggregated_data.json:', error));
 
@@ -3952,10 +3953,17 @@
                 nativitySlicer.value = 'Domestic';
 
                 // Add event listeners to update table based on slicer selections
-                indSlicer.addEventListener('change', filterTable);
-                nativitySlicer.addEventListener('change', filterTable);
+                indSlicer.addEventListener('change', () => {
+                    filterTable();
+                    colorMapBasedOnUnderemployment(data); // Reapply map color after slicer change
+                });
+                nativitySlicer.addEventListener('change', () => {
+                    filterTable();
+                    colorMapBasedOnUnderemployment(data); // Reapply map color after slicer change
+                });
             }
 
+            // Function to filter the table based on slicers
             function filterTable() {
                 const indSlicerValue = document.getElementById('ind-slicer').value;
                 const nativitySlicerValue = document.getElementById('nativity-slicer').value;
@@ -3964,163 +3972,41 @@
                 rows.forEach(row => {
                     const ind = row.cells[1].textContent;
                     const nativity = row.cells[2].textContent;
-
-                    let showRow = true;
-
-                    // Check IND slicer
-                    if (ind !== indSlicerValue) {
-                        showRow = false;
-                    }
-
-                    // Check NATIVITY slicer
-                    if (nativitySlicerValue === 'Domestic' && nativity !== 'Domestic') {
-                        showRow = false;
-                    } else if (nativitySlicerValue !== 'Domestic' && nativity !== nativitySlicerValue) {
-                        showRow = false;
-                    }
-
-                    // Apply row visibility
-                    row.style.display = showRow ? '' : 'none';
-                });
-            }
-
-            // Restore map interactivity and handle click event
-            const svg = document.querySelector('#svg-container svg');
-
-            svg.addEventListener('click', (e) => {
-                if (e.target.tagName === 'path') {
-                    // Reset all regions to default color
-                    svg.querySelectorAll('path').forEach(path => path.setAttribute('fill', 'lightblue'));
-
-                    // Highlight the clicked region
-                    e.target.setAttribute('fill', 'red');
-                }
-            });
-
-            // Pan and zoom functionality
-            let isPanning = false, startX = 0, startY = 0, panX = 0, panY = 0, scale = 1;
-
-            svg.addEventListener('mousedown', (e) => {
-                isPanning = true;
-                startX = e.clientX - panX;
-                startY = e.clientY - panY;
-                svg.style.cursor = 'grabbing';
-            });
-
-            svg.addEventListener('mousemove', (e) => {
-                if (!isPanning) return;
-
-                const containerRect = document.querySelector('#svg-container').getBoundingClientRect();
-                const svgRect = svg.getBoundingClientRect();
-
-                panX = e.clientX - startX;
-                panY = e.clientY - startY;
-
-                // Constrain panning within container bounds
-                const offsetX = Math.min(0, Math.max(containerRect.width - svgRect.width * scale, panX));
-                const offsetY = Math.min(0, Math.max(containerRect.height - svgRect.height * scale, panY));
-
-                svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
-            });
-
-            svg.addEventListener('mouseup', () => {
-                isPanning = false;
-                svg.style.cursor = 'grab';
-            });
-
-            svg.addEventListener('mouseleave', () => {
-                isPanning = false;
-                svg.style.cursor = 'grab';
-            });
-
-            svg.addEventListener('wheel', (e) => {
-                e.preventDefault();
-
-                const containerRect = document.querySelector('#svg-container').getBoundingClientRect();
-
-                const zoomIntensity = 0.1;
-                const zoomDirection = e.deltaY < 0 ? 1 : -1;
-                const newScale = Math.max(0.5, Math.min(scale + zoomDirection * zoomIntensity, 5));
-
-                const rect = svg.getBoundingClientRect();
-                const offsetX = (e.clientX - rect.left) / scale;
-                const offsetY = (e.clientY - rect.top) / scale;
-
-                const newPanX = panX - offsetX * (newScale - scale);
-                const newPanY = panY - offsetY * (newScale - scale);
-
-                scale = newScale;
-
-                // Apply constraints for zoom and panning
-                const constrainedX = Math.min(0, Math.max(containerRect.width - rect.width * scale, newPanX));
-                const constrainedY = Math.min(0, Math.max(containerRect.height - rect.height * scale, newPanY));
-
-                panX = constrainedX;
-                panY = constrainedY;
-
-                svg.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
-            });
-
-
-            // Handle click event on SVG regions
-            document.getElementById('svg-container').addEventListener('click', function (e) {
-                const clickedRegion = e.target;
-
-                // Check if an SVG path was clicked
-                if (clickedRegion.tagName === 'path') {
-                    highlightRegion(clickedRegion); // Highlight clicked region
-                    updateTable(clickedRegion.dataset.region); // Update the table with data for the clicked region
-                }
-            });
-
-            // Function to highlight the clicked region
-            function highlightRegion(regionElement) {
-                // Reset previously highlighted regions
-                document.querySelectorAll('.active-region').forEach(region => {
-                    region.classList.remove('active-region');
-                });
-                
-                // Highlight the selected region
-                regionElement.classList.add('active-region');
-            }
-
-            // Function to update the table based on the selected region
-            function updateTable(region) {
-                const rows = document.querySelectorAll('#data-table tr');
-                rows.forEach(row => {
-                    if (row.dataset.region === region) {
-                        row.style.backgroundColor = '#f2f2f2'; // Highlight the row in the table
+                    // Show the row if both filters match
+                    if (ind === indSlicerValue && nativity === nativitySlicerValue) {
+                        row.style.display = '';
                     } else {
-                        row.style.backgroundColor = ''; // Reset other rows
+                        row.style.display = 'none';
                     }
                 });
             }
 
-            // Function to apply choropleth color scale based on UNDEREMPLOYMENT_LEVEL
+            // Function to color map based on UNDEREMPLOYMENT_LEVEL
             function colorMapBasedOnUnderemployment(data) {
-                const minUnderemployment = Math.min(...data.map(item => item.UNDEREMPLOYMENT_LEVEL));
-                const maxUnderemployment = Math.max(...data.map(item => item.UNDEREMPLOYMENT_LEVEL));
+                const svg = document.querySelector('#svg-container svg');
+                const regions = svg.querySelectorAll('.region'); // Assuming regions are defined in your SVG
+                
+                regions.forEach(region => {
+                    const regionId = region.id; // Assuming each region has an id matching 'ID' from the table data
+                    const regionData = data.find(item => item.ID === regionId);
 
-                // Set color scale (from white to black based on UNDEREMPLOYMENT_LEVEL)
-                const svgPaths = document.querySelectorAll('#svg-container svg path');
-                svgPaths.forEach(path => {
-                    const id = path.dataset.region;
-                    const regionData = data.find(item => item.ID === id);
                     if (regionData) {
                         const underemploymentLevel = regionData.UNDEREMPLOYMENT_LEVEL;
-                        const colorValue = (underemploymentLevel - minUnderemployment) / (maxUnderemployment - minUnderemployment);
-                        const color = `rgb(${Math.floor(colorValue * 255)}, ${Math.floor((1 - colorValue) * 255)}, 255)`;
-                        path.style.fill = color;
+
+                        // Set color based on UNDEREMPLOYMENT_LEVEL (can adjust thresholds)
+                        let color = '#FFFFFF'; // Default color
+                        if (underemploymentLevel > 0 && underemploymentLevel <= 10) {
+                            color = '#FFDDC1'; // Light pink
+                        } else if (underemploymentLevel > 10 && underemploymentLevel <= 20) {
+                            color = '#FFABAB'; // Medium pink
+                        } else if (underemploymentLevel > 20) {
+                            color = '#FF8C8C'; // Dark pink
+                        }
+                        
+                        region.style.fill = color; // Apply the color to the region
                     }
                 });
             }
-
-            // Initialize choropleth map coloring after data is loaded
-            fetch('aggregated_data.json')
-                .then(response => response.json())
-                .then(data => {
-                    colorMapBasedOnUnderemployment(data);
-                });
         });
     </script>
 
