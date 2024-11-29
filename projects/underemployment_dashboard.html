@@ -33,11 +33,13 @@
             flex: 1;
             min-width: 300px;
             max-width: 600px;
+            order: 1; /* Default order for map */
         }
 
         #svg-container svg {
             width: 100%;
             height: auto;
+            display: block;
         }
 
         /* Table container with its own scrolling */
@@ -50,6 +52,7 @@
             border: 1px solid #ddd;
             background: white;
             border-radius: 5px;
+            order: 2; /* Default order for table */
         }
 
         /* Table styling */
@@ -94,9 +97,12 @@
                 align-items: center;
             }
 
-            #svg-container,
+            #svg-container {
+                order: 1; /* Move map to the top */
+            }
+
             .table-container {
-                max-width: 90%;
+                order: 2; /* Move table below the map */
             }
         }
     </style>
