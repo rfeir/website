@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shapefile and Data Table Interaction</title>
+    <title>Interactive Map and Data Table</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -34,24 +34,23 @@
             flex: 1;
             min-width: 300px;
             max-width: 600px;
-            height: 100%; /* Adjust to fit container height */
+            height: 500px;
             border: 1px solid #ddd;
             background: #e8e8e8;
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden; /* Controls cut-off, may be removed if needed */
+            overflow: hidden;
             position: relative;
         }
 
         #svg-container svg {
             width: 100%;
-            height: 100%; /* Ensure SVG scales correctly */
+            height: 100%;
             display: block;
             transform-origin: center center;
-            cursor: grab; /* Visual cue for panning */
+            cursor: grab;
         }
-
 
         .table-container {
             flex: 1;
@@ -79,11 +78,22 @@
             background-color: #4CAF50;
             color: white;
         }
+
+        #tooltip {
+            position: absolute;
+            padding: 10px;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            pointer-events: none;
+            display: none;
+            z-index: 10;
+        }
     </style>
 </head>
 <body>
 
-    <h1>Shapefile and Data Table Interaction</h1>
+    <h1>Interactive Map and Data Table</h1>
 
     <div class="slicer-container">
         <div>
@@ -126,32 +136,38 @@
         </div>
     </div>
 
+    <div id="tooltip"></div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Load the SVG paths dynamically from the 'paths.svg' file
+            const tooltip = document.getElementById('tooltip');
+            let data = []; // Global data variable to access across functions
+
+            // Load the SVG
             fetch('paths.svg')
                 .then(response => response.text())
                 .then(svgContent => {
                     document.getElementById('svg-container').innerHTML = svgContent;
-                    colorMapBasedOnUnderemployment(); // Apply map color after loading the paths
+                    initializeMapInteractivity();
                 })
                 .catch(error => console.error('Error loading paths.svg:', error));
 
-            // Fetch and populate data from your JSON (aggregated_data.json)
+            // Load the data
             fetch('aggregated_data.json')
                 .then(response => response.json())
-                .then(data => {
-                    populateTable(data); // Populate the table with the data
-                    populateSlicers(data); // Populate the slicers with data
-                    filterTable(); // Apply the default filter
-                    colorMapBasedOnUnderemployment(data); // Color the map based on underemployment levels
+                .then(jsonData => {
+                    data = jsonData; // Assign loaded data to the global variable
+                    populateTable(data);
+                    populateSlicers(data);
+                    filterTable();
+                    colorMapBasedOnUnderemployment(data);
                 })
                 .catch(error => console.error('Error loading aggregated_data.json:', error));
 
+            // Populate the table
             function populateTable(data) {
                 const table = document.getElementById('data-table').getElementsByTagName('tbody')[0];
                 table.innerHTML = '';
-
                 data.forEach(item => {
                     const row = document.createElement('tr');
                     row.dataset.region = item.ID;
@@ -172,53 +188,32 @@
                 });
             }
 
+            // Populate slicers
             function populateSlicers(data) {
                 const indSlicer = document.getElementById('ind-slicer');
                 const nativitySlicer = document.getElementById('nativity-slicer');
                 const uniqueInd = [...new Set(data.map(item => item.IND))];
                 const uniqueNativity = [...new Set(data.map(item => item.NATIVITY))];
 
-                const utilitiesOption = document.createElement('option');
-                utilitiesOption.value = 'Utilities';
-                utilitiesOption.textContent = 'Utilities';
-                indSlicer.appendChild(utilitiesOption);
-
                 uniqueInd.forEach(ind => {
-                    if (ind !== 'Utilities') {
-                        const option = document.createElement('option');
-                        option.value = ind;
-                        option.textContent = ind;
-                        indSlicer.appendChild(option);
-                    }
+                    const option = document.createElement('option');
+                    option.value = ind;
+                    option.textContent = ind;
+                    indSlicer.appendChild(option);
                 });
-
-                const domesticOption = document.createElement('option');
-                domesticOption.value = 'Domestic';
-                domesticOption.textContent = 'Domestic';
-                nativitySlicer.appendChild(domesticOption);
 
                 uniqueNativity.forEach(nativity => {
-                    if (nativity !== 'Domestic') {
-                        const option = document.createElement('option');
-                        option.value = nativity;
-                        option.textContent = nativity;
-                        nativitySlicer.appendChild(option);
-                    }
+                    const option = document.createElement('option');
+                    option.value = nativity;
+                    option.textContent = nativity;
+                    nativitySlicer.appendChild(option);
                 });
 
-                indSlicer.value = 'Utilities';
-                nativitySlicer.value = 'Domestic';
-
-                indSlicer.addEventListener('change', () => {
-                    filterTable();
-                    colorMapBasedOnUnderemployment(data);
-                });
-                nativitySlicer.addEventListener('change', () => {
-                    filterTable();
-                    colorMapBasedOnUnderemployment(data);
-                });
+                indSlicer.addEventListener('change', filterTable);
+                nativitySlicer.addEventListener('change', filterTable);
             }
 
+            // Filter table
             function filterTable() {
                 const indSlicerValue = document.getElementById('ind-slicer').value;
                 const nativitySlicerValue = document.getElementById('nativity-slicer').value;
@@ -227,7 +222,8 @@
                 rows.forEach(row => {
                     const ind = row.cells[1].textContent;
                     const nativity = row.cells[2].textContent;
-                    if (ind === indSlicerValue && nativity === nativitySlicerValue) {
+                    if ((ind === indSlicerValue || !indSlicerValue) &&
+                        (nativity === nativitySlicerValue || !nativitySlicerValue)) {
                         row.style.display = '';
                     } else {
                         row.style.display = 'none';
@@ -235,13 +231,11 @@
                 });
             }
 
+            // Color map based on underemployment
             function colorMapBasedOnUnderemployment(data) {
-                const svg = document.querySelector('#svg-container svg');
-                const regions = svg.querySelectorAll('.region');
+                const regions = document.querySelectorAll('.region');
                 regions.forEach(region => {
-                    const regionId = region.id;
-                    const regionData = data.find(item => item.ID === regionId);
-
+                    const regionData = data.find(item => item.ID === region.id);
                     if (regionData) {
                         const underemploymentLevel = regionData.UNDEREMPLOYMENT_LEVEL;
                         let color = '#FFFFFF';
@@ -252,8 +246,61 @@
                         } else if (underemploymentLevel > 20) {
                             color = '#FF8C8C';
                         }
-
                         region.style.fill = color;
+                    }
+                });
+            }
+
+            // Initialize map interactivity
+            function initializeMapInteractivity() {
+                const regions = document.querySelectorAll('.region');
+                regions.forEach(region => {
+                    region.addEventListener('mouseenter', (e) => {
+                        const regionData = data.find(item => item.ID === region.id);
+                        if (regionData) {
+                            tooltip.innerHTML = `
+                                <strong>${regionData.STATE}</strong><br>
+                                Underemployment Level: ${regionData.UNDEREMPLOYMENT_LEVEL}%<br>
+                                Mean Wage: ${regionData.MEAN_WAGE}
+                            `;
+                            tooltip.style.display = 'block';
+                            tooltip.style.left = e.pageX + 10 + 'px';
+                            tooltip.style.top = e.pageY + 10 + 'px';
+                        }
+                    });
+
+                    region.addEventListener('mouseleave', () => {
+                        tooltip.style.display = 'none';
+                    });
+
+                    region.addEventListener('click', () => {
+                        highlightRegion(region.id);
+                        filterTableByRegion(region.id);
+                    });
+                });
+            }
+
+            function highlightRegion(selectedId) {
+                const regions = document.querySelectorAll('.region');
+                regions.forEach(region => {
+                    if (region.id === selectedId) {
+                        region.style.opacity = '1';
+                        region.style.stroke = 'black';
+                        region.style.strokeWidth = '2px';
+                    } else {
+                        region.style.opacity = '0.3';
+                        region.style.stroke = 'none';
+                    }
+                });
+            }
+
+            function filterTableByRegion(regionId) {
+                const rows = document.querySelectorAll('#data-table tbody tr');
+                rows.forEach(row => {
+                    if (row.dataset.region === regionId) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
                     }
                 });
             }
