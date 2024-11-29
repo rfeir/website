@@ -148,7 +148,7 @@
                 .then(response => response.text())
                 .then(svgContent => {
                     document.getElementById('svg-container').innerHTML = svgContent;
-                    initializeMapInteractivity();
+                    initializeMapInteractivity(); // Ensure interactivity after SVG loads
                 })
                 .catch(error => console.error('Error loading paths.svg:', error));
 
@@ -159,7 +159,7 @@
                     data = jsonData; // Assign loaded data to the global variable
                     populateTable(data);
                     populateSlicers(data);
-                    filterTable();
+                    filterTable(); // Apply initial slicer filter
                     colorMapBasedOnUnderemployment(data);
                 })
                 .catch(error => console.error('Error loading aggregated_data.json:', error));
@@ -280,10 +280,11 @@
                 });
             }
 
-            function highlightRegion(selectedId) {
+            // Highlight selected region
+            function highlightRegion(regionId) {
                 const regions = document.querySelectorAll('.region');
                 regions.forEach(region => {
-                    if (region.id === selectedId) {
+                    if (region.id === regionId) {
                         region.style.opacity = '1';
                         region.style.stroke = 'black';
                         region.style.strokeWidth = '2px';
@@ -294,6 +295,7 @@
                 });
             }
 
+            // Filter table by region
             function filterTableByRegion(regionId) {
                 const rows = document.querySelectorAll('#data-table tbody tr');
                 rows.forEach(row => {
