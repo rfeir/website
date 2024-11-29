@@ -144,6 +144,7 @@
             let offsetX = 0;
             let offsetY = 0;
             let scale = 1;
+            let isDragging = false; // Track the dragging state
 
             // Variable to keep track of the currently selected region
             let selectedRegion = null;
@@ -176,9 +177,10 @@
                 // Add pan functionality
                 svg.addEventListener('mousedown', (e) => {
                     if (e.button !== 0) return;
+                    isDragging = true; // Start dragging
                     let startX = e.clientX - offsetX;
                     let startY = e.clientY - offsetY;
-                    svgContainer.style.cursor = 'grabbing';
+                    svgContainer.style.cursor = 'grabbing'; // Change cursor when dragging
 
                     const onMouseMove = (moveEvent) => {
                         offsetX = moveEvent.clientX - startX;
@@ -187,7 +189,8 @@
                     };
 
                     const onMouseUp = () => {
-                        svgContainer.style.cursor = 'grab';
+                        svgContainer.style.cursor = 'grab'; // Reset cursor after drag ends
+                        isDragging = false;
                         window.removeEventListener('mousemove', onMouseMove);
                         window.removeEventListener('mouseup', onMouseUp);
                     };
@@ -390,6 +393,7 @@
             document.getElementById('ind-slicer').addEventListener('change', filterTable);
             document.getElementById('nativity-slicer').addEventListener('change', filterTable);
         });
+
 
     </script>
 </body>
