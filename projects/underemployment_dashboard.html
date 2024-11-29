@@ -178,13 +178,14 @@
                 nativitySlicer.appendChild(domesticOption);
 
                 uniqueNativity.forEach(nativity => {
-                    if (nativity !== 'Domestic') { // Avoid adding 'Domestic' twice
-                        const option = document.createElement('option');
-                        option.value = nativity;
-                        option.textContent = nativity;
-                        nativitySlicer.appendChild(option);
-                    }
+                    const option = document.createElement('option');
+                    option.value = nativity;
+                    option.textContent = nativity;
+                    nativitySlicer.appendChild(option);
                 });
+
+                // Set default value for IND slicer to 'Utilities'
+                indSlicer.value = 'Utilities';
 
                 // Set default value for NATIVITY slicer to 'Domestic'
                 nativitySlicer.value = 'Domestic';
