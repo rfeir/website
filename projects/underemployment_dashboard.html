@@ -188,7 +188,6 @@
                 nativitySlicer.addEventListener('change', filterTable);
             }
 
-            // Function to filter the table based on selected slicers
             function filterTable() {
                 const indSlicerValue = document.getElementById('ind-slicer').value;
                 const nativitySlicerValue = document.getElementById('nativity-slicer').value;
@@ -200,17 +199,23 @@
 
                     let showRow = true;
 
+                    // Check IND slicer
                     if (ind !== indSlicerValue) {
                         showRow = false;
                     }
 
-                    if (nativitySlicerValue !== 'Domestic' && nativity !== nativitySlicerValue) {
+                    // Check NATIVITY slicer
+                    if (nativitySlicerValue === 'Domestic' && nativity !== 'Domestic') {
+                        showRow = false;
+                    } else if (nativitySlicerValue !== 'Domestic' && nativity !== nativitySlicerValue) {
                         showRow = false;
                     }
 
+                    // Apply row visibility
                     row.style.display = showRow ? '' : 'none';
                 });
             }
+
 
             // Handle click event on SVG regions
             document.getElementById('svg-container').addEventListener('click', function (e) {
