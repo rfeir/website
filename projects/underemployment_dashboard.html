@@ -3981,6 +3981,56 @@
                 });
             }
 
+            // Restore map interactivity and handle click event
+            const svg = document.querySelector('#svg-container svg');
+
+            svg.addEventListener('click', (e) => {
+                if (e.target.tagName === 'path') {
+                    // Reset all regions to default color
+                    svg.querySelectorAll('path').forEach(path => path.setAttribute('fill', 'lightblue'));
+
+                    // Highlight the clicked region
+                    e.target.setAttribute('fill', 'red');
+                }
+            });
+
+            // Pan and zoom functionality
+            let isPanning = false, startX = 0, startY = 0, panX = 0, panY = 0, scale = 1;
+
+            svg.addEventListener('mousedown', (e) => {
+                isPanning = true;
+                startX = e.clientX - panX;
+                startY = e.clientY - panY;
+                svg.style.cursor = 'grabbing';
+            });
+
+            svg.addEventListener('mousemove', (e) => {
+                if (!isPanning) return;
+
+                panX = e.clientX - startX;
+                panY = e.clientY - startY;
+                svg.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+            });
+
+            svg.addEventListener('mouseup', () => {
+                isPanning = false;
+                svg.style.cursor = 'grab';
+            });
+
+            svg.addEventListener('mouseleave', () => {
+                isPanning = false;
+                svg.style.cursor = 'grab';
+            });
+
+            svg.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const zoomIntensity = 0.1;
+                scale += e.deltaY < 0 ? zoomIntensity : -zoomIntensity;
+                scale = Math.max(0.5, Math.min(scale, 5)); // Clamp zoom level
+                svg.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+            });
+
+
 
             // Handle click event on SVG regions
             document.getElementById('svg-container').addEventListener('click', function (e) {
@@ -4043,6 +4093,6 @@
                 });
         });
     </script>
-    
+
 </body>
 </html>
