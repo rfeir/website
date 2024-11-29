@@ -165,10 +165,12 @@
 
                 // Populate the IND slicer
                 uniqueInd.forEach(ind => {
-                    const option = document.createElement('option');
-                    option.value = ind;
-                    option.textContent = ind;
-                    indSlicer.appendChild(option);
+                    if (ind !== 'Utilities') { // Avoid adding 'Utilities' twice
+                        const option = document.createElement('option');
+                        option.value = ind;
+                        option.textContent = ind;
+                        indSlicer.appendChild(option);
+                    }
                 });
 
                 // Populate the NATIVITY slicer with 'Domestic' as the default and at the top
@@ -178,10 +180,12 @@
                 nativitySlicer.appendChild(domesticOption);
 
                 uniqueNativity.forEach(nativity => {
-                    const option = document.createElement('option');
-                    option.value = nativity;
-                    option.textContent = nativity;
-                    nativitySlicer.appendChild(option);
+                    if (nativity !== 'Domestic') { // Avoid adding 'Domestic' twice
+                        const option = document.createElement('option');
+                        option.value = nativity;
+                        option.textContent = nativity;
+                        nativitySlicer.appendChild(option);
+                    }
                 });
 
                 // Set default value for IND slicer to 'Utilities'
