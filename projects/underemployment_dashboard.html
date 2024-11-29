@@ -9,25 +9,22 @@
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f4f4f4;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
         }
-
-        h1 {
-            text-align: center;
-            margin: 20px 0;
-        }
-
-        .content-container {
+        
+        .container {
             display: flex;
-            flex-wrap: nowrap;
+            flex-direction: row;
             justify-content: space-between;
-            gap: 20px;
-            padding: 20px;
-            max-width: 1200px;
-            width: 100%;
+            margin: 20px;
+        }
+
+        .container .left, .container .right {
+            flex: 1;
+            margin-right: 20px;
+        }
+
+        .container .right {
+            flex: 0.4;
         }
 
         #svg-container {
@@ -43,34 +40,35 @@
             overflow: hidden;
             position: relative;
             cursor: grab;
+            user-select: none; /* Prevent text selection when dragging */
         }
 
         #svg-container svg {
+            transition: transform 0.2s ease; /* Smooth transition for zoom */
             width: 100%;
             height: auto;
-            display: block;
         }
 
-        .table-container {
-            flex: 1;
-            min-width: 300px;
-            max-width: 600px;
-            max-height: 500px;
-            overflow: auto;
-            border: 1px solid #ddd;
-            background: white;
-            border-radius: 5px;
+        #tooltip {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px;
+            border-radius: 3px;
+            display: none;
+            pointer-events: none;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
+            margin-top: 20px;
         }
 
         th, td {
-            padding: 12px;
-            border: 1px solid #ddd;
+            padding: 8px 12px;
             text-align: left;
+            border: 1px solid #ddd;
         }
 
         th {
@@ -78,62 +76,58 @@
             color: white;
         }
 
-        #tooltip {
-            position: absolute;
-            background-color: #fff;
+        select {
+            margin: 10px;
             padding: 5px;
-            border-radius: 3px;
-            box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
-            display: none;
+            font-size: 14px;
         }
     </style>
 </head>
 <body>
-
-    <h1>Shapefile and Data Table Interaction</h1>
-
-    <div class="slicer-container">
+    <div>
+        <h1>Shapefile and Data Table Interaction</h1>
         <div>
             <label for="ind-slicer">IND:</label>
-            <select id="ind-slicer"></select>
-        </div>
+            <select id="ind-slicer">
+                <option value="">Select Industry</option>
+            </select>
 
-        <div>
             <label for="nativity-slicer">NATIVITY:</label>
-            <select id="nativity-slicer"></select>
+            <select id="nativity-slicer">
+                <option value="">Select Nativity</option>
+            </select>
         </div>
     </div>
 
-    <div class="content-container">
-        <div id="svg-container">
-            <!-- The SVG will be loaded dynamically here -->
+    <div class="container">
+        <div class="left">
+            <div id="svg-container">
+                <svg id="map"></svg>
+            </div>
+            <div id="tooltip"></div>
         </div>
 
-        <div class="table-container">
+        <div class="right">
             <table id="data-table">
                 <thead>
                     <tr>
                         <th>Region</th>
                         <th>IND</th>
                         <th>NATIVITY</th>
-                        <th>MEAN_WAGE</th>
-                        <th>MEAN_OTHER_INCOME</th>
-                        <th>MEAN_AGE</th>
-                        <th>UNDEREMPLOYMENT_LEVEL</th>
-                        <th>EDUCATION_LEVEL</th>
-                        <th>REQUIRED_EDUCATION_LEVEL</th>
-                        <th>NATIVITY_PERCENTAGE</th>
+                        <th>Mean Wage</th>
+                        <th>Mean Other Income</th>
+                        <th>Mean Age</th>
+                        <th>Underemployment Level</th>
+                        <th>Education Level</th>
+                        <th>Required Education Level</th>
+                        <th>Nativity Percentage</th>
                         <th>ID</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <!-- Table rows will be populated dynamically -->
-                </tbody>
+                <tbody></tbody>
             </table>
         </div>
     </div>
-
-    <div id="tooltip"></div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -141,6 +135,7 @@
             let offsetY = 0;
             let scale = 1;
 
+            // Load SVG file and data
             fetch('paths.svg')
                 .then(response => response.text())
                 .then(svgContent => {
@@ -159,11 +154,13 @@
                 })
                 .catch(error => console.error('Error loading aggregated_data.json:', error));
 
+            // Initialize the map's zoom and pan functionality
             function initMap() {
                 const svgContainer = document.getElementById('svg-container');
                 const svg = svgContainer.querySelector('svg');
                 const paths = svg.querySelectorAll('path');
 
+                // Add pan functionality
                 svg.addEventListener('mousedown', (e) => {
                     if (e.button !== 0) return;
                     let startX = e.clientX - offsetX;
@@ -173,7 +170,7 @@
                     const onMouseMove = (moveEvent) => {
                         offsetX = moveEvent.clientX - startX;
                         offsetY = moveEvent.clientY - startY;
-                        svgContainer.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+                        svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
                     };
 
                     const onMouseUp = () => {
@@ -186,12 +183,14 @@
                     window.addEventListener('mouseup', onMouseUp);
                 });
 
+                // Add zoom functionality
                 svgContainer.addEventListener('wheel', (e) => {
                     e.preventDefault();
                     scale = Math.min(Math.max(0.5, scale + e.deltaY * -0.01), 3);
-                    svgContainer.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+                    svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
                 });
 
+                // Event listeners for hover and click functionality
                 paths.forEach(path => {
                     path.addEventListener('mouseenter', (e) => {
                         const regionId = path.id;
@@ -212,6 +211,7 @@
                 });
             }
 
+            // Highlight the selected region on hover
             function highlightRegion(regionId) {
                 const paths = document.querySelectorAll('g.regions path');
                 paths.forEach(path => {
@@ -226,6 +226,7 @@
                 });
             }
 
+            // Reset the region appearance
             function resetRegion(regionId) {
                 const paths = document.querySelectorAll('g.regions path');
                 paths.forEach(path => {
@@ -237,6 +238,7 @@
                 });
             }
 
+            // Show tooltip with region information
             function showTooltip(event, regionId) {
                 const tooltip = document.getElementById('tooltip');
                 tooltip.textContent = `Region: ${regionId}`;
@@ -245,11 +247,13 @@
                 tooltip.style.top = `${event.pageY + 10}px`;
             }
 
+            // Hide the tooltip
             function hideTooltip() {
                 const tooltip = document.getElementById('tooltip');
                 tooltip.style.display = 'none';
             }
 
+            // Filter table based on selected region
             function filterTableByRegion(regionId) {
                 const rows = document.querySelectorAll('#data-table tbody tr');
                 rows.forEach(row => {
@@ -261,6 +265,7 @@
                 });
             }
 
+            // Populate the table with data
             function populateTable(data) {
                 const table = document.getElementById('data-table').getElementsByTagName('tbody')[0];
                 table.innerHTML = '';
@@ -285,20 +290,22 @@
                 });
             }
 
+            // Populate slicer (dropdowns) with data
             function populateSlicers(data) {
                 const indSlicer = document.getElementById('ind-slicer');
                 const nativitySlicer = document.getElementById('nativity-slicer');
 
-                const industries = [...new Set(data.map(item => item.IND))];
-                industries.forEach(ind => {
+                const indOptions = Array.from(new Set(data.map(item => item.IND)));
+                const nativityOptions = Array.from(new Set(data.map(item => item.NATIVITY)));
+
+                indOptions.forEach(ind => {
                     const option = document.createElement('option');
                     option.value = ind;
                     option.textContent = ind;
                     indSlicer.appendChild(option);
                 });
 
-                const nativities = [...new Set(data.map(item => item.NATIVITY))];
-                nativities.forEach(nativity => {
+                nativityOptions.forEach(nativity => {
                     const option = document.createElement('option');
                     option.value = nativity;
                     option.textContent = nativity;
@@ -306,34 +313,28 @@
                 });
             }
 
+            // Filter table based on slicer selections
             function filterTable() {
-                const indSlicer = document.getElementById('ind-slicer');
-                const nativitySlicer = document.getElementById('nativity-slicer');
-
-                const ind = indSlicer.value;
-                const nativity = nativitySlicer.value;
-
+                const indValue = document.getElementById('ind-slicer').value;
+                const nativityValue = document.getElementById('nativity-slicer').value;
                 const rows = document.querySelectorAll('#data-table tbody tr');
-                rows.forEach(row => {
-                    const matchesInd = row.querySelector('td:nth-child(2)').textContent === ind || ind === '';
-                    const matchesNativity = row.querySelector('td:nth-child(3)').textContent === nativity || nativity === '';
-                    row.style.display = (matchesInd && matchesNativity) ? '' : 'none';
-                });
-            }
 
-            function colorMapBasedOnUnderemployment(data) {
-                const paths = document.querySelectorAll('g.regions path');
-                paths.forEach(path => {
-                    const regionId = path.id;
-                    const regionData = data.find(d => d.ID === regionId);
-                    if (regionData) {
-                        const underemployment = regionData.UNDEREMPLOYMENT_LEVEL;
-                        path.style.fill = `rgb(${255 - (underemployment * 10)}, ${underemployment * 10}, 0)`;
+                rows.forEach(row => {
+                    const matchesInd = !indValue || row.cells[1].textContent === indValue;
+                    const matchesNativity = !nativityValue || row.cells[2].textContent === nativityValue;
+
+                    if (matchesInd && matchesNativity) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
                     }
                 });
             }
+
+            // Listen for slicer changes
+            document.getElementById('ind-slicer').addEventListener('change', filterTable);
+            document.getElementById('nativity-slicer').addEventListener('change', filterTable);
         });
     </script>
-
 </body>
 </html>
