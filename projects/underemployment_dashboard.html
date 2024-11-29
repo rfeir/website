@@ -105,7 +105,8 @@
             <table id="data-table">
                 <thead>
                     <tr>
-                        <th>Region</th>
+                        <th>ID</th>
+                        <th>State</th>
                         <th>IND</th>
                         <th>NATIVITY</th>
                         <th>MEAN_WAGE</th>
@@ -115,7 +116,6 @@
                         <th>EDUCATION_LEVEL</th>
                         <th>REQUIRED_EDUCATION_LEVEL</th>
                         <th>NATIVITY_PERCENTAGE</th>
-                        <th>ID</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -155,6 +155,7 @@
                     const row = document.createElement('tr');
                     row.dataset.region = item.ID;
                     row.innerHTML = `
+                        <td>${item.ID}</td>
                         <td>${item.STATE}</td>
                         <td>${item.IND}</td>
                         <td>${item.NATIVITY}</td>
@@ -165,7 +166,6 @@
                         <td>${item.EDUCATION_LEVEL}</td>
                         <td>${item.REQUIRED_EDUCATION_LEVEL}</td>
                         <td>${item.NATIVITY_PERCENTAGE}</td>
-                        <td>${item.ID}</td>
                     `;
                     table.appendChild(row);
                 });
