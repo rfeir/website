@@ -226,9 +226,11 @@
                 svgContainer.style.cursor = 'grabbing';
 
                 const onMouseMove = (moveEvent) => {
-                    offsetX = moveEvent.clientX - startX;
-                    offsetY = moveEvent.clientY - startY;
-                    svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+                    if (isDragging) {
+                        offsetX = moveEvent.clientX - startX;
+                        offsetY = moveEvent.clientY - startY;
+                        svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+                    }
                 };
 
                 const onMouseUp = () => {
@@ -350,20 +352,18 @@
         }
 
         function moveTooltip(event) {
-            tooltip.style.left = `${event.pageX + 10}px`;
-            tooltip.style.top = `${event.pageY + 10}px`;
+            tooltip.style.left = event.pageX + 10 + 'px';
+            tooltip.style.top = event.pageY + 10 + 'px';
         }
 
-        // Populate table with data
         function populateTable(data) {
-            const table = document.getElementById('data-table').getElementsByTagName('tbody')[0];
+            const table = document.getElementById('data-table').querySelector('tbody');
             table.innerHTML = '';
-
             data.forEach(item => {
                 const row = document.createElement('tr');
-                row.dataset.region = item.ID;
+                row.dataset.region = item.Region;
                 row.innerHTML = `
-                    <td>${item.STATE}</td>
+                    <td>${item.Region}</td>
                     <td>${item.IND}</td>
                     <td>${item.NATIVITY}</td>
                     <td>${item.MEAN_WAGE}</td>
@@ -379,7 +379,6 @@
             });
         }
 
-        // Populate slicers with options
         function populateSlicers(data) {
             const indSlicer = document.getElementById('ind-slicer');
             const nativitySlicer = document.getElementById('nativity-slicer');
@@ -406,7 +405,6 @@
             });
         }
 
-        // Filter table based on slicer selections
         function filterTable() {
             const indValue = document.getElementById('ind-slicer').value;
             const nativityValue = document.getElementById('nativity-slicer').value;
@@ -425,7 +423,6 @@
             });
         }
 
-        // Filter table based on region selection
         function filterTableByRegion(regionId) {
             const rows = document.querySelectorAll('#data-table tbody tr');
             rows.forEach(row => {
@@ -441,6 +438,7 @@
         document.getElementById('nativity-slicer').addEventListener('change', filterTable);
     });
 </script>
+
 
 </body>
 </html>
