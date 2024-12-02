@@ -15,20 +15,20 @@
             display: flex;
             flex-direction: row;
             justify-content: space-between;
-            margin: 10px;
-            gap: 10px;
+            margin: 10px; /* Reduced margin around the container */
+            gap: 10px; /* Smaller gap between the map and table */
         }
 
         .container .left,
         .container .right {
-            flex: 1;
-            max-width: 50%;
+            flex: 1; /* Each takes up equal width */
+            max-width: 50%; /* Limit to 50% of the screen width */
         }
 
         #svg-container {
             flex: 1;
             min-width: 300px;
-            max-width: 100%;
+            max-width: 100%; /* Matches container's width */
             height: 600px;
             border: 0px solid #ff0000;
             background: #ffffff;
@@ -60,7 +60,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            margin: 0;
+            margin: 0; /* Removed top margin */
             overflow-x: auto;
             max-height: 600px;
             display: block;
@@ -84,6 +84,7 @@
             font-size: 14px;
         }
 
+
     </style>
 </head>
 <body>
@@ -92,12 +93,12 @@
         <div>
             <label for="ind-slicer">IND:</label>
             <select id="ind-slicer">
-                <option value="Utilities" selected>Utilities</option>
+                <option value="Utilities" selected>Utilities</option> <!-- Default selection -->
             </select>
 
             <label for="nativity-slicer">NATIVITY:</label>
             <select id="nativity-slicer">
-                <option value="Domestic" selected>Domestic</option>
+                <option value="Domestic" selected>Domestic</option> <!-- Default selection -->
             </select>
         </div>
     </div>
@@ -131,6 +132,53 @@
             </table>
         </div>
     </div>
+</body>
+</html>
+
+
+<style>
+    #tooltip {
+        position: absolute;
+        background-color: rgba(0, 0, 0, 0.8);
+        color: #fff;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 12px;
+        pointer-events: none;
+        display: none; /* Hidden by default */
+    }
+
+    #svg-container {
+        cursor: default; /* Default cursor */
+    }
+</style>
+
+<div id="tooltip"></div>
+<div id="svg-container"></div>
+<select id="ind-slicer">
+    <option value="">All Industries</option>
+</select>
+<select id="nativity-slicer">
+    <option value="">All Nativity</option>
+</select>
+<table id="data-table">
+    <thead>
+        <tr>
+            <th>State</th>
+            <th>Industry</th>
+            <th>Nativity</th>
+            <th>Mean Wage</th>
+            <th>Mean Other Income</th>
+            <th>Mean Age</th>
+            <th>Underemployment Level</th>
+            <th>Education Level</th>
+            <th>Required Education Level</th>
+            <th>Nativity Percentage</th>
+            <th>ID</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -219,15 +267,13 @@
 
                     path.addEventListener('click', (e) => {
                         const regionId = path.id;
-                        if (!draggingActive) {
-                            toggleRegionSelection(regionId);
-                        }
+                        toggleRegionSelection(regionId);
                         e.stopPropagation();
                     });
                 });
 
                 svgContainer.addEventListener('click', (e) => {
-                    if (!e.target.closest('path') && !draggingActive) {
+                    if (!e.target.closest('path')) {
                         deselectRegion();
                     }
                 });
@@ -248,8 +294,6 @@
             }
 
             function deselectRegion() {
-                // Prevent deselection if dragging is active
-                if (draggingActive) return;
                 selectedRegion = null;
                 resetRegion();
                 filterTable();
@@ -320,52 +364,75 @@
                         <td>${item.UNDEREMPLOYMENT_LEVEL}</td>
                         <td>${item.EDUCATION_LEVEL}</td>
                         <td>${item.REQUIRED_EDUCATION_LEVEL}</td>
-                        <td>${item.NATIVITY_PCT}</td>
+                        <td>${item.NATIVITY_PERCENTAGE}</td>
                         <td>${item.ID}</td>
                     `;
                     table.appendChild(row);
                 });
             }
 
-            function filterTableByRegion(regionId) {
-                const rows = document.querySelectorAll('#data-table tbody tr');
-                rows.forEach(row => {
-                    row.style.display = row.dataset.region === regionId ? '' : 'none';
-                });
-            }
-
-            function filterTable() {
-                const rows = document.querySelectorAll('#data-table tbody tr');
-                rows.forEach(row => {
-                    row.style.display = '';
-                });
-            }
-
+            // Populate slicers with options
             function populateSlicers(data) {
                 const indSlicer = document.getElementById('ind-slicer');
                 const nativitySlicer = document.getElementById('nativity-slicer');
-                const indValues = [...new Set(data.map(item => item.IND))];
-                const nativityValues = [...new Set(data.map(item => item.NATIVITY))];
 
-                indValues.forEach(value => {
-                    const option = document.createElement('option');
-                    option.value = value;
-                    option.textContent = value;
-                    indSlicer.appendChild(option);
+                const indOptions = Array.from(new Set(data.map(item => item.IND)));
+                const nativityOptions = Array.from(new Set(data.map(item => item.NATIVITY)));
+
+                indOptions.forEach(ind => {
+                    if (ind !== 'Utilities') {
+                        const option = document.createElement('option');
+                        option.value = ind;
+                        option.textContent = ind;
+                        indSlicer.appendChild(option);
+                    }
                 });
 
-                nativityValues.forEach(value => {
-                    const option = document.createElement('option');
-                    option.value = value;
-                    option.textContent = value;
-                    nativitySlicer.appendChild(option);
+                nativityOptions.forEach(nativity => {
+                    if (nativity !== 'Domestic') {
+                        const option = document.createElement('option');
+                        option.value = nativity;
+                        option.textContent = nativity;
+                        nativitySlicer.appendChild(option);
+                    }
                 });
             }
 
-            // Handle slicer changes
+            // Filter table based on slicer selections
+            function filterTable() {
+                const indValue = document.getElementById('ind-slicer').value;
+                const nativityValue = document.getElementById('nativity-slicer').value;
+                const rows = document.querySelectorAll('#data-table tbody tr');
+
+                rows.forEach(row => {
+                    const matchesInd = !indValue || row.cells[1].textContent === indValue;
+                    const matchesNativity = !nativityValue || row.cells[2].textContent === nativityValue;
+                    const matchesRegion = !selectedRegion || row.dataset.region === selectedRegion;
+
+                    if (matchesInd && matchesNativity && matchesRegion) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            }
+
+            // Filter table based on region selection
+            function filterTableByRegion(regionId) {
+                const rows = document.querySelectorAll('#data-table tbody tr');
+                rows.forEach(row => {
+                    if (row.dataset.region === regionId) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            }
+
             document.getElementById('ind-slicer').addEventListener('change', filterTable);
             document.getElementById('nativity-slicer').addEventListener('change', filterTable);
         });
     </script>
+
 </body>
 </html>
