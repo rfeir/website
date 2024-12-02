@@ -279,13 +279,17 @@
                 });
             }
 
-            // Highlight region when selected (different from hover)
+            // Highlight region when selected (with opacity reduction for other regions)
             function highlightRegionOnClick(regionId) {
                 const paths = document.querySelectorAll('g.regions path');
                 paths.forEach(path => {
                     if (path.id === regionId) {
                         path.style.stroke = 'blue'; // Change border color when selected
                         path.style.strokeWidth = '3px'; // Make the border thicker when selected
+                        path.style.opacity = '1'; // Ensure the selected region is fully visible
+                    } else {
+                        path.style.opacity = '0.3'; // Reduce opacity for other regions
+                        path.style.stroke = 'none'; // Remove border for other regions
                     }
                 });
             }
@@ -297,6 +301,7 @@
                     if (path.id === regionId) {
                         path.style.stroke = 'none';
                         path.style.strokeWidth = '0';
+                        path.style.opacity = '1'; // Keep opacity full for selected regions
                     }
                 });
             }
@@ -307,6 +312,7 @@
                 paths.forEach(path => {
                     path.style.stroke = 'none';
                     path.style.strokeWidth = '0';
+                    path.style.opacity = '1'; // Keep opacity full for all regions
                 });
             }
 
@@ -411,5 +417,6 @@
             document.getElementById('nativity-slicer').addEventListener('change', filterTable);
         });
     </script>
+
 </body>
 </html>
