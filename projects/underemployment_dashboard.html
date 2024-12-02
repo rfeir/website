@@ -28,7 +28,7 @@
         #svg-container {
             flex: 1;
             min-width: 300px;
-            max-width: 100%; /* Matches container's width */
+            max-width: 100%;
             height: 600px;
             border: 0px solid #ff0000;
             background: #ffffff;
@@ -42,9 +42,9 @@
         }
 
         #svg-container svg {
-            transition: transform 0.0s ease;
-            width: 100%;
-            height: 110%;
+            cursor: pointer;
+            width: 100%; /* Ensure the SVG scales properly within the container */
+            height: 100%; /* Make sure the height is proportional */
         }
 
         #tooltip {
@@ -60,7 +60,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            margin: 0; /* Removed top margin */
+            margin: 0;
             overflow-x: auto;
             max-height: 600px;
             display: block;
@@ -74,8 +74,20 @@
         }
 
         th {
-            background-color: #4CAF50;
-            color: white;
+            color: rgb(0, 0, 0);
+            border-bottom: 2px solid rgb(7, 142, 50);
+        }
+
+        tr:nth-child(odd) {
+            background-color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        .highlighted {
+            background-color: lightgray;
         }
 
         select {
@@ -83,8 +95,6 @@
             padding: 5px;
             font-size: 14px;
         }
-
-
     </style>
 </head>
 <body>
@@ -136,14 +146,55 @@
 </html>
 
 
+<style>
+    #tooltip {
+        position: absolute;
+        background-color: rgba(0, 0, 0, 0.8);
+        color: #fff;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 12px;
+        pointer-events: none;
+        display: none; /* Hidden by default */
+    }
+
+    #svg-container {
+        cursor: pointer; /* Default pointer cursor */
+    }
+</style>
+
+<div id="tooltip"></div>
+<div id="svg-container"></div>
+<select id="ind-slicer"></select>
+<select id="nativity-slicer"></select>
+<table id="data-table">
+    <thead>
+        <tr>
+            <th>State</th>
+            <th>Industry</th>
+            <th>Nativity</th>
+            <th>Mean Wage</th>
+            <th>Mean Other Income</th>
+            <th>Mean Age</th>
+            <th>Underemployment Level</th>
+            <th>Education Level</th>
+            <th>Required Education Level</th>
+            <th>Nativity Percentage</th>
+            <th>ID</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             let offsetX = 0;
             let offsetY = 0;
             let scale = 1;
-            let isDragging = false; // Track the dragging state
-
+            let isDragging = false;
+            let draggingActive = false;
             let selectedRegion = null;
+            const tooltip = document.getElementById('tooltip');
 
             fetch('paths.svg')
                 .then(response => response.text())
@@ -159,26 +210,22 @@
                     populateTable(data);
                     populateSlicers(data);
                     filterTable();
-                    colorMapBasedOnUnderemployment(data);
                 })
                 .catch(error => console.error('Error loading aggregated_data.json:', error));
 
-            // Initialize the map's zoom and pan functionality
             function initMap() {
                 const svgContainer = document.getElementById('svg-container');
                 const svg = svgContainer.querySelector('svg');
                 const paths = svg.querySelectorAll('path');
 
-                // Set initial cursor to default
-                svgContainer.style.cursor = 'default';
-
-                // Add pan functionality
+                // Dragging functionality
                 svgContainer.addEventListener('mousedown', (e) => {
-                    if (e.button !== 0) return; // Only respond to left mouse button
+                    if (e.button !== 0) return;
                     isDragging = true;
-                    let startX = e.clientX - offsetX;
-                    let startY = e.clientY - offsetY;
-                    svgContainer.style.cursor = 'grabbing'; // Set cursor to grabbing when dragging starts
+                    draggingActive = true;
+                    const startX = e.clientX - offsetX;
+                    const startY = e.clientY - offsetY;
+                    svgContainer.style.cursor = 'grabbing';
 
                     const onMouseMove = (moveEvent) => {
                         offsetX = moveEvent.clientX - startX;
@@ -187,8 +234,9 @@
                     };
 
                     const onMouseUp = () => {
-                        svgContainer.style.cursor = 'default'; // Reset cursor to default after drag ends
                         isDragging = false;
+                        draggingActive = false;
+                        svgContainer.style.cursor = 'default';
                         window.removeEventListener('mousemove', onMouseMove);
                         window.removeEventListener('mouseup', onMouseUp);
                     };
@@ -197,51 +245,70 @@
                     window.addEventListener('mouseup', onMouseUp);
                 });
 
-                // Add zoom functionality
+                // Zooming functionality with exponential behavior and centering
                 svgContainer.addEventListener('wheel', (e) => {
                     e.preventDefault();
-                    scale = Math.min(Math.max(0.5, scale + e.deltaY * -0.01), 3);
+
+                    // Exponential zoom adjustment (faster zoom when zoomed out)
+                    const zoomFactor = e.deltaY > 0 ? -0.1 : 0.1;
+                    const newScale = scale + zoomFactor * Math.pow(1.5, scale); // Exponential zoom
+                    scale = Math.min(Math.max(0.1, newScale), 5); // Clamp between 0.1 and 5
+
+                    // Get center position of the container (for centering zoom)
+                    const rect = svgContainer.getBoundingClientRect();
+                    const containerCenterX = rect.width / 2;
+                    const containerCenterY = rect.height / 2;
+
+                    // Calculate the scale factor (how much the image will scale)
+                    const scaleFactor = scale / (scale + zoomFactor * Math.pow(1.5, scale));
+
+                    // Adjust the offsets to zoom in/out centered on the container
+                    offsetX -= (containerCenterX - offsetX) * (scaleFactor - 1);
+                    offsetY -= (containerCenterY - offsetY) * (scaleFactor - 1);
+
+                    // Apply smooth transformation for zooming
+                    svg.style.transition = 'transform 0.2s ease-out';
                     svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
                 });
 
-                // Hover and click functionality for regions
+                // Path event listeners
                 paths.forEach(path => {
                     path.addEventListener('mouseenter', (e) => {
-                        const regionId = path.id;
-                        highlightRegionOnHover(regionId);
-                        showTooltip(e, regionId);
-                    });
-
-                    path.addEventListener('mouseleave', () => {
-                        hideTooltip();
-                        if (!selectedRegion) {
-                            resetAllRegions();
+                        if (!draggingActive) {
+                            highlightRegionOnHover(path.id);
+                            showTooltip(e, path.id);
                         }
                     });
 
-                    path.addEventListener('click', () => {
+                    path.addEventListener('mouseleave', () => {
+                        if (!draggingActive) {
+                            resetHoverBorders();
+                            hideTooltip();
+                        }
+                    });
+
+                    path.addEventListener('mousemove', (e) => {
+                        if (!draggingActive) {
+                            moveTooltip(e);
+                        }
+                    });
+
+                    path.addEventListener('click', (e) => {
                         const regionId = path.id;
                         toggleRegionSelection(regionId);
+                        e.stopPropagation();
                     });
                 });
 
-                // Reset regions when mouse leaves the entire container
-                svgContainer.addEventListener('mouseleave', () => {
-                    if (!selectedRegion) {
-                        resetAllRegions();
-                    }
-                    hideTooltip();
-                });
-
-                // Close any selected region if click is outside the map
-                document.addEventListener('click', (e) => {
-                    if (!svgContainer.contains(e.target) && selectedRegion !== null) {
-                        deselectRegion(); // Deselect the region if clicked outside
+                // Clicking outside to deselect region
+                svgContainer.addEventListener('click', (e) => {
+                    if (!e.target.closest('path')) {
+                        deselectRegion();
                     }
                 });
             }
 
-            // Select or deselect region
+            // Zoom logic (only scale changes, no offset)
             function toggleRegionSelection(regionId) {
                 if (selectedRegion === regionId) {
                     deselectRegion();
@@ -250,97 +317,63 @@
                 }
             }
 
-            // Select a region and filter the table
             function selectRegion(regionId) {
                 selectedRegion = regionId;
-                highlightRegionOnClick(regionId);
+                highlightRegion(regionId);
                 filterTableByRegion(regionId);
             }
 
-            // Deselect region and reset
             function deselectRegion() {
                 selectedRegion = null;
-                resetRegion(selectedRegion);
+                resetRegion();
                 filterTable();
-                resetAllRegions();
             }
 
-            // Highlight region when hovered
+            function highlightRegion(regionId) {
+                const paths = document.querySelectorAll('path');
+                paths.forEach(path => {
+                    path.style.opacity = path.id === regionId ? '1' : '0.3';
+                });
+            }
+
+            function resetRegion() {
+                const paths = document.querySelectorAll('path');
+                paths.forEach(path => {
+                    path.style.opacity = '1';
+                });
+            }
+
             function highlightRegionOnHover(regionId) {
-                const paths = document.querySelectorAll('g.regions path');
+                const paths = document.querySelectorAll('path');
                 paths.forEach(path => {
                     if (path.id === regionId) {
                         path.style.stroke = 'black';
                         path.style.strokeWidth = '2px';
-                    } else {
-                        path.style.stroke = 'none';
-                        path.style.strokeWidth = '0';
                     }
                 });
             }
 
-            // Highlight region when selected (with opacity reduction for other regions)
-            function highlightRegionOnClick(regionId) {
-                const paths = document.querySelectorAll('g.regions path');
-                paths.forEach(path => {
-                    if (path.id === regionId) {
-                        path.style.stroke = 'blue'; // Change border color when selected
-                        path.style.strokeWidth = '3px'; // Make the border thicker when selected
-                        path.style.opacity = '1'; // Ensure the selected region is fully visible
-                    } else {
-                        path.style.opacity = '0.3'; // Reduce opacity for other regions
-                        path.style.stroke = 'none'; // Remove border for other regions
-                    }
-                });
-            }
-
-            // Reset hover style on region
-            function resetRegion(regionId) {
-                const paths = document.querySelectorAll('g.regions path');
-                paths.forEach(path => {
-                    if (path.id === regionId) {
-                        path.style.stroke = 'none';
-                        path.style.strokeWidth = '0';
-                        path.style.opacity = '1'; // Keep opacity full for selected regions
-                    }
-                });
-            }
-
-            // Reset all regions to normal state
-            function resetAllRegions() {
-                const paths = document.querySelectorAll('g.regions path');
+            function resetHoverBorders() {
+                const paths = document.querySelectorAll('path');
                 paths.forEach(path => {
                     path.style.stroke = 'none';
                     path.style.strokeWidth = '0';
-                    path.style.opacity = '1'; // Keep opacity full for all regions
                 });
             }
 
-            // Show tooltip
             function showTooltip(event, regionId) {
-                const tooltip = document.getElementById('tooltip');
                 tooltip.textContent = `Region: ${regionId}`;
                 tooltip.style.display = 'block';
-                tooltip.style.left = `${event.pageX + 10}px`;
-                tooltip.style.top = `${event.pageY + 10}px`;
+                moveTooltip(event);
             }
 
-            // Hide tooltip
             function hideTooltip() {
-                const tooltip = document.getElementById('tooltip');
                 tooltip.style.display = 'none';
             }
 
-            // Filter table by selected region
-            function filterTableByRegion(regionId) {
-                const rows = document.querySelectorAll('#data-table tbody tr');
-                rows.forEach(row => {
-                    if (row.dataset.region === regionId) {
-                        row.style.display = '';
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
+            function moveTooltip(event) {
+                tooltip.style.left = `${event.pageX + 10}px`;
+                tooltip.style.top = `${event.pageY + 10}px`;
             }
 
             // Populate table with data
@@ -404,8 +437,21 @@
                 rows.forEach(row => {
                     const matchesInd = !indValue || row.cells[1].textContent === indValue;
                     const matchesNativity = !nativityValue || row.cells[2].textContent === nativityValue;
+                    const matchesRegion = !selectedRegion || row.dataset.region === selectedRegion;
 
-                    if (matchesInd && matchesNativity) {
+                    if (matchesInd && matchesNativity && matchesRegion) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            }
+
+            // Filter table based on region selection
+            function filterTableByRegion(regionId) {
+                const rows = document.querySelectorAll('#data-table tbody tr');
+                rows.forEach(row => {
+                    if (row.dataset.region === regionId) {
                         row.style.display = '';
                     } else {
                         row.style.display = 'none';
@@ -416,7 +462,10 @@
             document.getElementById('ind-slicer').addEventListener('change', filterTable);
             document.getElementById('nativity-slicer').addEventListener('change', filterTable);
         });
+
     </script>
+
+
 
 </body>
 </html>
