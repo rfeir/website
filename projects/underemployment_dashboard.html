@@ -214,21 +214,13 @@
 
                     path.addEventListener('mouseleave', () => {
                         hideTooltip();
-                        if (!selectedRegion) {
-                            resetAllRegions();
-                        }
+                        resetHoverBorders();
                     });
 
                     path.addEventListener('click', () => {
                         const regionId = path.id;
                         toggleRegionSelection(regionId);
                     });
-                });
-
-                // Reset regions when mouse leaves the entire container
-                svgContainer.addEventListener('mouseleave', () => {
-                    resetAllRegions();
-                    hideTooltip();
                 });
 
                 // Close any selected region if click is outside the map
@@ -293,13 +285,12 @@
             }
 
             // Reset hover style on region
-            function resetRegion(regionId) {
+            function resetHoverBorders() {
                 const paths = document.querySelectorAll('g.regions path');
                 paths.forEach(path => {
-                    if (path.id === regionId) {
+                    if (path.id !== selectedRegion) { // Only reset hover borders if the region is not selected
                         path.style.stroke = 'none';
                         path.style.strokeWidth = '0';
-                        path.style.opacity = '1'; // Keep opacity full for selected regions
                     }
                 });
             }
@@ -415,6 +406,7 @@
             document.getElementById('nativity-slicer').addEventListener('change', filterTable);
         });
     </script>
+
 
 
 </body>
