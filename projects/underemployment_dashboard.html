@@ -219,6 +219,7 @@
                 const svg = svgContainer.querySelector('svg');
                 const paths = svg.querySelectorAll('path');
 
+                // Dragging functionality
                 svgContainer.addEventListener('mousedown', (e) => {
                     if (e.button !== 0) return;
                     isDragging = true;
@@ -245,21 +246,34 @@
                     window.addEventListener('mouseup', onMouseUp);
                 });
 
+                // Wheel event listener for zooming
                 svgContainer.addEventListener('wheel', (e) => {
                     e.preventDefault();
 
-                    // Calculate the scale factor
-                    const zoomFactor = 0.1;  // Adjust the zoom factor for smoother zooming
-                    scale += e.deltaY * zoomFactor;
+                    // Calculate the zoom factor
+                    const zoomFactor = 0.1;  // Adjust for smoother zooming
+                    const delta = e.deltaY > 0 ? -zoomFactor : zoomFactor; // Zoom in or out based on wheel direction
 
-                    // Constrain the scale between 0.5 and 3
-                    scale = Math.min(Math.max(0.5, scale), 3);
+                    // Get the mouse position relative to the container
+                    const rect = svgContainer.getBoundingClientRect();
+                    const mouseX = e.clientX - rect.left;
+                    const mouseY = e.clientY - rect.top;
 
-                    // Apply the transformation
-                    svg.style.transform = `scale(${scale})`;
+                    // Calculate the new scale
+                    const newScale = scale + delta;
+                    scale = Math.min(Math.max(0.5, newScale), 3); // Ensure scale is within limits
+
+                    // Calculate the offset change to zoom centered on the mouse position
+                    const scaleDiff = scale - newScale; // Difference in scale
+                    offsetX -= mouseX * scaleDiff;
+                    offsetY -= mouseY * scaleDiff;
+
+                    // Apply the smooth transformation
+                    svg.style.transition = 'transform 0.1s ease-out'; // Smooth transition
+                    svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
                 });
 
-
+                // Path event listeners
                 paths.forEach(path => {
                     path.addEventListener('mouseenter', (e) => {
                         if (!draggingActive) {
@@ -288,6 +302,7 @@
                     });
                 });
 
+                // Clicking outside to deselect region
                 svgContainer.addEventListener('click', (e) => {
                     if (!e.target.closest('path')) {
                         deselectRegion();
@@ -295,6 +310,7 @@
                 });
             }
 
+            // Zoom logic - you already have this part, just keeping it consolidated
             function toggleRegionSelection(regionId) {
                 if (selectedRegion === regionId) {
                     deselectRegion();
@@ -448,6 +464,7 @@
             document.getElementById('ind-slicer').addEventListener('change', filterTable);
             document.getElementById('nativity-slicer').addEventListener('change', filterTable);
         });
+
     </script>
 
 </body>
