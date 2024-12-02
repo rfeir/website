@@ -256,21 +256,22 @@
                     const containerCenterX = rect.width / 2;
                     const containerCenterY = rect.height / 2;
 
-                    // Calculate the scale factor (how much the image will scale)
+                    // Scale factor calculation
                     const scaleFactor = scale / (scale - zoomFactor);
 
-                    // Adjust the offsets to zoom in/out based on container's center
+                    // Adjust the offset directly based on zooming into the center
                     offsetX = containerCenterX - (containerCenterX - offsetX) * scaleFactor;
                     offsetY = containerCenterY - (containerCenterY - offsetY) * scaleFactor;
 
-                    // Prevent the offsets from moving the content too far out of bounds
-                    offsetX = Math.min(Math.max(offsetX, 0), rect.width - rect.width * scale);
-                    offsetY = Math.min(Math.max(offsetY, 0), rect.height - rect.height * scale);
+                    // Ensure the image stays within bounds by clamping the offsets
+                    offsetX = Math.max(Math.min(offsetX, 0), rect.width - rect.width * scale);
+                    offsetY = Math.max(Math.min(offsetY, 0), rect.height - rect.height * scale);
 
                     // Apply smooth transformation for zooming
                     svg.style.transition = 'transform 0.2s ease-out';
                     svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
                 });
+
 
 
                 // Path event listeners
