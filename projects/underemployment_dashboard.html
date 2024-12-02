@@ -228,7 +228,7 @@
             function deselectRegion() {
                 selectedRegion = null;
                 resetRegion();
-                filterTable();
+                filterTable(); // Reapply dropdown filters
             }
 
             function highlightRegion(regionId) {
@@ -280,7 +280,32 @@
                     const matchesInd = !indValue || row.cells[1].textContent === indValue;
                     const matchesNativity = !nativityValue || row.cells[2].textContent === nativityValue;
 
-                    row.style.display = matchesInd && matchesNativity ? '' : 'none';
+                    // Apply dropdown filters AND region filter if a region is selected
+                    const matchesRegion = !selectedRegion || row.dataset.region === selectedRegion;
+
+                    row.style.display = matchesInd && matchesNativity && matchesRegion ? '' : 'none';
+                });
+            }
+
+            function populateSlicers(data) {
+                const indSet = new Set(data.map(item => item.IND));
+                const nativitySet = new Set(data.map(item => item.NATIVITY));
+
+                const indSlicer = document.getElementById('ind-slicer');
+                const nativitySlicer = document.getElementById('nativity-slicer');
+
+                indSet.forEach(ind => {
+                    const option = document.createElement('option');
+                    option.value = ind;
+                    option.textContent = ind;
+                    indSlicer.appendChild(option);
+                });
+
+                nativitySet.forEach(nativity => {
+                    const option = document.createElement('option');
+                    option.value = nativity;
+                    option.textContent = nativity;
+                    nativitySlicer.appendChild(option);
                 });
             }
 
@@ -288,6 +313,7 @@
             document.getElementById('nativity-slicer').addEventListener('change', filterTable);
         });
     </script>
+
 
 
 </body>
