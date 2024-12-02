@@ -251,7 +251,7 @@
                     e.preventDefault();
 
                     // Calculate the zoom factor
-                    const zoomFactor = 0.1;  // Adjust for smoother zooming
+                    const zoomFactor = 0.2;  // Adjust for smoother zooming
                     const delta = e.deltaY > 0 ? -zoomFactor : zoomFactor; // Zoom in or out based on wheel direction
 
                     // Get the mouse position relative to the container
@@ -261,15 +261,18 @@
 
                     // Calculate the new scale
                     const newScale = scale + delta;
-                    scale = Math.min(Math.max(0.5, newScale), 10); // Ensure scale is within limits
+                    scale = Math.min(Math.max(0.8, newScale), 10); // Ensure scale is within limits
 
                     // Calculate the offset change to zoom centered on the mouse position
-                    const scaleDiff = scale - newScale; // Difference in scale
-                    offsetX -= mouseX * scaleDiff;
-                    offsetY -= mouseY * scaleDiff;
+                    // The scale difference based on the new scale
+                    const scaleFactor = scale / (scale + delta);
+
+                    // Update the offsets based on the scale factor and the mouse position
+                    offsetX -= (mouseX - offsetX) * (scaleFactor - 1);
+                    offsetY -= (mouseY - offsetY) * (scaleFactor - 1);
 
                     // Apply the smooth transformation
-                    svg.style.transition = 'transform 0.1s ease-out'; // Smooth transition
+                    svg.style.transition = 'transform 0.2s ease-out'; // Smooth transition
                     svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
                 });
 
