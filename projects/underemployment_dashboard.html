@@ -246,18 +246,29 @@
                     window.addEventListener('mouseup', onMouseUp);
                 });
 
-                // Simplified zooming functionality (only scale, no offset adjustment)
+                // Simplified zooming functionality with exponential behavior
                 svgContainer.addEventListener('wheel', (e) => {
                     e.preventDefault();
 
-                    const zoomFactor = 0.1;  // Set zoom sensitivity
-                    const delta = e.deltaY > 0 ? -zoomFactor : zoomFactor; // Zoom in or out
+                    // Zoom factor based on current scale (exponential zoom effect)
+                    const zoomFactor = e.deltaY > 0 ? -0.1 : 0.1;  // Zoom in/out
+                    const newScale = scale + zoomFactor * Math.pow(1.5, scale); // Exponential zoom adjustment
+                    scale = Math.min(Math.max(0.1, newScale), 5); // Clamped between 0.1 and 5
 
-                    // Update scale, clamped between 0.5 and 5 to avoid excessive zoom
-                    scale = Math.min(Math.max(0.5, scale + delta), 5);
+                    // Get the mouse position relative to the container (for centering zoom)
+                    const rect = svgContainer.getBoundingClientRect();
+                    const mouseX = e.clientX - rect.left;
+                    const mouseY = e.clientY - rect.top;
 
-                    // Apply the zoom transformation without modifying offsets
-                    svg.style.transition = 'transform 0.2s ease-out'; // Smooth transition
+                    // Calculate the scaling factor
+                    const scaleFactor = scale / (scale + zoomFactor * Math.pow(1.5, scale));
+
+                    // Adjust the offsets based on zoom to center on the mouse position
+                    offsetX -= (mouseX - offsetX) * (scaleFactor - 1);
+                    offsetY -= (mouseY - offsetY) * (scaleFactor - 1);
+
+                    // Apply smooth transformation for zooming
+                    svg.style.transition = 'transform 0.2s ease-out';
                     svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
                 });
 
@@ -453,6 +464,7 @@
             document.getElementById('nativity-slicer').addEventListener('change', filterTable);
         });
     </script>
+
 
 </body>
 </html>
