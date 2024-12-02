@@ -227,9 +227,7 @@
 
                 // Reset regions when mouse leaves the entire container
                 svgContainer.addEventListener('mouseleave', () => {
-                    if (!selectedRegion) {
-                        resetAllRegions();
-                    }
+                    resetAllRegions();
                     hideTooltip();
                 });
 
@@ -261,7 +259,7 @@
             function deselectRegion() {
                 selectedRegion = null;
                 resetRegion(selectedRegion);
-                filterTable();
+                filterTable(); // Show all table rows
                 resetAllRegions();
             }
 
@@ -417,6 +415,7 @@
             document.getElementById('nativity-slicer').addEventListener('change', filterTable);
         });
     </script>
+
 
 </body>
 </html>
