@@ -261,7 +261,7 @@
 
                     // Calculate the new scale
                     const newScale = scale + delta;
-                    scale = Math.min(Math.max(0.5, newScale), 3); // Ensure scale is within limits
+                    scale = Math.min(Math.max(0.5, newScale), 10); // Ensure scale is within limits
 
                     // Calculate the offset change to zoom centered on the mouse position
                     const scaleDiff = scale - newScale; // Difference in scale
