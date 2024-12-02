@@ -264,12 +264,8 @@
                 const paths = document.querySelectorAll('g.regions path');
                 paths.forEach(path => {
                     if (path.id === regionId) {
-                        path.style.opacity = '1';
-                        path.style.stroke = 'black';
+                        path.style.stroke = 'red';
                         path.style.strokeWidth = '2px';
-                    } else {
-                        path.style.opacity = '0.3';
-                        path.style.stroke = 'none';
                     }
                 });
             }
@@ -279,7 +275,6 @@
                 const paths = document.querySelectorAll('g.regions path');
                 paths.forEach(path => {
                     if (path.id === regionId) {
-                        path.style.opacity = '1';
                         path.style.stroke = 'none';
                         path.style.strokeWidth = '0';
                     }
