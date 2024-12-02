@@ -31,12 +31,13 @@
 
         #svg-container {
             flex: 1;
+            height: 100%;
             min-width: 300px;
             max-width: 800px;
             height: 500px;
             border: 0px solid #ff0000;
             background: #ffffff;
-            display: flex;
+            display:  flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
@@ -46,10 +47,9 @@
         }
 
         #svg-container svg {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
             transition: transform 0.0s ease;
+            width: 100%;
+            height: auto;
         }
 
         #tooltip {
@@ -88,6 +88,7 @@
             padding: 5px;
             font-size: 14px;
         }
+
     </style>
 </head>
 <body>
@@ -96,12 +97,12 @@
         <div>
             <label for="ind-slicer">IND:</label>
             <select id="ind-slicer">
-                <option value="Utilities" selected>Utilities</option>
+                <option value="Utilities" selected>Utilities</option> <!-- Default selection -->
             </select>
 
             <label for="nativity-slicer">NATIVITY:</label>
             <select id="nativity-slicer">
-                <option value="Domestic" selected>Domestic</option>
+                <option value="Domestic" selected>Domestic</option> <!-- Default selection -->
             </select>
         </div>
     </div>
@@ -109,7 +110,7 @@
     <div class="container">
         <div class="left">
             <div id="svg-container">
-                <!-- SVG will be loaded dynamically -->
+                <svg id="map"></svg>
             </div>
             <div id="tooltip"></div>
         </div>
@@ -135,33 +136,24 @@
             </table>
         </div>
     </div>
+</body>
+</html>
+
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             let offsetX = 0;
             let offsetY = 0;
             let scale = 1;
-            let isDragging = false;
+            let isDragging = false; // Track the dragging state
+
             let selectedRegion = null;
 
-            // Fetch and load the SVG map
             fetch('paths.svg')
                 .then(response => response.text())
                 .then(svgContent => {
-                    const container = document.getElementById('svg-container');
-                    const parser = new DOMParser();
-                    const svgDoc = parser.parseFromString(svgContent, 'image/svg+xml');
-                    const svgElement = svgDoc.querySelector('svg');
-
-                    svgElement.setAttribute('width', container.offsetWidth);
-                    svgElement.setAttribute('height', container.offsetHeight);
-                    svgElement.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-                    svgElement.style.display = 'block';
-
-                    container.innerHTML = '';
-                    container.appendChild(svgElement);
-
-                    initMap(svgElement);
+                    document.getElementById('svg-container').innerHTML = svgContent;
+                    initMap();
                 })
                 .catch(error => console.error('Error loading paths.svg:', error));
 
@@ -175,23 +167,31 @@
                 })
                 .catch(error => console.error('Error loading aggregated_data.json:', error));
 
-            function initMap(svg) {
-                const container = document.getElementById('svg-container');
+            // Initialize the map's zoom and pan functionality
+            function initMap() {
+                const svgContainer = document.getElementById('svg-container');
+                const svg = svgContainer.querySelector('svg');
+                const paths = svg.querySelectorAll('path');
 
-                // Enable pan functionality
-                container.addEventListener('mousedown', (e) => {
-                    if (e.button !== 0) return;
+                // Set initial cursor to default
+                svgContainer.style.cursor = 'default';
+
+                // Add pan functionality
+                svgContainer.addEventListener('mousedown', (e) => {
+                    if (e.button !== 0) return; // Only respond to left mouse button
                     isDragging = true;
                     let startX = e.clientX - offsetX;
                     let startY = e.clientY - offsetY;
+                    svgContainer.style.cursor = 'grabbing'; // Set cursor to grabbing when dragging starts
 
-                    const onMouseMove = (event) => {
-                        offsetX = event.clientX - startX;
-                        offsetY = event.clientY - startY;
+                    const onMouseMove = (moveEvent) => {
+                        offsetX = moveEvent.clientX - startX;
+                        offsetY = moveEvent.clientY - startY;
                         svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
                     };
 
                     const onMouseUp = () => {
+                        svgContainer.style.cursor = 'default'; // Reset cursor to default after drag ends
                         isDragging = false;
                         window.removeEventListener('mousemove', onMouseMove);
                         window.removeEventListener('mouseup', onMouseUp);
@@ -201,12 +201,10 @@
                     window.addEventListener('mouseup', onMouseUp);
                 });
 
-                // Enable zoom functionality
-                container.addEventListener('wheel', (e) => {
+                // Add zoom functionality
+                svgContainer.addEventListener('wheel', (e) => {
                     e.preventDefault();
-                    const zoomFactor = 0.1;
-                    scale += e.deltaY > 0 ? -zoomFactor : zoomFactor;
-                    scale = Math.max(0.5, Math.min(scale, 3));
+                    scale = Math.min(Math.max(0.5, scale + e.deltaY * -0.01), 3);
                     svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
                 });
 
