@@ -284,12 +284,12 @@
                 const paths = document.querySelectorAll('g.regions path');
                 paths.forEach(path => {
                     if (path.id === regionId) {
-                        path.style.stroke = 'blue'; // Change border color when selected
-                        path.style.strokeWidth = '3px'; // Make the border thicker when selected
+                        path.style.stroke = 'black'; // Ensure the border is black when selected
+                        path.style.strokeWidth = '2px'; // Maintain border thickness for selected region
                         path.style.opacity = '1'; // Ensure the selected region is fully visible
                     } else {
                         path.style.opacity = '0.3'; // Reduce opacity for other regions
-                        path.style.stroke = 'none'; // Remove border for other regions
+                        path.style.stroke = 'none'; // No border for other regions
                     }
                 });
             }
