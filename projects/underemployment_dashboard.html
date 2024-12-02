@@ -246,32 +246,17 @@
                     window.addEventListener('mouseup', onMouseUp);
                 });
 
-                // Wheel event listener for zooming
+                // Simplified zooming functionality (only scale, no offset adjustment)
                 svgContainer.addEventListener('wheel', (e) => {
                     e.preventDefault();
 
-                    // Calculate the zoom factor
-                    const zoomFactor = 0.2;  // Adjust for smoother zooming
-                    const delta = e.deltaY > 0 ? -zoomFactor : zoomFactor; // Zoom in or out based on wheel direction
+                    const zoomFactor = 0.1;  // Set zoom sensitivity
+                    const delta = e.deltaY > 0 ? -zoomFactor : zoomFactor; // Zoom in or out
 
-                    // Get the mouse position relative to the container
-                    const rect = svgContainer.getBoundingClientRect();
-                    const mouseX = e.clientX - rect.left;
-                    const mouseY = e.clientY - rect.top;
+                    // Update scale, clamped between 0.5 and 5 to avoid excessive zoom
+                    scale = Math.min(Math.max(0.5, scale + delta), 5);
 
-                    // Calculate the new scale
-                    const newScale = scale + delta;
-                    scale = Math.min(Math.max(0.8, newScale), 10); // Ensure scale is within limits
-
-                    // Calculate the offset change to zoom centered on the mouse position
-                    // The scale difference based on the new scale
-                    const scaleFactor = scale / (scale + delta);
-
-                    // Update the offsets based on the scale factor and the mouse position
-                    offsetX -= (mouseX - offsetX) * (scaleFactor - 1);
-                    offsetY -= (mouseY - offsetY) * (scaleFactor - 1);
-
-                    // Apply the smooth transformation
+                    // Apply the zoom transformation without modifying offsets
                     svg.style.transition = 'transform 0.2s ease-out'; // Smooth transition
                     svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
                 });
@@ -313,7 +298,7 @@
                 });
             }
 
-            // Zoom logic - you already have this part, just keeping it consolidated
+            // Zoom logic (only scale changes, no offset)
             function toggleRegionSelection(regionId) {
                 if (selectedRegion === regionId) {
                     deselectRegion();
@@ -467,7 +452,6 @@
             document.getElementById('ind-slicer').addEventListener('change', filterTable);
             document.getElementById('nativity-slicer').addEventListener('change', filterTable);
         });
-
     </script>
 
 </body>
