@@ -245,26 +245,26 @@
                     window.addEventListener('mouseup', onMouseUp);
                 });
 
-                // Zooming functionality with exponential behavior and centering
+                // Zooming functionality with standard behavior and centering
                 svgContainer.addEventListener('wheel', (e) => {
                     e.preventDefault();
 
-                    // Exponential zoom adjustment (faster zoom when zoomed out)
-                    const zoomFactor = e.deltaY > 0 ? -0.1 : 0.1;
-                    const newScale = scale + zoomFactor * Math.pow(1.5, scale); // Exponential zoom
+                    // Simple zoom adjustment (zoom in for up wheel, zoom out for down wheel)
+                    const zoomFactor = e.deltaY < 0 ? 0.1 : -0.1;
+                    const newScale = scale + zoomFactor; // Linear zoom
                     scale = Math.min(Math.max(0.1, newScale), 5); // Clamp between 0.1 and 5
 
-                    // Get center position of the container (for centering zoom)
+                    // Get mouse position relative to the container
                     const rect = svgContainer.getBoundingClientRect();
-                    const containerCenterX = rect.width / 2;
-                    const containerCenterY = rect.height / 2;
+                    const mouseX = e.clientX - rect.left;
+                    const mouseY = e.clientY - rect.top;
 
                     // Calculate the scale factor (how much the image will scale)
-                    const scaleFactor = scale / (scale + zoomFactor * Math.pow(1.5, scale));
+                    const scaleFactor = scale / (scale - zoomFactor);
 
-                    // Adjust the offsets to zoom in/out centered on the container
-                    offsetX -= (containerCenterX - offsetX) * (scaleFactor - 1);
-                    offsetY -= (containerCenterY - offsetY) * (scaleFactor - 1);
+                    // Adjust the offsets to zoom in/out centered on the mouse position
+                    offsetX -= (mouseX - offsetX) * (scaleFactor - 1);
+                    offsetY -= (mouseY - offsetY) * (scaleFactor - 1);
 
                     // Apply smooth transformation for zooming
                     svg.style.transition = 'transform 0.2s ease-out';
@@ -308,7 +308,6 @@
                 });
             }
 
-            // Zoom logic (only scale changes, no offset)
             function toggleRegionSelection(regionId) {
                 if (selectedRegion === regionId) {
                     deselectRegion();
