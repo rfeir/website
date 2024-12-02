@@ -142,6 +142,7 @@
             let offsetY = 0;
             let scale = 1;
             let isDragging = false;
+            let draggingActive = false; // Tracks if dragging is active
             let selectedRegion = null;
 
             fetch('paths.svg')
@@ -169,6 +170,7 @@
                 svgContainer.addEventListener('mousedown', (e) => {
                     if (e.button !== 0) return;
                     isDragging = true;
+                    draggingActive = true; // Start drag tracking
                     const startX = e.clientX - offsetX;
                     const startY = e.clientY - offsetY;
                     svgContainer.style.cursor = 'grabbing';
@@ -180,8 +182,9 @@
                     };
 
                     const onMouseUp = () => {
-                        svgContainer.style.cursor = 'default';
                         isDragging = false;
+                        draggingActive = false; // End drag tracking
+                        svgContainer.style.cursor = 'default';
                         window.removeEventListener('mousemove', onMouseMove);
                         window.removeEventListener('mouseup', onMouseUp);
                     };
@@ -197,6 +200,18 @@
                 });
 
                 paths.forEach(path => {
+                    path.addEventListener('mouseenter', (e) => {
+                        if (!draggingActive) { // Only highlight if not dragging
+                            highlightRegionOnHover(path.id);
+                        }
+                    });
+
+                    path.addEventListener('mouseleave', () => {
+                        if (!draggingActive) { // Reset hover only if not dragging
+                            resetHoverBorders();
+                        }
+                    });
+
                     path.addEventListener('click', (e) => {
                         const regionId = path.id;
                         toggleRegionSelection(regionId);
@@ -245,6 +260,24 @@
                 });
             }
 
+            function highlightRegionOnHover(regionId) {
+                const paths = document.querySelectorAll('path');
+                paths.forEach(path => {
+                    if (path.id === regionId) {
+                        path.style.stroke = 'black';
+                        path.style.strokeWidth = '2px';
+                    }
+                });
+            }
+
+            function resetHoverBorders() {
+                const paths = document.querySelectorAll('path');
+                paths.forEach(path => {
+                    path.style.stroke = 'none';
+                    path.style.strokeWidth = '0';
+                });
+            }
+
             function populateTable(data) {
                 const tbody = document.querySelector('#data-table tbody');
                 tbody.innerHTML = data.map(item => `
@@ -279,8 +312,6 @@
                 rows.forEach(row => {
                     const matchesInd = !indValue || row.cells[1].textContent === indValue;
                     const matchesNativity = !nativityValue || row.cells[2].textContent === nativityValue;
-
-                    // Apply dropdown filters AND region filter if a region is selected
                     const matchesRegion = !selectedRegion || row.dataset.region === selectedRegion;
 
                     row.style.display = matchesInd && matchesNativity && matchesRegion ? '' : 'none';
@@ -313,6 +344,7 @@
             document.getElementById('nativity-slicer').addEventListener('change', filterTable);
         });
     </script>
+
 
 
 
