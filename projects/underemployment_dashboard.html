@@ -253,8 +253,8 @@
 
                     // Get center position of the container (for centering zoom)
                     const rect = svgContainer.getBoundingClientRect();
-                    const containerCenterX = rect.width / 2;
-                    const containerCenterY = rect.height / 2;
+                    const containerCenterX = rect.width / .5;
+                    const containerCenterY = rect.height / .5;
 
                     // Calculate the scale factor (how much the image will scale)
                     const scaleFactor = scale / (scale - zoomFactor);
