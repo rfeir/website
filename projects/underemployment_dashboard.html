@@ -233,40 +233,37 @@
                     hideTooltip();
                 });
 
-                // Close any selected region if click is outside the map
+                // Event listener to close any selected region if clicked outside the map
                 document.addEventListener('click', (e) => {
                     if (!svgContainer.contains(e.target) && selectedRegion !== null) {
                         deselectRegion(); // Deselect the region if clicked outside
                     }
                 });
-            }
 
-            // Select or deselect region
+            // Toggle region selection
             function toggleRegionSelection(regionId) {
-                // Check if selectedRegion is null, and deselect if necessary
-                if (selectedRegion === null) {
-                    deselectRegion();
-                } else if (selectedRegion === regionId) {
+                if (selectedRegion === regionId) {
                     deselectRegion();
                 } else {
                     selectRegion(regionId);
                 }
             }
 
-
             // Select a region and filter the table
             function selectRegion(regionId) {
-                selectedRegion = regionId;
-                highlightRegionOnClick(regionId);
-                filterTableByRegion(regionId);
+                selectedRegion = regionId; // Set the selected region
+                highlightRegionOnClick(regionId); // Highlight the region
+                filterTableByRegion(regionId); // Filter the table
             }
 
             // Deselect region and reset
             function deselectRegion() {
-                selectedRegion = null;
-                resetRegion(selectedRegion);
-                filterTable();
-                resetAllRegions();
+                if (selectedRegion === null) return; // Early exit if no region is selected
+
+                resetRegion(selectedRegion); // Reset the currently selected region
+                selectedRegion = null; // Clear the selected region
+                filterTable(); // Reset the table
+                resetAllRegions(); // Reset visuals for all regions
             }
 
             // Highlight region when hovered
