@@ -242,7 +242,7 @@
                     window.addEventListener('mouseup', onMouseUp);
                 });
 
-                // Zooming functionality with centering on the container's center
+                // Zooming functionality with centering on 50% of the container's height
                 svgContainer.addEventListener('wheel', (e) => {
                     e.preventDefault();
 
@@ -259,15 +259,14 @@
                     // Calculate the scale factor (how much the image will scale)
                     const scaleFactor = scale / (scale - zoomFactor);
 
-                    // Adjust the offsets to zoom in/out centered on the container's center
-                    offsetX -= (containerCenterX - offsetX) * (scaleFactor - 1);
-                    offsetY -= (containerCenterY - offsetY) * (scaleFactor - 1);
+                    // Adjust the offsets to zoom in/out centered on the container's center (50% from top and bottom)
+                    offsetX = containerCenterX - (containerCenterX - offsetX) * scaleFactor;
+                    offsetY = containerCenterY - (containerCenterY - offsetY) * scaleFactor;
 
                     // Apply smooth transformation for zooming
                     svg.style.transition = 'transform 0.2s ease-out';
                     svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
                 });
-
 
                 // Path event listeners
                 paths.forEach(path => {
