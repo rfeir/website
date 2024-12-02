@@ -208,12 +208,16 @@
                 paths.forEach(path => {
                     path.addEventListener('mouseenter', (e) => {
                         const regionId = path.id;
-                        highlightRegionOnHover(regionId);
+                        // Only highlight region on hover if no region is selected
+                        if (!selectedRegion) {
+                            highlightRegionOnHover(regionId);
+                        }
                         showTooltip(e, regionId);
                     });
 
                     path.addEventListener('mouseleave', () => {
                         hideTooltip();
+                        // Only reset all regions if no region is selected
                         if (!selectedRegion) {
                             resetAllRegions();
                         }
@@ -227,7 +231,9 @@
 
                 // Reset regions when mouse leaves the entire container
                 svgContainer.addEventListener('mouseleave', () => {
-                    resetAllRegions();
+                    if (!selectedRegion) {
+                        resetAllRegions();  // Reset hover effects when not selected
+                    }
                     hideTooltip();
                 });
 
