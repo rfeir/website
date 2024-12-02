@@ -5,84 +5,85 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shapefile and Data Table Interaction</title>
     <style>
-    body {
-        font-family: Arial, sans-serif;
-        margin: 0;
-        padding: 0;
-    }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
 
-    .container {
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
-        margin: 10px; /* Reduced margin around the container */
-        gap: 10px; /* Smaller gap between the map and table */
-    }
+        .container {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            margin: 10px; /* Reduced margin around the container */
+            gap: 10px; /* Smaller gap between the map and table */
+        }
 
-    .container .left,
-    .container .right {
-        flex: 1; /* Each takes up equal width */
-        max-width: 50%; /* Limit to 50% of the screen width */
-    }
+        .container .left,
+        .container .right {
+            flex: 1; /* Each takes up equal width */
+            max-width: 50%; /* Limit to 50% of the screen width */
+        }
 
-    #svg-container {
-        flex: 1;
-        min-width: 300px;
-        max-width: 100%; /* Matches container's width */
-        height: 600px;
-        border: 0px solid #ff0000;
-        background: #ffffff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-        position: relative;
-        cursor: grab;
-        user-select: none;
-    }
+        #svg-container {
+            flex: 1;
+            min-width: 300px;
+            max-width: 100%; /* Matches container's width */
+            height: 600px;
+            border: 0px solid #ff0000;
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            cursor: grab;
+            user-select: none;
+        }
 
-    #svg-container svg {
-        transition: transform 0.0s ease;
-        width: 100%;
-        height: 110%;
-    }
+        #svg-container svg {
+            transition: transform 0.0s ease;
+            width: 100%;
+            height: 110%;
+        }
 
-    #tooltip {
-        position: absolute;
-        background-color: rgba(0, 0, 0, 0.7);
-        color: white;
-        padding: 5px;
-        border-radius: 3px;
-        display: none;
-        pointer-events: none;
-    }
+        #tooltip {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px;
+            border-radius: 3px;
+            display: none;
+            pointer-events: none;
+        }
 
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin: 0; /* Removed top margin */
-        overflow-x: auto;
-        max-height: 600px;
-        display: block;
-        overflow-y: scroll;
-    }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0; /* Removed top margin */
+            overflow-x: auto;
+            max-height: 600px;
+            display: block;
+            overflow-y: scroll;
+        }
 
-    th, td {
-        padding: 8px 12px;
-        text-align: left;
-        border: 1px solid #ddd;
-    }
+        th, td {
+            padding: 8px 12px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
 
-    th {
-        background-color: #4CAF50;
-        color: white;
-    }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
 
-    select {
-        margin: 10px;
-        padding: 5px;
-        font-size: 14px;
-    }
+        select {
+            margin: 10px;
+            padding: 5px;
+            font-size: 14px;
+        }
+
 
     </style>
 </head>
@@ -162,33 +163,32 @@
                 })
                 .catch(error => console.error('Error loading aggregated_data.json:', error));
 
+            // Initialize the map's zoom and pan functionality
             function initMap() {
                 const svgContainer = document.getElementById('svg-container');
                 const svg = svgContainer.querySelector('svg');
+                const paths = svg.querySelectorAll('path');
 
-                svg.style.transform = `translate(0px, 0px) scale(${scale})`;
+                // Set initial cursor to default
+                svgContainer.style.cursor = 'default';
 
+                // Add pan functionality
                 svgContainer.addEventListener('mousedown', (e) => {
                     if (e.button !== 0) return; // Only respond to left mouse button
                     isDragging = true;
-                    const startX = e.clientX - offsetX;
-                    const startY = e.clientY - offsetY;
-                    svgContainer.style.cursor = 'grabbing';
+                    let startX = e.clientX - offsetX;
+                    let startY = e.clientY - offsetY;
+                    svgContainer.style.cursor = 'grabbing'; // Set cursor to grabbing when dragging starts
 
                     const onMouseMove = (moveEvent) => {
                         offsetX = moveEvent.clientX - startX;
                         offsetY = moveEvent.clientY - startY;
-
-                        const bounds = calculateBounds(svgContainer, svg, scale);
-                        offsetX = Math.max(bounds.minX, Math.min(bounds.maxX, offsetX));
-                        offsetY = Math.max(bounds.minY, Math.min(bounds.maxY, offsetY));
-
                         svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
                     };
 
                     const onMouseUp = () => {
+                        svgContainer.style.cursor = 'default'; // Reset cursor to default after drag ends
                         isDragging = false;
-                        svgContainer.style.cursor = 'grab';
                         window.removeEventListener('mousemove', onMouseMove);
                         window.removeEventListener('mouseup', onMouseUp);
                     };
@@ -197,55 +197,12 @@
                     window.addEventListener('mouseup', onMouseUp);
                 });
 
+                // Add zoom functionality
                 svgContainer.addEventListener('wheel', (e) => {
                     e.preventDefault();
-                    const zoomFactor = -0.01;
-                    scale = Math.min(Math.max(0.5, scale + e.deltaY * zoomFactor), 3);
-
-                    const bounds = calculateBounds(svgContainer, svg, scale);
-                    offsetX = Math.max(bounds.minX, Math.min(bounds.maxX, offsetX));
-                    offsetY = Math.max(bounds.minY, Math.min(bounds.maxY, offsetY));
-
+                    scale = Math.min(Math.max(0.5, scale + e.deltaY * -0.01), 3);
                     svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
                 });
-
-                // Ensure map elements (paths) respond to hover and click
-                const paths = document.querySelectorAll('g.regions path');
-                paths.forEach(path => {
-                    path.addEventListener('mouseenter', (e) => {
-                        const regionId = path.id;
-                        highlightRegion(regionId);
-                        showTooltip(e, regionId);
-                    });
-
-                    path.addEventListener('mouseleave', () => {
-                        hideTooltip();
-                        if (!selectedRegion) {
-                            resetAllRegions();
-                        }
-                    });
-
-                    path.addEventListener('click', () => {
-                        const regionId = path.id;
-                        toggleRegionSelection(regionId);
-                    });
-                });
-            }
-
-            function calculateBounds(container, svg, scale) {
-                const containerRect = container.getBoundingClientRect();
-                const svgRect = svg.getBBox();
-
-                const scaledWidth = svgRect.width * scale;
-                const scaledHeight = svgRect.height * scale;
-
-                const minX = Math.min(0, containerRect.width - scaledWidth);
-                const maxX = Math.max(0, containerRect.width - scaledWidth);
-                const minY = Math.min(0, containerRect.height - scaledHeight);
-                const maxY = Math.max(0, containerRect.height - scaledHeight);
-
-                return { minX, maxX, minY, maxY };
-            }
 
                 // Hover and click functionality for regions
                 paths.forEach(path => {
