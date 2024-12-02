@@ -242,7 +242,7 @@
                     window.addEventListener('mouseup', onMouseUp);
                 });
 
-                // Zooming functionality with centering on 50% of the container's height
+                // Zooming functionality with centering on 50% from top and bottom of the container
                 svgContainer.addEventListener('wheel', (e) => {
                     e.preventDefault();
 
@@ -259,7 +259,7 @@
                     // Calculate the scale factor (how much the image will scale)
                     const scaleFactor = scale / (scale - zoomFactor);
 
-                    // Adjust the offsets to zoom in/out centered on the container's center (50% from top and bottom)
+                    // Adjust the offsets to zoom in/out based on container's center
                     offsetX = containerCenterX - (containerCenterX - offsetX) * scaleFactor;
                     offsetY = containerCenterY - (containerCenterY - offsetY) * scaleFactor;
 
