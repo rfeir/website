@@ -3,97 +3,407 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive Draggable Map</title>
+    <title>Shapefile and Data Table Interaction</title>
     <style>
         body {
-            margin: 0;
             font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
         }
 
-        #map-container {
-            width: 100vw;
-            height: 100vh;
+        .container {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            margin: 20px;
+            gap: 20px; /* Ensures spacing between left and right */
+        }
+
+        .container .left {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .container .right {
+            flex: 0 0 45%; /* 45% for the table's container width */
+            max-width: 600px; /* Prevents the table from growing too large */
+        }
+
+        #svg-container {
+            flex: 1;
+            min-width: 300px;
+            max-width: 800px;
+            height: 500px;
+            border: 0px solid #ff0000;
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             overflow: hidden;
             position: relative;
-            background: #f4f4f4;
+            cursor: grab;
+            user-select: none;
         }
 
-        #map {
-            position: absolute;
-            top: 0;
-            left: 0;
+        #svg-container svg {
             width: 100%;
             height: 100%;
             object-fit: contain;
-            cursor: grab;
+            transition: transform 0.0s ease;
         }
 
-        #map:active {
-            cursor: grabbing;
+        #tooltip {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px;
+            border-radius: 3px;
+            display: none;
+            pointer-events: none;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 0px;
+            overflow-x: auto;
+            max-height: 500px;
+            display: block;
+            overflow-y: scroll;
+        }
+
+        th, td {
+            padding: 8px 12px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        select {
+            margin: 10px;
+            padding: 5px;
+            font-size: 14px;
         }
     </style>
 </head>
 <body>
-    <div id="map-container">
-        <!-- SVG map will be dynamically loaded here -->
+    <div>
+        <h1>Shapefile and Data Table Interaction</h1>
+        <div>
+            <label for="ind-slicer">IND:</label>
+            <select id="ind-slicer">
+                <option value="Utilities" selected>Utilities</option>
+            </select>
+
+            <label for="nativity-slicer">NATIVITY:</label>
+            <select id="nativity-slicer">
+                <option value="Domestic" selected>Domestic</option>
+            </select>
+        </div>
     </div>
-    
+
+    <div class="container">
+        <div class="left">
+            <div id="svg-container">
+                <!-- SVG will be loaded dynamically -->
+            </div>
+            <div id="tooltip"></div>
+        </div>
+
+        <div class="right">
+            <table id="data-table">
+                <thead>
+                    <tr>
+                        <th>Region</th>
+                        <th>IND</th>
+                        <th>NATIVITY</th>
+                        <th>Mean Wage</th>
+                        <th>Mean Other Income</th>
+                        <th>Mean Age</th>
+                        <th>Underemployment Level</th>
+                        <th>Education Level</th>
+                        <th>Required Education Level</th>
+                        <th>Nativity Percentage</th>
+                        <th>ID</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const container = document.getElementById('map-container');
-            
-            // Load SVG dynamically
+        document.addEventListener('DOMContentLoaded', function () {
+            let offsetX = 0;
+            let offsetY = 0;
+            let scale = 1;
+            let isDragging = false;
+            let selectedRegion = null;
+
+            // Fetch and load the SVG map
             fetch('paths.svg')
                 .then(response => response.text())
-                .then(svgText => {
+                .then(svgContent => {
+                    const container = document.getElementById('svg-container');
                     const parser = new DOMParser();
-                    const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
+                    const svgDoc = parser.parseFromString(svgContent, 'image/svg+xml');
                     const svgElement = svgDoc.querySelector('svg');
-                    
-                    // Adjust the SVG to scale properly
-                    const containerRect = container.getBoundingClientRect();
-                    svgElement.setAttribute('width', containerRect.width);
-                    svgElement.setAttribute('height', containerRect.height);
+
+                    svgElement.setAttribute('width', container.offsetWidth);
+                    svgElement.setAttribute('height', container.offsetHeight);
                     svgElement.setAttribute('preserveAspectRatio', 'xMidYMid meet');
                     svgElement.style.display = 'block';
 
-                    // Add the loaded SVG to the container
-                    svgElement.id = 'map'; // Ensure the SVG has an ID
+                    container.innerHTML = '';
                     container.appendChild(svgElement);
-                    
-                    // Enable dragging for the map
-                    enableDrag(svgElement);
+
+                    initMap(svgElement);
                 })
-                .catch(err => console.error('Error loading SVG:', err));
+                .catch(error => console.error('Error loading paths.svg:', error));
 
-            function enableDrag(svgElement) {
-                let isDragging = false;
-                let startX, startY, currentX = 0, currentY = 0;
+            fetch('aggregated_data.json')
+                .then(response => response.json())
+                .then(data => {
+                    populateTable(data);
+                    populateSlicers(data);
+                    filterTable();
+                    colorMapBasedOnUnderemployment(data);
+                })
+                .catch(error => console.error('Error loading aggregated_data.json:', error));
 
-                svgElement.addEventListener('mousedown', (e) => {
+            function initMap(svg) {
+                const container = document.getElementById('svg-container');
+
+                // Enable pan functionality
+                container.addEventListener('mousedown', (e) => {
+                    if (e.button !== 0) return;
                     isDragging = true;
-                    startX = e.clientX - currentX;
-                    startY = e.clientY - currentY;
+                    let startX = e.clientX - offsetX;
+                    let startY = e.clientY - offsetY;
+
+                    const onMouseMove = (event) => {
+                        offsetX = event.clientX - startX;
+                        offsetY = event.clientY - startY;
+                        svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+                    };
+
+                    const onMouseUp = () => {
+                        isDragging = false;
+                        window.removeEventListener('mousemove', onMouseMove);
+                        window.removeEventListener('mouseup', onMouseUp);
+                    };
+
+                    window.addEventListener('mousemove', onMouseMove);
+                    window.addEventListener('mouseup', onMouseUp);
                 });
 
-                document.addEventListener('mousemove', (e) => {
-                    if (isDragging) {
-                        currentX = e.clientX - startX;
-                        currentY = e.clientY - startY;
-                        svgElement.style.transform = `translate(${currentX}px, ${currentY}px)`;
+                // Enable zoom functionality
+                container.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    const zoomFactor = 0.1;
+                    scale += e.deltaY > 0 ? -zoomFactor : zoomFactor;
+                    scale = Math.max(0.5, Math.min(scale, 3));
+                    svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+                });
+
+                // Hover and click functionality for regions
+                paths.forEach(path => {
+                    path.addEventListener('mouseenter', (e) => {
+                        const regionId = path.id;
+                        highlightRegion(regionId);
+                        showTooltip(e, regionId);
+                    });
+
+                    path.addEventListener('mouseleave', () => {
+                        hideTooltip();
+                        if (!selectedRegion) {
+                            resetAllRegions();
+                        }
+                    });
+
+                    path.addEventListener('click', () => {
+                        const regionId = path.id;
+                        toggleRegionSelection(regionId);
+                    });
+                });
+
+                // Reset regions when mouse leaves the entire container
+                svgContainer.addEventListener('mouseleave', () => {
+                    if (!selectedRegion) {
+                        resetAllRegions();
+                    }
+                    hideTooltip();
+                });
+            }
+
+
+            // Select or deselect region
+            function toggleRegionSelection(regionId) {
+                if (selectedRegion === regionId) {
+                    deselectRegion();
+                } else {
+                    selectRegion(regionId);
+                }
+            }
+
+            // Select a region and filter the table
+            function selectRegion(regionId) {
+                selectedRegion = regionId;
+                highlightRegion(regionId);
+                filterTableByRegion(regionId);
+            }
+
+            // Deselect region and reset
+            function deselectRegion() {
+                selectedRegion = null;
+                resetRegion(selectedRegion);
+                filterTable();
+                resetAllRegions();
+            }
+
+            // Highlight region when hovered or selected
+            function highlightRegion(regionId) {
+                const paths = document.querySelectorAll('g.regions path');
+                paths.forEach(path => {
+                    if (path.id === regionId) {
+                        path.style.opacity = '1';
+                        path.style.stroke = 'black';
+                        path.style.strokeWidth = '2px';
+                    } else {
+                        path.style.opacity = '0.3';
+                        path.style.stroke = 'none';
+                    }
+                });
+            }
+
+            // Reset hover style on region
+            function resetRegion(regionId) {
+                const paths = document.querySelectorAll('g.regions path');
+                paths.forEach(path => {
+                    if (path.id === regionId) {
+                        path.style.opacity = '1';
+                        path.style.stroke = 'none';
+                        path.style.strokeWidth = '0';
+                    }
+                });
+            }
+
+            // Reset all regions to normal state
+            function resetAllRegions() {
+                const paths = document.querySelectorAll('g.regions path');
+                paths.forEach(path => {
+                    path.style.opacity = '1';
+                    path.style.stroke = 'none';
+                    path.style.strokeWidth = '0';
+                });
+            }
+
+            // Show tooltip
+            function showTooltip(event, regionId) {
+                const tooltip = document.getElementById('tooltip');
+                tooltip.textContent = `Region: ${regionId}`;
+                tooltip.style.display = 'block';
+                tooltip.style.left = `${event.pageX + 10}px`;
+                tooltip.style.top = `${event.pageY + 10}px`;
+            }
+
+            // Hide tooltip
+            function hideTooltip() {
+                const tooltip = document.getElementById('tooltip');
+                tooltip.style.display = 'none';
+            }
+
+            // Filter table by selected region
+            function filterTableByRegion(regionId) {
+                const rows = document.querySelectorAll('#data-table tbody tr');
+                rows.forEach(row => {
+                    if (row.dataset.region === regionId) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            }
+
+            // Populate table with data
+            function populateTable(data) {
+                const table = document.getElementById('data-table').getElementsByTagName('tbody')[0];
+                table.innerHTML = '';
+
+                data.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.dataset.region = item.ID;
+                    row.innerHTML = `
+                        <td>${item.STATE}</td>
+                        <td>${item.IND}</td>
+                        <td>${item.NATIVITY}</td>
+                        <td>${item.MEAN_WAGE}</td>
+                        <td>${item.MEAN_OTHER_INCOME}</td>
+                        <td>${item.MEAN_AGE}</td>
+                        <td>${item.UNDEREMPLOYMENT_LEVEL}</td>
+                        <td>${item.EDUCATION_LEVEL}</td>
+                        <td>${item.REQUIRED_EDUCATION_LEVEL}</td>
+                        <td>${item.NATIVITY_PERCENTAGE}</td>
+                        <td>${item.ID}</td>
+                    `;
+                    table.appendChild(row);
+                });
+            }
+
+            // Populate slicers with options
+            function populateSlicers(data) {
+                const indSlicer = document.getElementById('ind-slicer');
+                const nativitySlicer = document.getElementById('nativity-slicer');
+
+                const indOptions = Array.from(new Set(data.map(item => item.IND)));
+                const nativityOptions = Array.from(new Set(data.map(item => item.NATIVITY)));
+
+                indOptions.forEach(ind => {
+                    if (ind !== 'Utilities') {
+                        const option = document.createElement('option');
+                        option.value = ind;
+                        option.textContent = ind;
+                        indSlicer.appendChild(option);
                     }
                 });
 
-                document.addEventListener('mouseup', () => {
-                    isDragging = false;
-                });
-
-                // Optional: Prevent default text selection during drag
-                document.addEventListener('selectstart', (e) => {
-                    if (isDragging) e.preventDefault();
+                nativityOptions.forEach(nativity => {
+                    if (nativity !== 'Domestic') {
+                        const option = document.createElement('option');
+                        option.value = nativity;
+                        option.textContent = nativity;
+                        nativitySlicer.appendChild(option);
+                    }
                 });
             }
+
+            // Filter table based on slicer selections
+            function filterTable() {
+                const indValue = document.getElementById('ind-slicer').value;
+                const nativityValue = document.getElementById('nativity-slicer').value;
+                const rows = document.querySelectorAll('#data-table tbody tr');
+
+                rows.forEach(row => {
+                    const matchesInd = !indValue || row.cells[1].textContent === indValue;
+                    const matchesNativity = !nativityValue || row.cells[2].textContent === nativityValue;
+
+                    if (matchesInd && matchesNativity) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            }
+
+            document.getElementById('ind-slicer').addEventListener('change', filterTable);
+            document.getElementById('nativity-slicer').addEventListener('change', filterTable);
         });
+
+
     </script>
 </body>
 </html>
