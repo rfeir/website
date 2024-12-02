@@ -225,7 +225,7 @@
                     const onMouseUp = () => {
                         isDragging = false;
                         draggingActive = false;
-                        svgContainer.style.cursor = 'pointer';
+                        svgContainer.style.cursor = 'default';
                         window.removeEventListener('mousemove', onMouseMove);
                         window.removeEventListener('mouseup', onMouseUp);
                     };
@@ -403,8 +403,21 @@
                 rows.forEach(row => {
                     const matchesInd = !indValue || row.cells[1].textContent === indValue;
                     const matchesNativity = !nativityValue || row.cells[2].textContent === nativityValue;
+                    const matchesRegion = !selectedRegion || row.dataset.region === selectedRegion;
 
-                    if (matchesInd && matchesNativity) {
+                    if (matchesInd && matchesNativity && matchesRegion) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            }
+
+            // Filter table based on region selection
+            function filterTableByRegion(regionId) {
+                const rows = document.querySelectorAll('#data-table tbody tr');
+                rows.forEach(row => {
+                    if (row.dataset.region === regionId) {
                         row.style.display = '';
                     } else {
                         row.style.display = 'none';
@@ -416,10 +429,6 @@
             document.getElementById('nativity-slicer').addEventListener('change', filterTable);
         });
     </script>
-
-
-
-
 
 </body>
 </html>
