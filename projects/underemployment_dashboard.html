@@ -210,20 +210,12 @@
                 const paths = svg.querySelectorAll('path');
 
                 svgContainer.addEventListener('mousedown', (e) => {
-                    if (e.button !== 0) return; // Ignore non-left-click
-                    isDragging = true; // Set dragging state to true
+                    if (e.button !== 0) return;
+                    isDragging = true;
                     draggingActive = true;
                     const startX = e.clientX - offsetX;
                     const startY = e.clientY - offsetY;
-                    svgContainer.style.cursor = 'grabbing'; // Change cursor to 'grabbing'
-
-                    // Disable hover effects during dragging
-                    paths.forEach(path => {
-                        path.removeEventListener('mouseenter', handleMouseEnter);
-                        path.removeEventListener('mouseleave', handleMouseLeave);
-                        path.removeEventListener('mousemove', handleMouseMove);
-                        path.removeEventListener('click', handleClick);
-                    });
+                    svgContainer.style.cursor = 'grabbing';
 
                     const onMouseMove = (moveEvent) => {
                         offsetX = moveEvent.clientX - startX;
@@ -232,18 +224,9 @@
                     };
 
                     const onMouseUp = () => {
-                        isDragging = false; // Reset dragging state
+                        isDragging = false;
                         draggingActive = false;
-                        svgContainer.style.cursor = 'default'; // Reset cursor to default
-
-                        // Re-enable hover effects after dragging stops
-                        paths.forEach(path => {
-                            path.addEventListener('mouseenter', handleMouseEnter);
-                            path.addEventListener('mouseleave', handleMouseLeave);
-                            path.addEventListener('mousemove', handleMouseMove);
-                            path.addEventListener('click', handleClick);
-                        });
-
+                        svgContainer.style.cursor = 'default';
                         window.removeEventListener('mousemove', onMouseMove);
                         window.removeEventListener('mouseup', onMouseUp);
                     };
@@ -268,10 +251,31 @@
                 });
 
                 paths.forEach(path => {
-                    path.addEventListener('mouseenter', handleMouseEnter);
-                    path.addEventListener('mouseleave', handleMouseLeave);
-                    path.addEventListener('mousemove', handleMouseMove);
-                    path.addEventListener('click', handleClick);
+                    path.addEventListener('mouseenter', (e) => {
+                        if (!draggingActive) {
+                            highlightRegionOnHover(path.id);
+                            showTooltip(e, path.id);
+                        }
+                    });
+
+                    path.addEventListener('mouseleave', () => {
+                        if (!draggingActive) {
+                            resetHoverBorders();
+                            hideTooltip();
+                        }
+                    });
+
+                    path.addEventListener('mousemove', (e) => {
+                        if (!draggingActive) {
+                            moveTooltip(e);
+                        }
+                    });
+
+                    path.addEventListener('click', (e) => {
+                        const regionId = path.id;
+                        toggleRegionSelection(regionId);
+                        e.stopPropagation();
+                    });
                 });
 
                 svgContainer.addEventListener('click', (e) => {
@@ -279,34 +283,6 @@
                         deselectRegion();
                     }
                 });
-            }
-
-            function handleMouseEnter(e) {
-                if (!draggingActive) {
-                    const path = e.target;
-                    highlightRegionOnHover(path.id);
-                    showTooltip(e, path.id);
-                }
-            }
-
-            function handleMouseLeave(e) {
-                if (!draggingActive) {
-                    resetHoverBorders();
-                    hideTooltip();
-                }
-            }
-
-            function handleMouseMove(e) {
-                if (!draggingActive) {
-                    moveTooltip(e);
-                }
-            }
-
-            function handleClick(e) {
-                const path = e.target;
-                const regionId = path.id;
-                toggleRegionSelection(regionId);
-                e.stopPropagation();
             }
 
             function toggleRegionSelection(regionId) {
@@ -463,7 +439,6 @@
             document.getElementById('nativity-slicer').addEventListener('change', filterTable);
         });
     </script>
-
 
 </body>
 </html>
