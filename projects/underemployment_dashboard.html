@@ -176,8 +176,8 @@
                 svgContainer.style.cursor = 'default';
 
                 // Add pan functionality
-                svg.addEventListener('mousedown', (e) => {
-                    if (e.button !== 0) return;
+                svgContainer.addEventListener('mousedown', (e) => {
+                    if (e.button !== 0) return; // Only respond to left mouse button
                     isDragging = true;
                     let startX = e.clientX - offsetX;
                     let startY = e.clientY - offsetY;
@@ -216,9 +216,10 @@
                     });
 
                     path.addEventListener('mouseleave', () => {
-                        const regionId = path.id;
-                        resetRegion(regionId);
                         hideTooltip();
+                        if (!selectedRegion) {
+                            resetAllRegions();
+                        }
                     });
 
                     path.addEventListener('click', () => {
@@ -226,7 +227,16 @@
                         toggleRegionSelection(regionId);
                     });
                 });
+
+                // Reset regions when mouse leaves the entire container
+                svgContainer.addEventListener('mouseleave', () => {
+                    if (!selectedRegion) {
+                        resetAllRegions();
+                    }
+                    hideTooltip();
+                });
             }
+
 
             // Select or deselect region
             function toggleRegionSelection(regionId) {
