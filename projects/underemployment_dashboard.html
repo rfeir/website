@@ -162,32 +162,33 @@
                 })
                 .catch(error => console.error('Error loading aggregated_data.json:', error));
 
-            // Initialize the map's zoom and pan functionality
             function initMap() {
                 const svgContainer = document.getElementById('svg-container');
                 const svg = svgContainer.querySelector('svg');
-                const paths = svg.querySelectorAll('path');
 
-                // Set initial cursor to default
-                svgContainer.style.cursor = 'default';
+                svg.style.transform = `translate(0px, 0px) scale(${scale})`;
 
-                // Add pan functionality
                 svgContainer.addEventListener('mousedown', (e) => {
                     if (e.button !== 0) return; // Only respond to left mouse button
                     isDragging = true;
-                    let startX = e.clientX - offsetX;
-                    let startY = e.clientY - offsetY;
-                    svgContainer.style.cursor = 'grabbing'; // Set cursor to grabbing when dragging starts
+                    const startX = e.clientX - offsetX;
+                    const startY = e.clientY - offsetY;
+                    svgContainer.style.cursor = 'grabbing';
 
                     const onMouseMove = (moveEvent) => {
                         offsetX = moveEvent.clientX - startX;
                         offsetY = moveEvent.clientY - startY;
+
+                        const bounds = calculateBounds(svgContainer, svg, scale);
+                        offsetX = Math.max(bounds.minX, Math.min(bounds.maxX, offsetX));
+                        offsetY = Math.max(bounds.minY, Math.min(bounds.maxY, offsetY));
+
                         svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
                     };
 
                     const onMouseUp = () => {
-                        svgContainer.style.cursor = 'default'; // Reset cursor to default after drag ends
                         isDragging = false;
+                        svgContainer.style.cursor = 'grab';
                         window.removeEventListener('mousemove', onMouseMove);
                         window.removeEventListener('mouseup', onMouseUp);
                     };
@@ -196,12 +197,55 @@
                     window.addEventListener('mouseup', onMouseUp);
                 });
 
-                // Add zoom functionality
                 svgContainer.addEventListener('wheel', (e) => {
                     e.preventDefault();
-                    scale = Math.min(Math.max(0.5, scale + e.deltaY * -0.01), 3);
+                    const zoomFactor = -0.01;
+                    scale = Math.min(Math.max(0.5, scale + e.deltaY * zoomFactor), 3);
+
+                    const bounds = calculateBounds(svgContainer, svg, scale);
+                    offsetX = Math.max(bounds.minX, Math.min(bounds.maxX, offsetX));
+                    offsetY = Math.max(bounds.minY, Math.min(bounds.maxY, offsetY));
+
                     svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
                 });
+
+                // Ensure map elements (paths) respond to hover and click
+                const paths = document.querySelectorAll('g.regions path');
+                paths.forEach(path => {
+                    path.addEventListener('mouseenter', (e) => {
+                        const regionId = path.id;
+                        highlightRegion(regionId);
+                        showTooltip(e, regionId);
+                    });
+
+                    path.addEventListener('mouseleave', () => {
+                        hideTooltip();
+                        if (!selectedRegion) {
+                            resetAllRegions();
+                        }
+                    });
+
+                    path.addEventListener('click', () => {
+                        const regionId = path.id;
+                        toggleRegionSelection(regionId);
+                    });
+                });
+            }
+
+            function calculateBounds(container, svg, scale) {
+                const containerRect = container.getBoundingClientRect();
+                const svgRect = svg.getBBox();
+
+                const scaledWidth = svgRect.width * scale;
+                const scaledHeight = svgRect.height * scale;
+
+                const minX = Math.min(0, containerRect.width - scaledWidth);
+                const maxX = Math.max(0, containerRect.width - scaledWidth);
+                const minY = Math.min(0, containerRect.height - scaledHeight);
+                const maxY = Math.max(0, containerRect.height - scaledHeight);
+
+                return { minX, maxX, minY, maxY };
+            }
 
                 // Hover and click functionality for regions
                 paths.forEach(path => {
