@@ -243,12 +243,16 @@
 
             // Select or deselect region
             function toggleRegionSelection(regionId) {
-                if (selectedRegion === regionId) {
+                // Check if selectedRegion is null, and deselect if necessary
+                if (selectedRegion === null) {
+                    deselectRegion();
+                } else if (selectedRegion === regionId) {
                     deselectRegion();
                 } else {
                     selectRegion(regionId);
                 }
             }
+
 
             // Select a region and filter the table
             function selectRegion(regionId) {
