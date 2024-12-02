@@ -247,24 +247,24 @@
                     window.addEventListener('mouseup', onMouseUp);
                 });
 
-                // Updated zooming functionality with exponential behavior (center zoom)
+                // Zooming functionality with exponential behavior and centering
                 svgContainer.addEventListener('wheel', (e) => {
                     e.preventDefault();
 
-                    // Zoom factor based on wheel direction (exponential zoom effect)
+                    // Exponential zoom adjustment (faster zoom when zoomed out)
                     const zoomFactor = e.deltaY > 0 ? -0.1 : 0.1;
-                    const newScale = scale + zoomFactor * Math.pow(1.5, scale); // Exponential zoom adjustment
-                    scale = Math.min(Math.max(0.1, newScale), 5); // Clamped between 0.1 and 5
+                    const newScale = scale + zoomFactor * Math.pow(1.5, scale); // Exponential zoom
+                    scale = Math.min(Math.max(0.1, newScale), 5); // Clamp between 0.1 and 5
 
-                    // Get the center position of the container
+                    // Get center position of the container (for centering zoom)
                     const rect = svgContainer.getBoundingClientRect();
                     const containerCenterX = rect.width / 2;
                     const containerCenterY = rect.height / 2;
 
-                    // Calculate the scaling factor
+                    // Calculate the scale factor (how much the image will scale)
                     const scaleFactor = scale / (scale + zoomFactor * Math.pow(1.5, scale));
 
-                    // Adjust the offsets to zoom in or out centered on the container's center
+                    // Adjust the offsets to zoom in/out centered on the container
                     offsetX -= (containerCenterX - offsetX) * (scaleFactor - 1);
                     offsetY -= (containerCenterY - offsetY) * (scaleFactor - 1);
 
