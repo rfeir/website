@@ -75,8 +75,8 @@
         }
 
         th {
-            color: rgb(7, 142, 50);
-            border-bottom: 2px solid black;
+            color: rgb(0, 0, 0);
+            border-bottom: 2px solid rgb(7, 142, 50);
         }
 
         tr:nth-child(odd) {
@@ -248,21 +248,17 @@
                 svgContainer.addEventListener('wheel', (e) => {
                     e.preventDefault();
 
-                    // Calculate scale factor
-                    const zoomFactor = 0.01;
-                    scale = Math.min(Math.max(0.5, scale - e.deltaY * zoomFactor), 3);
+                    // Calculate the scale factor
+                    const zoomFactor = 0.1;  // Adjust the zoom factor for smoother zooming
+                    scale += e.deltaY * zoomFactor;
 
-                    // Calculate the center of the SVG container
-                    const centerX = svgContainer.getBoundingClientRect().left + svgContainer.clientWidth / 2;
-                    const centerY = svgContainer.getBoundingClientRect().top + svgContainer.clientHeight / 2;
-
-                    // Adjust offset to keep the zoom centered
-                    offsetX -= (centerX - offsetX) * (scale - 1);
-                    offsetY -= (centerY - offsetY) * (scale - 1);
+                    // Constrain the scale between 0.5 and 3
+                    scale = Math.min(Math.max(0.5, scale), 3);
 
                     // Apply the transformation
-                    svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+                    svg.style.transform = `scale(${scale})`;
                 });
+
 
                 paths.forEach(path => {
                     path.addEventListener('mouseenter', (e) => {
