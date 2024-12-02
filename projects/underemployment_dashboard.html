@@ -217,16 +217,17 @@
                         resetHoverBorders();
                     });
 
-                    path.addEventListener('click', () => {
+                    path.addEventListener('click', (e) => {
                         const regionId = path.id;
                         toggleRegionSelection(regionId);
+                        e.stopPropagation(); // Prevent the click event from bubbling up to the container click
                     });
                 });
 
-                // Close any selected region if click is outside the map
-                document.addEventListener('click', (e) => {
-                    if (!svgContainer.contains(e.target) && selectedRegion !== null) {
-                        deselectRegion(); // Deselect the region if clicked outside
+                // Handle click on the container to deselect region
+                svgContainer.addEventListener('click', (e) => {
+                    if (!e.target.closest('path')) { // Check if the click was not on a path (region)
+                        deselectRegion(); // Deselect region if clicked outside any region
                     }
                 });
             }
@@ -250,9 +251,9 @@
             // Deselect region and reset
             function deselectRegion() {
                 selectedRegion = null;
-                resetRegion(selectedRegion);
+                resetRegion(); // Reset region styles
                 filterTable(); // Show all table rows
-                resetAllRegions();
+                resetAllRegions(); // Reset all regions to normal state
             }
 
             // Highlight region when hovered
@@ -406,6 +407,7 @@
             document.getElementById('nativity-slicer').addEventListener('change', filterTable);
         });
     </script>
+
 
 
 
