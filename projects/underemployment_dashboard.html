@@ -149,14 +149,18 @@
     }
 
     #svg-container {
-        cursor: pointer; /* Default pointer cursor */
+        cursor: default; /* Default cursor */
     }
 </style>
 
 <div id="tooltip"></div>
 <div id="svg-container"></div>
-<select id="ind-slicer"></select>
-<select id="nativity-slicer"></select>
+<select id="ind-slicer">
+    <option value="">All Industries</option>
+</select>
+<select id="nativity-slicer">
+    <option value="">All Nativity</option>
+</select>
 <table id="data-table">
     <thead>
         <tr>
