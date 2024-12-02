@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shapefile and Data Table Interaction</title>
+    <title>Underemployment Dashboard</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -99,18 +99,15 @@
 </head>
 <body>
     <div>
-        <h1>Shapefile and Data Table Interaction</h1>
-        <div>
-            <label for="ind-slicer">IND:</label>
-            <select id="ind-slicer">
-                <option value="Utilities" selected>Utilities</option> <!-- Default selection -->
-            </select>
+        <label for="ind-slicer">IND:</label>
+        <select id="ind-slicer">
+            <option value="Utilities" selected>Utilities</option> <!-- Default selection -->
+        </select>
 
-            <label for="nativity-slicer">NATIVITY:</label>
-            <select id="nativity-slicer">
-                <option value="Domestic" selected>Domestic</option> <!-- Default selection -->
-            </select>
-        </div>
+        <label for="nativity-slicer">NATIVITY:</label>
+        <select id="nativity-slicer">
+            <option value="Domestic" selected>Domestic</option> <!-- Default selection -->
+        </select>
     </div>
 
     <div class="container">
@@ -245,7 +242,7 @@
                     window.addEventListener('mouseup', onMouseUp);
                 });
 
-                // Zooming functionality with standard behavior and centering
+                // Zooming functionality with centering on the container's center
                 svgContainer.addEventListener('wheel', (e) => {
                     e.preventDefault();
 
@@ -254,22 +251,23 @@
                     const newScale = scale + zoomFactor; // Linear zoom
                     scale = Math.min(Math.max(0.1, newScale), 5); // Clamp between 0.1 and 5
 
-                    // Get mouse position relative to the container
+                    // Get center position of the container (for centering zoom)
                     const rect = svgContainer.getBoundingClientRect();
-                    const mouseX = e.clientX - rect.left;
-                    const mouseY = e.clientY - rect.top;
+                    const containerCenterX = rect.width / 2;
+                    const containerCenterY = rect.height / 2;
 
                     // Calculate the scale factor (how much the image will scale)
                     const scaleFactor = scale / (scale - zoomFactor);
 
-                    // Adjust the offsets to zoom in/out centered on the mouse position
-                    offsetX -= (mouseX - offsetX) * (scaleFactor - 1);
-                    offsetY -= (mouseY - offsetY) * (scaleFactor - 1);
+                    // Adjust the offsets to zoom in/out centered on the container's center
+                    offsetX -= (containerCenterX - offsetX) * (scaleFactor - 1);
+                    offsetY -= (containerCenterY - offsetY) * (scaleFactor - 1);
 
                     // Apply smooth transformation for zooming
                     svg.style.transition = 'transform 0.2s ease-out';
                     svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
                 });
+
 
                 // Path event listeners
                 paths.forEach(path => {
