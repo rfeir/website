@@ -249,12 +249,12 @@
                     // Simple zoom adjustment (zoom in for up wheel, zoom out for down wheel)
                     const zoomFactor = e.deltaY < 0 ? 0.1 : -0.1;
                     const newScale = scale + zoomFactor; // Linear zoom
-                    scale = Math.min(Math.max(0.8, newScale), 10); // Clamp between 0.1 and 5
+                    scale = Math.min(Math.max(0.8, newScale), 10); // Clamp between 0.8 and 10
 
                     // Get center position of the container (for centering zoom)
                     const rect = svgContainer.getBoundingClientRect();
-                    const containerCenterX = rect.width / 10;
-                    const containerCenterY = rect.height / 10;
+                    const containerCenterX = rect.width / 2;
+                    const containerCenterY = rect.height / 2;
 
                     // Calculate the scale factor (how much the image will scale)
                     const scaleFactor = scale / (scale - zoomFactor);
@@ -263,10 +263,15 @@
                     offsetX = containerCenterX - (containerCenterX - offsetX) * scaleFactor;
                     offsetY = containerCenterY - (containerCenterY - offsetY) * scaleFactor;
 
+                    // Prevent the offsets from moving the content too far out of bounds
+                    offsetX = Math.min(Math.max(offsetX, 0), rect.width - rect.width * scale);
+                    offsetY = Math.min(Math.max(offsetY, 0), rect.height - rect.height * scale);
+
                     // Apply smooth transformation for zooming
-                    svg.style.transition = 'transform 0.0s ease-out';
+                    svg.style.transition = 'transform 0.2s ease-out';
                     svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
                 });
+
 
                 // Path event listeners
                 paths.forEach(path => {
