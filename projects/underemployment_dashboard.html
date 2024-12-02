@@ -255,17 +255,17 @@
                     const newScale = scale + zoomFactor * Math.pow(1.5, scale); // Exponential zoom adjustment
                     scale = Math.min(Math.max(0.1, newScale), 5); // Clamped between 0.1 and 5
 
-                    // Get the mouse position relative to the container (for centering zoom)
+                    // Get the center position of the container
                     const rect = svgContainer.getBoundingClientRect();
-                    const mouseX = e.clientX - rect.left;
-                    const mouseY = e.clientY - rect.top;
+                    const containerCenterX = rect.width / 2;
+                    const containerCenterY = rect.height / 2;
 
                     // Calculate the scaling factor
                     const scaleFactor = scale / (scale + zoomFactor * Math.pow(1.5, scale));
 
-                    // Adjust the offsets based on zoom to center on the mouse position
-                    offsetX -= (mouseX - offsetX) * (scaleFactor - 1);
-                    offsetY -= (mouseY - offsetY) * (scaleFactor - 1);
+                    // Adjust the offsets to zoom in or out centered on the container's center
+                    offsetX -= (containerCenterX - offsetX) * (scaleFactor - 1);
+                    offsetY -= (containerCenterY - offsetY) * (scaleFactor - 1);
 
                     // Apply smooth transformation for zooming
                     svg.style.transition = 'transform 0.2s ease-out';
@@ -464,6 +464,7 @@
             document.getElementById('nativity-slicer').addEventListener('change', filterTable);
         });
     </script>
+
 
 
 </body>
