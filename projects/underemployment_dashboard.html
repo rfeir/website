@@ -452,24 +452,23 @@
                     const regionId = path.id; // Get the ID of the current path (should match the data region ID)
                     const underemploymentLevel = underemploymentMap[regionId];
 
-                    // If the region exists in the data and has a valid UNDEREMPLOYMENT_LEVEL
-                    if (underemploymentLevel !== undefined && underemploymentLevel !== null) {
-                        const color = getColorForUnderemployment(underemploymentLevel);
-                        path.style.fill = color; // Apply the color
-                    } else {
-                        path.style.fill = '#e9e9e9'; // Default color for regions with no data
-                    }
+                    // Call getColorForUnderemployment to get the correct color
+                    const color = getColorForUnderemployment(underemploymentLevel);
+
+                    // Apply the color
+                    path.style.fill = color;
                 });
             }
 
+
             // Define a color scale function from the custom colorscale
             function getColorForUnderemployment(level) {
-                // If the UNDEREMPLOYMENT_LEVEL is undefined or null, return the default color
-                if (level === undefined || level === null) {
-                    return '#e9e9e9';  // Default color for missing data
+                // Check if the level is a valid number and finite
+                if (typeof level !== 'number' || !Number.isFinite(level)) {
+                    return '#e9e9e9'; // Default color for invalid or missing data
                 }
 
-                // Now, proceed with the scaling logic for valid UNDEREMPLOYMENT_LEVEL values
+                // Now proceed with the scaling logic for valid UNDEREMPLOYMENT_LEVEL values
                 const clampedLevel = Math.min(Math.max(level, 0), 2); // Clamp values between 0 and 2
 
                 // Map the UNDEREMPLOYMENT_LEVEL (0 to 2) into the colorscale (0/13 to 14/13)
@@ -486,6 +485,7 @@
 
                 return color;
             }
+
 
             // Update map color on table filter
             function filterTable() {
