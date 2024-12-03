@@ -227,7 +227,6 @@
                     offsetY = Math.min(Math.max(offsetY, 0), rect.height - rect.height * scale);
 
                     // Apply smooth transformation for zooming
-                    svg.style.transition = 'transform 0.2s ease-out';
                     svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
                 });
 
