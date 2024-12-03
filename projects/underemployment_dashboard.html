@@ -407,35 +407,46 @@
                 });
             }
 
-            // Filter table based on slicer selections
+            // Filter table and update SVG path colors
             function filterTable() {
                 const indValue = document.getElementById('ind-slicer').value;
                 const nativityValue = document.getElementById('nativity-slicer').value;
-                const rows = document.querySelectorAll('#data-table tbody tr');
 
-                rows.forEach(row => {
-                    const matchesInd = !indValue || row.cells[1].textContent === indValue;
-                    const matchesNativity = !nativityValue || row.cells[2].textContent === nativityValue;
-                    const matchesRegion = !selectedRegion || row.dataset.region === selectedRegion;
+                const filteredData = data.filter(item => {
+                    const matchesInd = indValue ? item.IND === indValue : true;
+                    const matchesNativity = nativityValue ? item.NATIVITY === nativityValue : true;
+                    return matchesInd && matchesNativity;
+                });
 
-                    if (matchesInd && matchesNativity && matchesRegion) {
-                        row.style.display = '';
-                    } else {
-                        row.style.display = 'none';
+                // Update table display
+                populateTable(filteredData);
+                updatePathColors(filteredData);
+            }
+
+            // Update SVG path colors based on UNDEREMPLOYMENT_LEVEL
+            function updatePathColors(data) {
+                const paths = document.querySelectorAll('svg path');
+                const underemploymentMap = data.reduce((acc, item) => {
+                    acc[item.ID] = item.UNDEREMPLOYMENT_LEVEL;
+                    return acc;
+                }, {});
+
+                paths.forEach(path => {
+                    const regionId = path.id;
+                    const underemploymentLevel = underemploymentMap[regionId];
+
+                    if (underemploymentLevel !== undefined) {
+                        const color = getColorForUnderemployment(underemploymentLevel);
+                        path.style.fill = color;
                     }
                 });
             }
 
-            // Filter table based on region selection
-            function filterTableByRegion(regionId) {
-                const rows = document.querySelectorAll('#data-table tbody tr');
-                rows.forEach(row => {
-                    if (row.dataset.region === regionId) {
-                        row.style.display = '';
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
+            // Define a color scale function from white (0) to black (2)
+            function getColorForUnderemployment(level) {
+                const clampedLevel = Math.min(Math.max(level, 0), 2);
+                const intensity = Math.round((1 - clampedLevel / 2) * 255);
+                return `rgb(${intensity}, ${intensity}, ${intensity})`;
             }
 
             document.getElementById('ind-slicer').addEventListener('change', filterTable);
