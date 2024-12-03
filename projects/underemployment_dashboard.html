@@ -125,54 +125,39 @@
         </select>
     </div>
 
-    <div id="container">
-        <div id="svg-container">
-            <!-- Map SVG will be dynamically loaded here -->
+    <div class="container">
+        <div class="left">
+            <div id="svg-container">
+                <svg id="map"></svg>
+            </div>
+            <div id="tooltip"></div>
         </div>
-        <table id="data-table">
-            <thead>
-                <tr>
-                    <th>State</th>
-                    <th>Industry</th>
-                    <th>Nativity</th>
-                    <th>Mean Wage</th>
-                    <th>Mean Other Income</th>
-                    <th>Mean Age</th>
-                    <th>Underemployment Level</th>
-                    <th>Education Level</th>
-                    <th>Required Education Level</th>
-                    <th>Nativity Percentage</th>
-                    <th>Region ID</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Table data will be dynamically populated -->
-            </tbody>
-        </table>
+
+        <div class="right">
+            <table id="data-table">
+                <thead>
+                    <tr>
+                        <th>Region</th>
+                        <th>IND</th>
+                        <th>NATIVITY</th>
+                        <th>Mean Wage</th>
+                        <th>Mean Other Income</th>
+                        <th>Mean Age</th>
+                        <th>Underemployment Level</th>
+                        <th>Education Level</th>
+                        <th>Required Education Level</th>
+                        <th>Nativity Percentage</th>
+                        <th>ID</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
     </div>
-
-    <div id="tooltip"></div>
-
 </body>
 </html>
 
-
-<style>
-    #tooltip {
-        position: absolute;
-        background-color: rgba(0, 0, 0, 0.8);
-        color: #fff;
-        padding: 5px 10px;
-        border-radius: 5px;
-        font-size: 12px;
-        pointer-events: none;
-        display: none; /* Hidden by default */
-    }
-
-    #svg-container {
-        cursor: pointer; /* Default pointer cursor */
-    }
-</style>
+<!--try making the script section not indented tomorrow. It went back to loading full table. Still need to fix zooming. Coloring works though!--> 
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -183,53 +168,23 @@
             let draggingActive = false;
             let selectedRegion = null;
             const tooltip = document.getElementById('tooltip');
-            const spinner = document.createElement('div');
-            spinner.id = 'loading-spinner';
-            spinner.textContent = 'Loading...';
-            spinner.style.cssText = `
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                background: rgba(0, 0, 0, 0.7);
-                color: white;
-                padding: 10px 20px;
-                border-radius: 5px;
-                display: none;
-            `;
-            document.body.appendChild(spinner);
+            let data = [];  // Declare a variable to hold the data
 
-            let data = []; // Holds fetched data
-
-            // Show loading spinner during map loading
-            function showSpinner() {
-                spinner.style.display = 'block';
-            }
-
-            function hideSpinner() {
-                spinner.style.display = 'none';
-            }
-
-            showSpinner();
             fetch('paths.svg')
                 .then(response => response.text())
                 .then(svgContent => {
-                    hideSpinner();
                     document.getElementById('svg-container').innerHTML = svgContent;
                     initMap();
                 })
-                .catch(error => {
-                    console.error('Error loading paths.svg:', error);
-                    hideSpinner();
-                });
+                .catch(error => console.error('Error loading paths.svg:', error));
 
             fetch('aggregated_data.json')
                 .then(response => response.json())
                 .then(fetchedData => {
-                    data = fetchedData; // Store data globally
+                    data = fetchedData; // Store the data in the global variable
                     populateSlicers(data);
-                    filterTable(); // Apply filter on page load
-                    populateTable(data); // Populate table after filtering
+                    filterTable(); // Apply the filter when data is loaded and slicers are populated
+                    populateTable(data); // Populate the table after filtering
                 })
                 .catch(error => console.error('Error loading aggregated_data.json:', error));
 
@@ -265,17 +220,37 @@
                     window.addEventListener('mouseup', onMouseUp);
                 });
 
-                // Zooming functionality with dynamic scaling
+                // Zooming functionality with centering on 50% from top and bottom of the container
                 svgContainer.addEventListener('wheel', (e) => {
                     e.preventDefault();
-                    const zoomFactor = e.deltaY < 0 ? 0.1 : -0.1;
-                    scale = Math.min(Math.max(0.8, scale + zoomFactor), 10);
 
-                    // Adjust transformation on zoom
+                    // Simple zoom adjustment (zoom in for up wheel, zoom out for down wheel)
+                    const zoomFactor = e.deltaY < 0 ? 0.1 : -0.1;
+                    const newScale = scale + zoomFactor; // Linear zoom
+                    scale = Math.min(Math.max(0.8, newScale), 10); // Clamp between 0.8 and 10
+
+                    // Get center position of the container (for centering zoom)
+                    const rect = svgContainer.getBoundingClientRect();
+                    const containerCenterX = rect.width / 2;
+                    const containerCenterY = rect.height / 2;
+
+                    // Scale factor calculation
+                    const scaleFactor = scale / (scale - zoomFactor);
+
+                    // Adjust the offset directly based on zooming into the center
+                    offsetX = containerCenterX - (containerCenterX - offsetX) * scaleFactor;
+                    offsetY = containerCenterY - (containerCenterY - offsetY) * scaleFactor;
+
+                    // Ensure the image stays within bounds by clamping the offsets
+                    offsetX = Math.max(Math.min(offsetX, 0), rect.width - rect.width * scale);
+                    offsetY = Math.max(Math.min(offsetY, 0), rect.height - rect.height * scale);
+
+                    // Apply smooth transformation for zooming
+                    svg.style.transition = 'transform 0.2s ease-out';
                     svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
                 });
 
-                // Path hover and selection logic
+                // Path event listeners
                 paths.forEach(path => {
                     path.addEventListener('mouseenter', (e) => {
                         if (!draggingActive) {
@@ -304,11 +279,66 @@
                     });
                 });
 
-                // Clicking outside to deselect
-                svgContainer.addEventListener('click', () => deselectRegion());
+                // Clicking outside to deselect region
+                svgContainer.addEventListener('click', (e) => {
+                    if (!e.target.closest('path')) {
+                        deselectRegion();
+                    }
+                });
             }
 
-            // Tooltip functionality
+            function toggleRegionSelection(regionId) {
+                if (selectedRegion === regionId) {
+                    deselectRegion();
+                } else {
+                    selectRegion(regionId);
+                }
+            }
+
+            function selectRegion(regionId) {
+                selectedRegion = regionId;
+                highlightRegion(regionId);
+                filterTableByRegion(regionId);
+            }
+
+            function deselectRegion() {
+                selectedRegion = null;
+                resetRegion();
+                filterTable();
+            }
+
+            function highlightRegion(regionId) {
+                const paths = document.querySelectorAll('path');
+                paths.forEach(path => {
+                    path.style.opacity = path.id === regionId ? '1' : '0.3';
+                });
+            }
+
+            function resetRegion() {
+                const paths = document.querySelectorAll('path');
+                paths.forEach(path => {
+                    path.style.opacity = '1';
+                });
+            }
+
+            function highlightRegionOnHover(regionId) {
+                const paths = document.querySelectorAll('path');
+                paths.forEach(path => {
+                    if (path.id === regionId) {
+                        path.style.stroke = 'black';
+                        path.style.strokeWidth = '2px';
+                    }
+                });
+            }
+
+            function resetHoverBorders() {
+                const paths = document.querySelectorAll('path');
+                paths.forEach(path => {
+                    path.style.stroke = 'none';
+                    path.style.strokeWidth = '0';
+                });
+            }
+
             function showTooltip(event, regionId) {
                 tooltip.textContent = `Region: ${regionId}`;
                 tooltip.style.display = 'block';
@@ -324,7 +354,7 @@
                 tooltip.style.top = `${event.pageY + 10}px`;
             }
 
-            // Table and slicer logic
+            // Populate table with data
             function populateTable(data) {
                 const table = document.getElementById('data-table').getElementsByTagName('tbody')[0];
                 table.innerHTML = '';
@@ -349,6 +379,7 @@
                 });
             }
 
+            // Populate slicers with options
             function populateSlicers(data) {
                 const indSlicer = document.getElementById('ind-slicer');
                 const nativitySlicer = document.getElementById('nativity-slicer');
@@ -375,6 +406,7 @@
                 });
             }
 
+            // Filter table and update SVG path colors
             function filterTable() {
                 const indValue = document.getElementById('ind-slicer').value;
                 const nativityValue = document.getElementById('nativity-slicer').value;
@@ -385,13 +417,15 @@
                     return matchesInd && matchesNativity;
                 });
 
+                // Update table display
                 populateTable(filteredData);
                 updatePathColors(filteredData);
             }
 
-            function updatePathColors(filteredData) {
+            // Update SVG path colors based on UNDEREMPLOYMENT_LEVEL
+            function updatePathColors(data) {
                 const paths = document.querySelectorAll('svg path');
-                const underemploymentMap = filteredData.reduce((acc, item) => {
+                const underemploymentMap = data.reduce((acc, item) => {
                     acc[item.ID] = item.UNDEREMPLOYMENT_LEVEL;
                     return acc;
                 }, {});
@@ -399,6 +433,7 @@
                 paths.forEach(path => {
                     const regionId = path.id;
                     const underemploymentLevel = underemploymentMap[regionId];
+
                     if (underemploymentLevel !== undefined) {
                         const color = getColorForUnderemployment(underemploymentLevel);
                         path.style.fill = color;
@@ -406,17 +441,17 @@
                 });
             }
 
+            // Define a color scale function from white (0) to black (2)
             function getColorForUnderemployment(level) {
                 const clampedLevel = Math.min(Math.max(level, 0), 2);
                 const intensity = Math.round((1 - clampedLevel / 2) * 255);
                 return `rgb(${intensity}, ${intensity}, ${intensity})`;
             }
 
-            // Attach slicer change listeners
+            // Listen for slicer changes to filter the table
             document.getElementById('ind-slicer').addEventListener('change', filterTable);
             document.getElementById('nativity-slicer').addEventListener('change', filterTable);
         });
-
     </script>
 
 
