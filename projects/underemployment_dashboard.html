@@ -420,21 +420,20 @@
 
             // Define the custom colorscale
             const colorscale = [
-                [0/14, "#F4F6DB"],
-                [1/14, "#DFEEB4"],
-                [2/14, "#C4F08F"],
-                [3/14, "#A8EA81"],
-                [4/14, "#8DE07E"],
-                [5/14, "#73D67E"],
-                [6/14, "#57CD82"],
-                [7/14, "#3BC38A"],
-                [8/14, "#21B697"],
-                [9/14, "#0E9FA2"],
-                [10/14, "#0580A1"],
-                [11/14, "#016092"],
-                [12/14, "#01407B"],
-                [13/14, "#02215F"],
-                [14/14, "#030240"],
+                [0/13, "#DFEEB4"],
+                [1/13, "#C4F08F"],
+                [2/13, "#A8EA81"],
+                [3/13, "#8DE07E"],
+                [4/13, "#73D67E"],
+                [5/13, "#57CD82"],
+                [6/13, "#3BC38A"],
+                [7/13, "#21B697"],
+                [8/13, "#0E9FA2"],
+                [9/13, "#0580A1"],
+                [10/13, "#016092"],
+                [11/13, "#01407B"],
+                [12/13, "#02215F"],
+                [13/13, "#030240"],
             ];
 
             // Update SVG path colors based on UNDEREMPLOYMENT_LEVEL using the new colorscale
@@ -468,12 +467,12 @@
                 const clampedLevel = Math.min(Math.max(level, 0), 2); // Clamp values between 0 and 2
 
                 // Map the UNDEREMPLOYMENT_LEVEL (0 to 2) into the colorscale (0/14 to 14/14)
-                const scaleValue = (clampedLevel / 2) * 14; // Scale level to range 0 to 14
+                const scaleValue = (clampedLevel / 2) * 13; // Scale level to range 0 to 14
 
                 // Find the closest value in the colorscale
                 let color = "#e0e0e0"; // Default color for unfiltered regions
                 for (let i = 0; i < colorscale.length; i++) {
-                    if (scaleValue <= colorscale[i][0] * 14) {
+                    if (scaleValue <= colorscale[i][0] * 13) {
                         color = colorscale[i][1];
                         break;
                     }
