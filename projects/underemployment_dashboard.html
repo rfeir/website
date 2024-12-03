@@ -142,7 +142,46 @@
 </body>
 </html>
 
-<!--try making the script section not indented tomorrow--> 
+
+<style>
+    #tooltip {
+        position: absolute;
+        background-color: rgba(0, 0, 0, 0.8);
+        color: #fff;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 12px;
+        pointer-events: none;
+        display: none; /* Hidden by default */
+    }
+
+    #svg-container {
+        cursor: pointer; /* Default pointer cursor */
+    }
+</style>
+
+<div id="tooltip"></div>
+<div id="svg-container"></div>
+<select id="ind-slicer"></select>
+<select id="nativity-slicer"></select>
+<table id="data-table">
+    <thead>
+        <tr>
+            <th>State</th>
+            <th>Industry</th>
+            <th>Nativity</th>
+            <th>Mean Wage</th>
+            <th>Mean Other Income</th>
+            <th>Mean Age</th>
+            <th>Underemployment Level</th>
+            <th>Education Level</th>
+            <th>Required Education Level</th>
+            <th>Nativity Percentage</th>
+            <th>ID</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -153,7 +192,6 @@
             let draggingActive = false;
             let selectedRegion = null;
             const tooltip = document.getElementById('tooltip');
-            let data = [];  // Declare a variable to hold the data
 
             fetch('paths.svg')
                 .then(response => response.text())
@@ -165,11 +203,10 @@
 
             fetch('aggregated_data.json')
                 .then(response => response.json())
-                .then(fetchedData => {
-                    data = fetchedData; // Store the data in the global variable
+                .then(data => {
+                    populateTable(data);
                     populateSlicers(data);
-                    filterTable(); // Apply the filter when data is loaded and slicers are populated
-                    populateTable(data); // Populate the table after filtering
+                    filterTable();
                 })
                 .catch(error => console.error('Error loading aggregated_data.json:', error));
 
@@ -219,21 +256,22 @@
                     const containerCenterX = rect.width / 2;
                     const containerCenterY = rect.height / 2;
 
-                    // Scale factor calculation
+                    // Calculate the scale factor (how much the image will scale)
                     const scaleFactor = scale / (scale - zoomFactor);
 
-                    // Adjust the offset directly based on zooming into the center
+                    // Adjust the offsets to zoom in/out based on container's center
                     offsetX = containerCenterX - (containerCenterX - offsetX) * scaleFactor;
                     offsetY = containerCenterY - (containerCenterY - offsetY) * scaleFactor;
 
-                    // Ensure the image stays within bounds by clamping the offsets
-                    offsetX = Math.max(Math.min(offsetX, 0), rect.width - rect.width * scale);
-                    offsetY = Math.max(Math.min(offsetY, 0), rect.height - rect.height * scale);
+                    // Prevent the offsets from moving the content too far out of bounds
+                    offsetX = Math.min(Math.max(offsetX, 0), rect.width - rect.width * scale);
+                    offsetY = Math.min(Math.max(offsetY, 0), rect.height - rect.height * scale);
 
                     // Apply smooth transformation for zooming
                     svg.style.transition = 'transform 0.2s ease-out';
                     svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
                 });
+
 
                 // Path event listeners
                 paths.forEach(path => {
@@ -369,10 +407,6 @@
                 const indSlicer = document.getElementById('ind-slicer');
                 const nativitySlicer = document.getElementById('nativity-slicer');
 
-                // Add default "All" options
-                indSlicer.innerHTML = '<option value="">All</option>';
-                nativitySlicer.innerHTML = '<option value="">All</option>';
-
                 const indOptions = Array.from(new Set(data.map(item => item.IND)));
                 const nativityOptions = Array.from(new Set(data.map(item => item.NATIVITY)));
 
@@ -395,53 +429,43 @@
                 });
             }
 
-            // Filter table and update SVG path colors
+            // Filter table based on slicer selections
             function filterTable() {
                 const indValue = document.getElementById('ind-slicer').value;
                 const nativityValue = document.getElementById('nativity-slicer').value;
+                const rows = document.querySelectorAll('#data-table tbody tr');
 
-                const filteredData = data.filter(item => {
-                    const matchesInd = indValue ? item.IND === indValue : true;
-                    const matchesNativity = nativityValue ? item.NATIVITY === nativityValue : true;
-                    return matchesInd && matchesNativity;
-                });
+                rows.forEach(row => {
+                    const matchesInd = !indValue || row.cells[1].textContent === indValue;
+                    const matchesNativity = !nativityValue || row.cells[2].textContent === nativityValue;
+                    const matchesRegion = !selectedRegion || row.dataset.region === selectedRegion;
 
-                // Update table display
-                populateTable(filteredData);
-                updatePathColors(filteredData);
-            }
-
-            // Update SVG path colors based on UNDEREMPLOYMENT_LEVEL
-            function updatePathColors(data) {
-                const paths = document.querySelectorAll('svg path');
-                const underemploymentMap = data.reduce((acc, item) => {
-                    acc[item.ID] = item.UNDEREMPLOYMENT_LEVEL;
-                    return acc;
-                }, {});
-
-                paths.forEach(path => {
-                    const regionId = path.id;
-                    const underemploymentLevel = underemploymentMap[regionId];
-
-                    if (underemploymentLevel !== undefined) {
-                        const color = getColorForUnderemployment(underemploymentLevel);
-                        path.style.fill = color;
+                    if (matchesInd && matchesNativity && matchesRegion) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
                     }
                 });
             }
 
-            // Define a color scale function from white (0) to black (2)
-            function getColorForUnderemployment(level) {
-                const clampedLevel = Math.min(Math.max(level, 0), 2);
-                const intensity = Math.round((1 - clampedLevel / 2) * 255);
-                return `rgb(${intensity}, ${intensity}, ${intensity})`;
+            // Filter table based on region selection
+            function filterTableByRegion(regionId) {
+                const rows = document.querySelectorAll('#data-table tbody tr');
+                rows.forEach(row => {
+                    if (row.dataset.region === regionId) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
             }
 
-            // Listen for slicer changes to filter the table
             document.getElementById('ind-slicer').addEventListener('change', filterTable);
             document.getElementById('nativity-slicer').addEventListener('change', filterTable);
         });
+
     </script>
+
 
 
 </body>
