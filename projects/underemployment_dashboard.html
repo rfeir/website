@@ -142,7 +142,7 @@
 </body>
 </html>
 
-<!--try making the script section not indented tomorrow. It went back to loading full table. Still need to fix zooming. Coloring works though!--> 
+<!--try making the script section not indented tomorrow--> 
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -368,6 +368,10 @@
             function populateSlicers(data) {
                 const indSlicer = document.getElementById('ind-slicer');
                 const nativitySlicer = document.getElementById('nativity-slicer');
+
+                // Add default "All" options
+                indSlicer.innerHTML = '<option value="">All</option>';
+                nativitySlicer.innerHTML = '<option value="">All</option>';
 
                 const indOptions = Array.from(new Set(data.map(item => item.IND)));
                 const nativityOptions = Array.from(new Set(data.map(item => item.NATIVITY)));
