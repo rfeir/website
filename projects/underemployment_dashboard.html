@@ -61,7 +61,6 @@
             width: 100%;
             border-collapse: collapse;
             margin: 0;
-            overflow-x: auto;
             max-height: 600px;
             display: block;
             overflow-y: scroll;
@@ -73,8 +72,22 @@
         }
 
         th {
-            border-bottom: 2px solid rgb(7, 142, 50);
-            font-weight: normal;
+            position: sticky;
+            top: 0;
+            background: #f4f4f4;
+            cursor: pointer;
+        }
+
+        th:hover {
+            background: #ddd;
+        }
+
+        th.active-asc::after {
+            content: " ▲";
+        }
+
+        th.active-desc::after {
+            content: " ▼";
         }
 
         tr:nth-child(odd) {
@@ -319,6 +332,45 @@
                     `;
                     table.appendChild(row);
                 });
+            }
+
+            // Sort table by column
+            const table = document.getElementById('data-table');
+            const headers = table.querySelectorAll('th');
+            headers.forEach(header => {
+                header.addEventListener('click', () => {
+                    const column = header.dataset.column;
+                    const ascending = !header.classList.contains('active-asc');
+
+                    // Remove active class from all headers
+                    headers.forEach(h => h.classList.remove('active-asc', 'active-desc'));
+
+                    // Add active class to the clicked header
+                    header.classList.add(ascending ? 'active-asc' : 'active-desc');
+
+                    sortTable(column, ascending);
+                });
+            });
+
+            function sortTable(column, ascending) {
+                const tbody = table.querySelector('tbody');
+                const rows = Array.from(tbody.rows);
+                const columnIndex = Array.from(headers).findIndex(h => h.dataset.column === column);
+
+                rows.sort((a, b) => {
+                    const aText = a.cells[columnIndex].textContent.trim();
+                    const bText = b.cells[columnIndex].textContent.trim();
+
+                    const aValue = isNaN(aText) ? aText : parseFloat(aText);
+                    const bValue = isNaN(bText) ? bText : parseFloat(bText);
+
+                    if (aValue < bValue) return ascending ? -1 : 1;
+                    if (aValue > bValue) return ascending ? 1 : -1;
+                    return 0;
+                });
+
+                // Append sorted rows to the tbody
+                rows.forEach(row => tbody.appendChild(row));
             }
 
             // Populate slicers with options
