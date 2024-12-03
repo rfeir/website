@@ -336,26 +336,26 @@
 
             // Sort table by column
             const table = document.getElementById('data-table');
-            const headers = table.querySelectorAll('th');
-            headers.forEach(header => {
-                header.addEventListener('click', () => {
-                    const column = header.dataset.column;
-                    const ascending = !header.classList.contains('active-asc');
+            const headers = document.querySelectorAll('#data-table th');
 
-                    // Remove active class from all headers
+            headers.forEach((header, index) => {
+                header.addEventListener('click', () => {
+                    const ascending = !header.classList.contains('active-asc'); // Toggle ascending/descending
+
+                    // Clear active classes from all headers
                     headers.forEach(h => h.classList.remove('active-asc', 'active-desc'));
 
-                    // Add active class to the clicked header
+                    // Set the active class on the clicked header
                     header.classList.add(ascending ? 'active-asc' : 'active-desc');
 
-                    sortTable(column, ascending);
+                    // Sort the table
+                    sortTable(index, ascending);
                 });
             });
 
-            function sortTable(column, ascending) {
-                const tbody = table.querySelector('tbody');
-                const rows = Array.from(tbody.rows);
-                const columnIndex = Array.from(headers).findIndex(h => h.dataset.column === column);
+            function sortTable(columnIndex, ascending) {
+                const tbody = document.querySelector('#data-table tbody');
+                const rows = Array.from(tbody.querySelectorAll('tr')).filter(row => row.style.display !== 'none'); // Filter visible rows
 
                 rows.sort((a, b) => {
                     const aText = a.cells[columnIndex].textContent.trim();
@@ -369,9 +369,9 @@
                     return 0;
                 });
 
-                // Append sorted rows to the tbody
-                rows.forEach(row => tbody.appendChild(row));
+                rows.forEach(row => tbody.appendChild(row)); // Append sorted rows back
             }
+
 
             // Populate slicers with options
             function populateSlicers(data) {
@@ -416,6 +416,14 @@
                     } else {
                         row.style.display = 'none';
                     }
+
+                const activeHeader = document.querySelector('#data-table th.active-asc, #data-table th.active-desc');
+                    if (activeHeader) {
+                        const columnIndex = Array.from(headers).indexOf(activeHeader);
+                        const ascending = activeHeader.classList.contains('active-asc');
+                        sortTable(columnIndex, ascending);
+                    }
+
                 });
             }
 
