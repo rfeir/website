@@ -142,24 +142,6 @@
 </body>
 </html>
 
-
-<style>
-    #tooltip {
-        position: absolute;
-        background-color: rgba(0, 0, 0, 0.8);
-        color: #fff;
-        padding: 5px 10px;
-        border-radius: 5px;
-        font-size: 12px;
-        pointer-events: none;
-        display: none; /* Hidden by default */
-    }
-
-    #svg-container {
-        cursor: pointer; /* Default pointer cursor */
-    }
-</style>
-
 <div id="tooltip"></div>
 <div id="svg-container"></div>
 <select id="ind-slicer"></select>
@@ -458,6 +440,32 @@
                         row.style.display = 'none';
                     }
                 });
+            }
+
+            // Update SVG path colors based on UNDEREMPLOYMENT_LEVEL
+            function updatePathColors(data) {
+                const paths = document.querySelectorAll('svg path');
+                const underemploymentMap = data.reduce((acc, item) => {
+                    acc[item.ID] = item.UNDEREMPLOYMENT_LEVEL;
+                    return acc;
+                }, {});
+
+                paths.forEach(path => {
+                    const regionId = path.id;
+                    const underemploymentLevel = underemploymentMap[regionId];
+
+                    if (underemploymentLevel !== undefined) {
+                        const color = getColorForUnderemployment(underemploymentLevel);
+                        path.style.fill = color;
+                    }
+                });
+            }
+
+            // Define a color scale function from white (0) to black (2)
+            function getColorForUnderemployment(level) {
+                const clampedLevel = Math.min(Math.max(level, 0), 2);
+                const intensity = Math.round((1 - clampedLevel / 2) * 255);
+                return `rgb(${intensity}, ${intensity}, ${intensity})`;
             }
 
             document.getElementById('ind-slicer').addEventListener('change', filterTable);
