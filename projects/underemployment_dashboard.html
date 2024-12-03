@@ -152,15 +152,12 @@
             let offsetX = 0;
             let offsetY = 0;
             let scale = 1;
-            let isDragging = false;
-            let draggingActive = false;
-            let selectedRegions = [];
-    
+            let selectedRegion = null;
             const tooltip = document.getElementById('tooltip');
             const svgContainer = document.getElementById('svg-container');
             const dataTable = document.getElementById('data-table');
             let paths = null;
-    
+
             fetch('paths.svg')
                 .then(response => response.text())
                 .then(svgContent => {
@@ -169,46 +166,43 @@
                     initMap();
                 })
                 .catch(error => console.error('Error loading paths.svg:', error));
-    
+
             fetch('aggregated_data.json')
                 .then(response => response.json())
                 .then(data => {
                     populateTable(data);
                     populateSlicers(data);
-                    filterTable(data);
+                    filterTable(data); // Initial table filtering
                 })
                 .catch(error => console.error('Error loading aggregated_data.json:', error));
-    
+
             function initMap() {
                 const svg = svgContainer.querySelector('svg');
-    
+
                 // Dragging
                 svgContainer.addEventListener('mousedown', (e) => {
-                    if (e.button !== 0) return;
-                    isDragging = true;
-                    draggingActive = true;
+                    if (e.button !== 0) return; // Only allow left-click dragging
                     const startX = e.clientX - offsetX;
                     const startY = e.clientY - offsetY;
-    
+
                     svgContainer.style.cursor = 'grabbing';
+
                     const onMouseMove = (moveEvent) => {
                         offsetX = moveEvent.clientX - startX;
                         offsetY = moveEvent.clientY - startY;
                         svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
                     };
-    
+
                     const onMouseUp = () => {
-                        isDragging = false;
-                        draggingActive = false;
                         svgContainer.style.cursor = 'default';
                         window.removeEventListener('mousemove', onMouseMove);
                         window.removeEventListener('mouseup', onMouseUp);
                     };
-    
+
                     window.addEventListener('mousemove', onMouseMove);
                     window.addEventListener('mouseup', onMouseUp);
                 });
-    
+
                 // Zooming
                 svgContainer.addEventListener('wheel', (e) => {
                     e.preventDefault();
@@ -216,85 +210,78 @@
                     scale = Math.min(Math.max(scale + zoomFactor, 0.8), 10);
                     svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
                 });
-    
+
+                // Path events
                 paths.forEach(path => {
                     path.addEventListener('mouseenter', (e) => {
-                        if (!draggingActive) showTooltip(e, path.id);
+                        showTooltip(e, path.id);
                     });
-    
+
                     path.addEventListener('mouseleave', hideTooltip);
-    
+
                     path.addEventListener('mousemove', moveTooltip);
-    
+
                     path.addEventListener('click', (e) => {
-                        toggleRegionSelection(path.id, e.ctrlKey || e.metaKey); // Detect Ctrl or Cmd key
+                        toggleRegionSelection(path.id);
                         e.stopPropagation();
                     });
                 });
-    
+
                 svgContainer.addEventListener('click', deselectRegion);
             }
-    
-            function toggleRegionSelection(regionId, ctrlKey) {
-                if (ctrlKey) {
-                    // Ctrl is held, toggle the region in the selectedRegions array
-                    const index = selectedRegions.indexOf(regionId);
-                    if (index > -1) {
-                        // Region is already selected, remove it
-                        selectedRegions.splice(index, 1);
-                    } else {
-                        // Region is not selected, add it
-                        selectedRegions.push(regionId);
-                    }
+
+            function showTooltip(event, regionId) {
+                tooltip.textContent = `Region: ${regionId}`;
+                tooltip.style.display = 'block';
+                moveTooltip(event);
+            }
+
+            function hideTooltip() {
+                tooltip.style.display = 'none';
+            }
+
+            function moveTooltip(event) {
+                requestAnimationFrame(() => {
+                    tooltip.style.left = `${event.pageX + 10}px`;
+                    tooltip.style.top = `${event.pageY + 10}px`;
+                });
+            }
+
+            function toggleRegionSelection(regionId) {
+                if (selectedRegion === regionId) {
+                    deselectRegion();
                 } else {
-                    // Ctrl is not held, reset the selection to only the clicked region
-                    if (selectedRegions.includes(regionId)) {
-                        // If the clicked region is already selected, deselect all
-                        selectedRegions = [];
-                    } else {
-                        selectedRegions = [regionId];
-                    }
+                    selectRegion(regionId);
                 }
-    
-                // Update highlights and table filter
-                highlightRegion();
+            }
+
+            function selectRegion(regionId) {
+                selectedRegion = regionId;
+                highlightRegion(regionId);
                 filterTable();
             }
-    
-            function highlightRegion() {
-                paths.forEach(path => {
-                    path.style.opacity = selectedRegions.includes(path.id) ? '1' : '0.2';
-                });
-            }
-    
+
             function deselectRegion() {
-                selectedRegions = [];
-                highlightRegion();
+                selectedRegion = null;
+                resetRegionHighlight();
                 filterTable();
             }
-    
-            function filterTable() {
-                const indValue = document.getElementById('ind-slicer').value;
-                const nativityValue = document.getElementById('nativity-slicer').value;
-                const rows = document.querySelectorAll('#data-table tbody tr');
-    
-                rows.forEach(row => {
-                    const matchesInd = !indValue || row.cells[1].textContent === indValue;
-                    const matchesNativity = !nativityValue || row.cells[2].textContent === nativityValue;
-                    const matchesRegion = selectedRegions.length === 0 || selectedRegions.includes(row.dataset.region);
-    
-                    if (matchesInd && matchesNativity && matchesRegion) {
-                        row.style.display = '';
-                    } else {
-                        row.style.display = 'none';
-                    }
+
+            function highlightRegion(regionId) {
+                paths.forEach(path => {
+                    path.style.opacity = path.id === regionId ? '1' : '0.2';
                 });
             }
-    
+
+            function resetRegionHighlight() {
+                paths.forEach(path => {
+                    path.style.opacity = '1';
+                });
+            }
+
             function populateTable(data) {
-                const table = document.getElementById('data-table').getElementsByTagName('tbody')[0];
-                table.innerHTML = '';
-    
+                const tableBody = dataTable.querySelector('tbody');
+                tableBody.innerHTML = '';
                 data.forEach(item => {
                     const row = document.createElement('tr');
                     row.dataset.region = item.ID;
@@ -311,39 +298,93 @@
                         <td>${item.NATIVITY_PERCENTAGE}</td>
                         <td>${item.ID}</td>
                     `;
-                    table.appendChild(row);
+                    tableBody.appendChild(row);
                 });
             }
-    
+
             function populateSlicers(data) {
                 const indSlicer = document.getElementById('ind-slicer');
                 const nativitySlicer = document.getElementById('nativity-slicer');
-    
-                const indOptions = Array.from(new Set(data.map(item => item.IND)));
-                const nativityOptions = Array.from(new Set(data.map(item => item.NATIVITY)));
-    
-                indOptions.forEach(ind => {
-                    if (ind !== 'Utilities') {
-                        const option = document.createElement('option');
-                        option.value = ind;
-                        option.textContent = ind;
-                        indSlicer.appendChild(option);
-                    }
+
+                const industries = Array.from(new Set(data.map(item => item.IND)));
+                const nativities = Array.from(new Set(data.map(item => item.NATIVITY)));
+
+                industries.forEach(ind => {
+                    const option = document.createElement('option');
+                    option.value = ind;
+                    option.textContent = ind;
+                    indSlicer.appendChild(option);
                 });
-    
-                nativityOptions.forEach(nativity => {
-                    if (nativity !== 'Domestic') {
-                        const option = document.createElement('option');
-                        option.value = nativity;
-                        option.textContent = nativity;
-                        nativitySlicer.appendChild(option);
-                    }
+
+                nativities.forEach(nativity => {
+                    const option = document.createElement('option');
+                    option.value = nativity;
+                    option.textContent = nativity;
+                    nativitySlicer.appendChild(option);
                 });
             }
-    
+
+            function filterTable() {
+                const indValue = document.getElementById('ind-slicer').value;
+                const nativityValue = document.getElementById('nativity-slicer').value;
+
+                const rows = dataTable.querySelectorAll('tbody tr');
+                const filteredData = [];
+
+                rows.forEach(row => {
+                    const matchesInd = !indValue || row.cells[1].textContent === indValue;
+                    const matchesNativity = !nativityValue || row.cells[2].textContent === nativityValue;
+                    const matchesRegion = !selectedRegion || row.dataset.region === selectedRegion;
+
+                    if (matchesInd && matchesNativity && matchesRegion) {
+                        row.style.display = '';
+                        filteredData.push({ ID: row.dataset.region, UNDEREMPLOYMENT_LEVEL: parseFloat(row.cells[6].textContent) });
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+
+                updatePathColors(filteredData);
+            }
+
+            function updatePathColors(data) {
+                const underemploymentMap = data.reduce((map, item) => {
+                    map[item.ID] = item.UNDEREMPLOYMENT_LEVEL;
+                    return map;
+                }, {});
+
+                paths.forEach(path => {
+                    const level = underemploymentMap[path.id];
+                    path.style.fill = getColorForUnderemployment(level);
+                });
+            }
+
+            function getColorForUnderemployment(level) {
+                const colorscale = [
+                    [0, "#DFEEB4"], [1, "#C4F08F"], [2, "#A8EA81"], 
+                    [3, "#8DE07E"], [4, "#73D67E"], [5, "#57CD82"],
+                    [6, "#3BC38A"], [7, "#21B697"], [8, "#0E9FA2"],
+                    [9, "#0580A1"], [10, "#016092"], [11, "#01407B"],
+                    [12, "#02215F"], [13, "#030240"],
+                ];
+
+                if (level == null || isNaN(level)) {
+                    return '#e9e9e9';
+                }
+
+                const scaledValue = Math.min(Math.max(level / 2 * 13, 0), 13);
+                for (let i = colorscale.length - 1; i >= 0; i--) {
+                    if (scaledValue >= colorscale[i][0]) {
+                        return colorscale[i][1];
+                    }
+                }
+                return '#e9e9e9';
+            }
+
             document.getElementById('ind-slicer').addEventListener('change', filterTable);
             document.getElementById('nativity-slicer').addEventListener('change', filterTable);
         });
+
     </script>
     
 </body>
