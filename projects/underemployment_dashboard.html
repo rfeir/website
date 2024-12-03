@@ -152,11 +152,12 @@
             let offsetX = 0;
             let offsetY = 0;
             let scale = 1;
-            let selectedRegion = null;
+            let selectedRegions = new Set(); // Using a Set for multiple region selections
             const tooltip = document.getElementById('tooltip');
             const svgContainer = document.getElementById('svg-container');
             const dataTable = document.getElementById('data-table');
             let paths = null;
+            let tableData = [];
 
             fetch('paths.svg')
                 .then(response => response.text())
@@ -170,6 +171,7 @@
             fetch('aggregated_data.json')
                 .then(response => response.json())
                 .then(data => {
+                    tableData = data;
                     populateTable(data);
                     populateSlicers(data);
                     filterTable(data); // Initial table filtering
@@ -222,12 +224,16 @@
                     path.addEventListener('mousemove', moveTooltip);
 
                     path.addEventListener('click', (e) => {
-                        toggleRegionSelection(path.id);
+                        if (e.ctrlKey) {
+                            toggleMultipleSelection(path.id);
+                        } else {
+                            toggleSingleSelection(path.id);
+                        }
                         e.stopPropagation();
                     });
                 });
 
-                svgContainer.addEventListener('click', deselectRegion);
+                svgContainer.addEventListener('click', deselectAllRegions);
             }
 
             function showTooltip(event, regionId) {
@@ -247,35 +253,47 @@
                 });
             }
 
-            function toggleRegionSelection(regionId) {
-                if (selectedRegion === regionId) {
-                    deselectRegion();
+            function toggleSingleSelection(regionId) {
+                if (selectedRegions.has(regionId)) {
+                    deselectRegion(regionId);
+                } else {
+                    selectRegion(regionId);
+                }
+            }
+
+            function toggleMultipleSelection(regionId) {
+                if (selectedRegions.has(regionId)) {
+                    deselectRegion(regionId);
                 } else {
                     selectRegion(regionId);
                 }
             }
 
             function selectRegion(regionId) {
-                selectedRegion = regionId;
-                highlightRegion(regionId);
+                selectedRegions.add(regionId);
+                highlightRegions();
                 filterTable();
             }
 
-            function deselectRegion() {
-                selectedRegion = null;
-                resetRegionHighlight();
+            function deselectRegion(regionId) {
+                selectedRegions.delete(regionId);
+                highlightRegions();
                 filterTable();
             }
 
-            function highlightRegion(regionId) {
-                paths.forEach(path => {
-                    path.style.opacity = path.id === regionId ? '1' : '0.2';
-                });
+            function deselectAllRegions() {
+                selectedRegions.clear();
+                highlightRegions();
+                filterTable();
             }
 
-            function resetRegionHighlight() {
+            function highlightRegions() {
                 paths.forEach(path => {
-                    path.style.opacity = '1';
+                    if (selectedRegions.has(path.id)) {
+                        path.style.opacity = '1';
+                    } else {
+                        path.style.opacity = '0.2';
+                    }
                 });
             }
 
@@ -299,6 +317,14 @@
                         <td>${item.ID}</td>
                     `;
                     tableBody.appendChild(row);
+                });
+                updateTableRowColors();
+            }
+
+            function updateTableRowColors() {
+                const rows = dataTable.querySelectorAll('tbody tr');
+                rows.forEach((row, index) => {
+                    row.style.backgroundColor = index % 2 === 0 ? '#f9f9f9' : '#ffffff';
                 });
             }
 
@@ -334,9 +360,9 @@
                 rows.forEach(row => {
                     const matchesInd = !indValue || row.cells[1].textContent === indValue;
                     const matchesNativity = !nativityValue || row.cells[2].textContent === nativityValue;
-                    const matchesRegion = !selectedRegion || row.dataset.region === selectedRegion;
+                    const matchesRegion = selectedRegions.has(row.dataset.region);
 
-                    if (matchesInd && matchesNativity && matchesRegion) {
+                    if (matchesInd && matchesNativity && (selectedRegions.size === 0 || matchesRegion)) {
                         row.style.display = '';
                         filteredData.push({ ID: row.dataset.region, UNDEREMPLOYMENT_LEVEL: parseFloat(row.cells[6].textContent) });
                     } else {
@@ -378,12 +404,9 @@
                         return colorscale[i][1];
                     }
                 }
-                return '#e9e9e9';
             }
-
-            document.getElementById('ind-slicer').addEventListener('change', filterTable);
-            document.getElementById('nativity-slicer').addEventListener('change', filterTable);
         });
+
 
     </script>
     
