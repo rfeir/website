@@ -418,7 +418,26 @@
                 });
             }
 
-            // Update SVG path colors based on UNDEREMPLOYMENT_LEVEL
+            // Define the custom colorscale
+            const colorscale = [
+                [0/14, "#F4F6DB"],
+                [1/14, "#DFEEB4"],
+                [2/14, "#C4F08F"],
+                [3/14, "#A8EA81"],
+                [4/14, "#8DE07E"],
+                [5/14, "#73D67E"],
+                [6/14, "#57CD82"],
+                [7/14, "#3BC38A"],
+                [8/14, "#21B697"],
+                [9/14, "#0E9FA2"],
+                [10/14, "#0580A1"],
+                [11/14, "#016092"],
+                [12/14, "#01407B"],
+                [13/14, "#02215F"],
+                [14/14, "#030240"],
+            ];
+
+            // Update SVG path colors based on UNDEREMPLOYMENT_LEVEL using the new colorscale
             function updatePathColors(data) {
                 const svg = document.querySelector('#svg-container svg'); // Get the SVG element from the container
                 const paths = svg.querySelectorAll('path'); // Select all path elements
@@ -444,12 +463,61 @@
                 });
             }
 
-            // Define a color scale function from white (0) to black (2)
+            // Define a color scale function from the custom colorscale
             function getColorForUnderemployment(level) {
                 const clampedLevel = Math.min(Math.max(level, 0), 2); // Clamp values between 0 and 2
-                const intensity = Math.round((1 - clampedLevel / 2) * 255); // Calculate intensity for grayscale
-                return `rgb(${intensity}, ${intensity}, ${intensity})`; // Return grayscale color
+
+                // Map the UNDEREMPLOYMENT_LEVEL (0 to 2) into the colorscale (0/14 to 14/14)
+                const scaleValue = (clampedLevel / 2) * 14; // Scale level to range 0 to 14
+
+                // Find the closest value in the colorscale
+                let color = "#e0e0e0"; // Default color for unfiltered regions
+                for (let i = 0; i < colorscale.length; i++) {
+                    if (scaleValue <= colorscale[i][0] * 14) {
+                        color = colorscale[i][1];
+                        break;
+                    }
+                }
+
+                return color;
             }
+
+            // Update map color on table filter
+            function filterTable() {
+                const indValue = document.getElementById('ind-slicer').value;
+                const nativityValue = document.getElementById('nativity-slicer').value;
+                const rows = document.querySelectorAll('#data-table tbody tr');
+
+                // Filter table rows based on slicer selection
+                const filteredData = [];
+                rows.forEach(row => {
+                    const matchesInd = !indValue || row.cells[1].textContent === indValue;
+                    const matchesNativity = !nativityValue || row.cells[2].textContent === nativityValue;
+                    const matchesRegion = !selectedRegion || row.dataset.region === selectedRegion;
+
+                    if (matchesInd && matchesNativity && matchesRegion) {
+                        row.style.display = ''; // Show row
+                        const regionId = row.dataset.region;
+                        filteredData.push({ ID: regionId, UNDEREMPLOYMENT_LEVEL: row.cells[6].textContent });
+                    } else {
+                        row.style.display = 'none'; // Hide row
+                    }
+                });
+
+                // Update map with filtered data
+                updatePathColors(filteredData);
+            }
+
+            // Update the map when data is first loaded
+            fetch('aggregated_data.json')
+                .then(response => response.json())
+                .then(data => {
+                    populateTable(data);
+                    populateSlicers(data);
+                    filterTable(); // Apply filter and color on initial load
+                })
+                .catch(error => console.error('Error loading aggregated_data.json:', error));
+
 
 
             document.getElementById('ind-slicer').addEventListener('change', filterTable);
