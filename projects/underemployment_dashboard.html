@@ -466,34 +466,36 @@
                 });
             }
 
+
             // Define a color scale function from the custom colorscale
             function getColorForUnderemployment(level) {
                 // Log the level being processed to ensure the data is correct
                 console.log('Processing level:', level);
 
-                // Check if the level is a valid number (handle null, undefined, NaN, etc.)
+                // Handle explicitly invalid values (null, undefined, etc.)
                 if (level == null || isNaN(level)) {
-                    console.warn('Invalid level:', level); // Debug invalid values
-                    return '#e9e9e9'; // Default color for invalid or missing data
+                    console.warn('Invalid level (null or NaN):', level);
+                    return '#e9e9e9'; // Default color for missing or invalid data
                 }
 
-                // Clamp the level to the range 0–2 (valid range for the scale)
+                // Clamp the level to the range 0–2
                 const clampedLevel = Math.min(Math.max(level, 0), 2);
 
-                // Map the level to the colorscale range (0 to 13)
+                // Scale the value to the range used by the colorscale (0 to 13)
                 const scaleValue = (clampedLevel / 2) * 13;
 
-                // Find the closest color in the colorscale
+                // Map the value to the colorscale
                 for (let i = 0; i < colorscale.length; i++) {
                     if (scaleValue <= colorscale[i][0] * 13) {
                         return colorscale[i][1];
                     }
                 }
 
-                // Fallback (should never hit this)
+                // Fallback (should not be reached in normal cases)
                 console.error('Unexpected scaleValue:', scaleValue);
                 return '#e9e9e9';
             }
+
 
             // Update map color on table filter
             function filterTable() {
