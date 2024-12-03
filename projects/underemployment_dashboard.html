@@ -421,19 +421,26 @@
 
             // Update SVG path colors based on UNDEREMPLOYMENT_LEVEL
             function updatePathColors(data) {
-                const paths = document.querySelectorAll('#map path'); // Ensure paths are within the SVG element with id 'map'
+                const svg = document.querySelector('#svg-container svg'); // Get the SVG element from the container
+                const paths = svg.querySelectorAll('path'); // Select all path elements
+
+                // Map the data to associate region IDs with UNDEREMPLOYMENT_LEVEL
                 const underemploymentMap = data.reduce((acc, item) => {
                     acc[item.ID] = item.UNDEREMPLOYMENT_LEVEL;
                     return acc;
                 }, {});
 
+                // Loop over all the paths and update their color based on the data
                 paths.forEach(path => {
-                    const regionId = path.id; // Ensure your paths have appropriate IDs matching the data
+                    const regionId = path.id; // Get the ID of the current path (should match the data region ID)
                     const underemploymentLevel = underemploymentMap[regionId];
 
+                    // If the region exists in the data, update its color
                     if (underemploymentLevel !== undefined) {
                         const color = getColorForUnderemployment(underemploymentLevel);
-                        path.style.fill = color;
+                        path.style.fill = color; // Apply the color
+                    } else {
+                        path.style.fill = '#e0e0e0'; // Default color for unfiltered regions
                     }
                 });
             }
@@ -444,6 +451,7 @@
                 const intensity = Math.round((1 - clampedLevel / 2) * 255); // Calculate intensity for grayscale
                 return `rgb(${intensity}, ${intensity}, ${intensity})`; // Return grayscale color
             }
+
 
             document.getElementById('ind-slicer').addEventListener('change', filterTable);
             document.getElementById('nativity-slicer').addEventListener('change', filterTable);
