@@ -65,17 +65,18 @@
             max-height: 600px;
             display: block;
             overflow-y: scroll;
+            font-size: 14px;
         }
 
         th, td {
             padding: 8px 12px;
             text-align: left;
-            border: 1px solid #ddd;
         }
 
         th {
             color: rgb(0, 0, 0);
             border-bottom: 2px solid rgb(7, 142, 50);
+            font-weight: normal;
         }
 
         tr:nth-child(odd) {
@@ -93,7 +94,7 @@
         select {
             margin: 10px;
             padding: 5px;
-            font-size: 12px;
+            font-size: 14px;
         }
     </style>
 </head>
@@ -299,24 +300,6 @@
                 const paths = document.querySelectorAll('path');
                 paths.forEach(path => {
                     path.style.opacity = '1';
-                });
-            }
-
-            function highlightRegionOnHover(regionId) {
-                const paths = document.querySelectorAll('path');
-                paths.forEach(path => {
-                    if (path.id === regionId) {
-                        path.style.stroke = 'black';
-                        path.style.strokeWidth = '2px';
-                    }
-                });
-            }
-
-            function resetHoverBorders() {
-                const paths = document.querySelectorAll('path');
-                paths.forEach(path => {
-                    path.style.stroke = 'none';
-                    path.style.strokeWidth = '0';
                 });
             }
 
