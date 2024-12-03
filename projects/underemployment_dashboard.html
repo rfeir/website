@@ -166,7 +166,6 @@
                     populateTable(data);
                     populateSlicers(data);
                     filterTable();
-                    updatePathColors(data);  // <-- Call to update map colors after data is loaded
                 })
                 .catch(error => console.error('Error loading aggregated_data.json:', error));
 
@@ -380,56 +379,83 @@
                 });
 
                 nativityOptions.forEach(nativity => {
-                    const option = document.createElement('option');
-                    option.value = nativity;
-                    option.textContent = nativity;
-                    nativitySlicer.appendChild(option);
+                    if (nativity !== 'Domestic') {
+                        const option = document.createElement('option');
+                        option.value = nativity;
+                        option.textContent = nativity;
+                        nativitySlicer.appendChild(option);
+                    }
                 });
             }
 
-            // Filter table and map based on slicer selections
+            // Filter table based on slicer selections
             function filterTable() {
-                const selectedInd = document.getElementById('ind-slicer').value;
-                const selectedNativity = document.getElementById('nativity-slicer').value;
+                const indValue = document.getElementById('ind-slicer').value;
+                const nativityValue = document.getElementById('nativity-slicer').value;
                 const rows = document.querySelectorAll('#data-table tbody tr');
 
                 rows.forEach(row => {
-                    const rowData = row.dataset.region;
-                    const item = data.find(d => d.ID === rowData);
-                    const matchInd = selectedInd === '' || item.IND === selectedInd;
-                    const matchNativity = selectedNativity === '' || item.NATIVITY === selectedNativity;
+                    const matchesInd = !indValue || row.cells[1].textContent === indValue;
+                    const matchesNativity = !nativityValue || row.cells[2].textContent === nativityValue;
+                    const matchesRegion = !selectedRegion || row.dataset.region === selectedRegion;
 
-                    if (matchInd && matchNativity) {
+                    if (matchesInd && matchesNativity && matchesRegion) {
                         row.style.display = '';
-                        updatePathColor(rowData, item.UNDEREMPLOYMENT_LEVEL); // Update path color for this row's region
                     } else {
                         row.style.display = 'none';
                     }
                 });
             }
 
-            function updatePathColors(data) {
-                const underemploymentMap = data.reduce((map, item) => {
-                    map[item.ID] = item.UNDEREMPLOYMENT_LEVEL;
-                    return map;
-                }, {});
-
-                const paths = document.querySelectorAll('path');
-                paths.forEach(path => {
-                    const regionId = path.id;
-                    if (underemploymentMap[regionId] !== undefined) {
-                        const color = getColorForUnderemployment(underemploymentMap[regionId]);
-                        path.style.fill = color;
+            // Filter table based on region selection
+            function filterTableByRegion(regionId) {
+                const rows = document.querySelectorAll('#data-table tbody tr');
+                rows.forEach(row => {
+                    if (row.dataset.region === regionId) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
                     }
                 });
             }
 
-            function getColorForUnderemployment(level) {
-                const colorScale = d3.scaleLinear().domain([0, 10]).range(["#f7fbff", "#08306b"]);  // Adjust domain based on your data
-                return colorScale(level);
-            }
-        });
+            // Update SVG path colors based on UNDEREMPLOYMENT_LEVEL
+            function updatePathColors(data) {
+                const svg = document.querySelector('#svg-container svg'); // Get the SVG element from the container
+                const paths = svg.querySelectorAll('path'); // Select all path elements
 
+                // Map the data to associate region IDs with UNDEREMPLOYMENT_LEVEL
+                const underemploymentMap = data.reduce((acc, item) => {
+                    acc[item.ID] = item.UNDEREMPLOYMENT_LEVEL;
+                    return acc;
+                }, {});
+
+                // Loop over all the paths and update their color based on the data
+                paths.forEach(path => {
+                    const regionId = path.id; // Get the ID of the current path (should match the data region ID)
+                    const underemploymentLevel = underemploymentMap[regionId];
+
+                    // If the region exists in the data, update its color
+                    if (underemploymentLevel !== undefined) {
+                        const color = getColorForUnderemployment(underemploymentLevel);
+                        path.style.fill = color; // Apply the color
+                    } else {
+                        path.style.fill = '#e0e0e0'; // Default color for unfiltered regions
+                    }
+                });
+            }
+
+            // Define a color scale function from white (0) to black (2)
+            function getColorForUnderemployment(level) {
+                const clampedLevel = Math.min(Math.max(level, 0), 2); // Clamp values between 0 and 2
+                const intensity = Math.round((1 - clampedLevel / 2) * 255); // Calculate intensity for grayscale
+                return `rgb(${intensity}, ${intensity}, ${intensity})`; // Return grayscale color
+            }
+
+
+            document.getElementById('ind-slicer').addEventListener('change', filterTable);
+            document.getElementById('nativity-slicer').addEventListener('change', filterTable);
+        });
 
     </script>
 
