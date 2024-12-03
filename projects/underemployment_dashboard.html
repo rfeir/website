@@ -151,6 +151,7 @@
             let draggingActive = false;
             let selectedRegion = null;
             const tooltip = document.getElementById('tooltip');
+            let data = [];  // Store the data globally for later use
 
             fetch('paths.svg')
                 .then(response => response.text())
@@ -162,27 +163,189 @@
 
             fetch('aggregated_data.json')
                 .then(response => response.json())
-                .then(data => {
+                .then(fetchedData => {
+                    data = fetchedData;  // Store the fetched data
                     populateTable(data);
                     populateSlicers(data);
                     filterTable();
+                    updatePathColors(data);  // <-- Call to update map colors after data is loaded
                 })
                 .catch(error => console.error('Error loading aggregated_data.json:', error));
 
             function initMap() {
-                // Same map initialization logic
+                const svgContainer = document.getElementById('svg-container');
+                const svg = svgContainer.querySelector('svg');
+                const paths = svg.querySelectorAll('path');
+
+                // Dragging functionality
+                svgContainer.addEventListener('mousedown', (e) => {
+                    if (e.button !== 0) return;
+                    isDragging = true;
+                    draggingActive = true;
+                    const startX = e.clientX - offsetX;
+                    const startY = e.clientY - offsetY;
+                    svgContainer.style.cursor = 'grabbing';
+
+                    const onMouseMove = (moveEvent) => {
+                        offsetX = moveEvent.clientX - startX;
+                        offsetY = moveEvent.clientY - startY;
+                        svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+                    };
+
+                    const onMouseUp = () => {
+                        isDragging = false;
+                        draggingActive = false;
+                        svgContainer.style.cursor = 'default';
+                        window.removeEventListener('mousemove', onMouseMove);
+                        window.removeEventListener('mouseup', onMouseUp);
+                    };
+
+                    window.addEventListener('mousemove', onMouseMove);
+                    window.addEventListener('mouseup', onMouseUp);
+                });
+
+                // Zooming functionality with centering on 50% from top and bottom of the container
+                svgContainer.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+
+                    // Simple zoom adjustment (zoom in for up wheel, zoom out for down wheel)
+                    const zoomFactor = e.deltaY < 0 ? 0.1 : -0.1;
+                    const newScale = scale + zoomFactor; // Linear zoom
+                    scale = Math.min(Math.max(0.8, newScale), 10); // Clamp between 0.8 and 10
+
+                    // Get center position of the container (for centering zoom)
+                    const rect = svgContainer.getBoundingClientRect();
+                    const containerCenterX = rect.width / 2;
+                    const containerCenterY = rect.height / 2;
+
+                    // Calculate the scale factor (how much the image will scale)
+                    const scaleFactor = scale / (scale - zoomFactor);
+
+                    // Adjust the offsets to zoom in/out based on container's center
+                    offsetX = containerCenterX - (containerCenterX - offsetX) * scaleFactor;
+                    offsetY = containerCenterY - (containerCenterY - offsetY) * scaleFactor;
+
+                    // Prevent the offsets from moving the content too far out of bounds
+                    offsetX = Math.min(Math.max(offsetX, 0), rect.width - rect.width * scale);
+                    offsetY = Math.min(Math.max(offsetY, 0), rect.height - rect.height * scale);
+
+                    // Apply smooth transformation for zooming
+                    svg.style.transition = 'transform 0.2s ease-out';
+                    svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+                });
+
+                // Path event listeners
+                paths.forEach(path => {
+                    path.addEventListener('mouseenter', (e) => {
+                        if (!draggingActive) {
+                            highlightRegionOnHover(path.id);
+                            showTooltip(e, path.id);
+                        }
+                    });
+
+                    path.addEventListener('mouseleave', () => {
+                        if (!draggingActive) {
+                            resetHoverBorders();
+                            hideTooltip();
+                        }
+                    });
+
+                    path.addEventListener('mousemove', (e) => {
+                        if (!draggingActive) {
+                            moveTooltip(e);
+                        }
+                    });
+
+                    path.addEventListener('click', (e) => {
+                        const regionId = path.id;
+                        toggleRegionSelection(regionId);
+                        e.stopPropagation();
+                    });
+                });
+
+                // Clicking outside to deselect region
+                svgContainer.addEventListener('click', (e) => {
+                    if (!e.target.closest('path')) {
+                        deselectRegion();
+                    }
+                });
             }
 
-            // Populate table with data and colorize UNDEREMPLOYMENT_LEVEL column
+            function toggleRegionSelection(regionId) {
+                if (selectedRegion === regionId) {
+                    deselectRegion();
+                } else {
+                    selectRegion(regionId);
+                }
+            }
+
+            function selectRegion(regionId) {
+                selectedRegion = regionId;
+                highlightRegion(regionId);
+                filterTableByRegion(regionId);
+            }
+
+            function deselectRegion() {
+                selectedRegion = null;
+                resetRegion();
+                filterTable();
+            }
+
+            function highlightRegion(regionId) {
+                const paths = document.querySelectorAll('path');
+                paths.forEach(path => {
+                    path.style.opacity = path.id === regionId ? '1' : '0.3';
+                });
+            }
+
+            function resetRegion() {
+                const paths = document.querySelectorAll('path');
+                paths.forEach(path => {
+                    path.style.opacity = '1';
+                });
+            }
+
+            function highlightRegionOnHover(regionId) {
+                const paths = document.querySelectorAll('path');
+                paths.forEach(path => {
+                    if (path.id === regionId) {
+                        path.style.stroke = 'black';
+                        path.style.strokeWidth = '2px';
+                    }
+                });
+            }
+
+            function resetHoverBorders() {
+                const paths = document.querySelectorAll('path');
+                paths.forEach(path => {
+                    path.style.stroke = 'none';
+                    path.style.strokeWidth = '0';
+                });
+            }
+
+            function showTooltip(event, regionId) {
+                tooltip.textContent = `Region: ${regionId}`;
+                tooltip.style.display = 'block';
+                moveTooltip(event);
+            }
+
+            function hideTooltip() {
+                tooltip.style.display = 'none';
+            }
+
+            function moveTooltip(event) {
+                tooltip.style.left = `${event.pageX + 10}px`;
+                tooltip.style.top = `${event.pageY + 10}px`;
+            }
+
+            // Populate table with data
             function populateTable(data) {
                 const table = document.getElementById('data-table').getElementsByTagName('tbody')[0];
-                table.innerHTML = ''; // Clear any existing rows
+                table.innerHTML = '';
 
                 data.forEach(item => {
                     const row = document.createElement('tr');
                     row.dataset.region = item.ID;
-
-                    // Generate the table row
                     row.innerHTML = `
                         <td>${item.STATE}</td>
                         <td>${item.IND}</td>
@@ -190,26 +353,14 @@
                         <td>${item.MEAN_WAGE}</td>
                         <td>${item.MEAN_OTHER_INCOME}</td>
                         <td>${item.MEAN_AGE}</td>
-                        <td class="underemployment-level">${item.UNDEREMPLOYMENT_LEVEL}</td> <!-- Add class for colorization -->
+                        <td>${item.UNDEREMPLOYMENT_LEVEL}</td>
                         <td>${item.EDUCATION_LEVEL}</td>
                         <td>${item.REQUIRED_EDUCATION_LEVEL}</td>
                         <td>${item.NATIVITY_PERCENTAGE}</td>
                         <td>${item.ID}</td>
                     `;
-
-                    // Apply color to UNDEREMPLOYMENT_LEVEL cell
-                    const underemploymentCell = row.querySelector('.underemployment-level');
-                    underemploymentCell.style.backgroundColor = getColorForUnderemployment(item.UNDEREMPLOYMENT_LEVEL);
-
                     table.appendChild(row);
                 });
-            }
-
-            // Define a color scale function from white (0) to black (2)
-            function getColorForUnderemployment(level) {
-                const clampedLevel = Math.min(Math.max(level, 0), 2); // Clamp values between 0 and 2
-                const intensity = Math.round((1 - clampedLevel / 2) * 255); // Calculate intensity for grayscale
-                return `rgb(${intensity}, ${intensity}, ${intensity})`; // Return grayscale color
             }
 
             // Populate slicers with options
@@ -220,75 +371,69 @@
                 const indOptions = Array.from(new Set(data.map(item => item.IND)));
                 const nativityOptions = Array.from(new Set(data.map(item => item.NATIVITY)));
 
+                indSlicer.innerHTML = `<option value="">All</option>`;
+                nativitySlicer.innerHTML = `<option value="">All</option>`;
+
                 indOptions.forEach(ind => {
-                    if (ind !== 'Utilities') {
-                        const option = document.createElement('option');
-                        option.value = ind;
-                        option.textContent = ind;
-                        indSlicer.appendChild(option);
-                    }
+                    const option = document.createElement('option');
+                    option.value = ind;
+                    option.textContent = ind;
+                    indSlicer.appendChild(option);
                 });
 
                 nativityOptions.forEach(nativity => {
-                    if (nativity !== 'Domestic') {
-                        const option = document.createElement('option');
-                        option.value = nativity;
-                        option.textContent = nativity;
-                        nativitySlicer.appendChild(option);
-                    }
+                    const option = document.createElement('option');
+                    option.value = nativity;
+                    option.textContent = nativity;
+                    nativitySlicer.appendChild(option);
                 });
             }
 
             // Filter table based on slicer selections
             function filterTable() {
-                const indValue = document.getElementById('ind-slicer').value;
-                const nativityValue = document.getElementById('nativity-slicer').value;
+                const selectedInd = document.getElementById('ind-slicer').value;
+                const selectedNativity = document.getElementById('nativity-slicer').value;
                 const rows = document.querySelectorAll('#data-table tbody tr');
 
                 rows.forEach(row => {
-                    const matchesInd = !indValue || row.cells[1].textContent === indValue;
-                    const matchesNativity = !nativityValue || row.cells[2].textContent === nativityValue;
-                    const matchesRegion = !selectedRegion || row.dataset.region === selectedRegion;
+                    const rowData = row.dataset.region;
+                    const item = data.find(d => d.ID === rowData);
+                    const matchInd = selectedInd === '' || item.IND === selectedInd;
+                    const matchNativity = selectedNativity === '' || item.NATIVITY === selectedNativity;
 
-                    if (matchesInd && matchesNativity && matchesRegion) {
+                    if (matchInd && matchNativity) {
                         row.style.display = '';
+                        updatePathColor(rowData, item.UNDEREMPLOYMENT_LEVEL);
                     } else {
                         row.style.display = 'none';
                     }
+                });
+                updatePathColors(data); // Reapply map coloring after filtering
+            }
 
-                    // After filtering, update the UNDEREMPLOYMENT_LEVEL color
-                    const underemploymentCell = row.querySelector('.underemployment-level');
-                    if (underemploymentCell) {
-                        const underemploymentLevel = parseFloat(underemploymentCell.textContent);
-                        underemploymentCell.style.backgroundColor = getColorForUnderemployment(underemploymentLevel);
+            function updatePathColors(data) {
+                const underemploymentMap = data.reduce((map, item) => {
+                    map[item.ID] = item.UNDEREMPLOYMENT_LEVEL;
+                    return map;
+                }, {});
+
+                const paths = document.querySelectorAll('path');
+                paths.forEach(path => {
+                    const regionId = path.id;
+                    if (underemploymentMap[regionId] !== undefined) {
+                        const color = getColorForUnderemployment(underemploymentMap[regionId]);
+                        path.style.fill = color;
                     }
                 });
             }
 
-            // Filter table based on region selection
-            function filterTableByRegion(regionId) {
-                const rows = document.querySelectorAll('#data-table tbody tr');
-                rows.forEach(row => {
-                    if (row.dataset.region === regionId) {
-                        row.style.display = '';
-                    } else {
-                        row.style.display = 'none';
-                    }
-
-                    // After filtering by region, update the UNDEREMPLOYMENT_LEVEL color
-                    const underemploymentCell = row.querySelector('.underemployment-level');
-                    if (underemploymentCell) {
-                        const underemploymentLevel = parseFloat(underemploymentCell.textContent);
-                        underemploymentCell.style.backgroundColor = getColorForUnderemployment(underemploymentLevel);
-                    }
-                });
+            function getColorForUnderemployment(level) {
+                const colorScale = d3.scaleLinear().domain([0, 10]).range(["#f7fbff", "#08306b"]);
+                return colorScale(level);
             }
-
-            document.getElementById('ind-slicer').addEventListener('change', filterTable);
-            document.getElementById('nativity-slicer').addEventListener('change', filterTable);
         });
-    </script>
 
+    </script>
 
 </body>
 </html>
