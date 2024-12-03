@@ -9,6 +9,7 @@
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
+            font-size: 14px;
         }
 
         .container {
@@ -100,12 +101,12 @@
 </head>
 <body>
     <div>
-        <label for="ind-slicer">IND:</label>
+        <label for="ind-slicer">Industry:</label>
         <select id="ind-slicer">
             <option value="Utilities" selected>Utilities</option> <!-- Default selection -->
         </select>
 
-        <label for="nativity-slicer">NATIVITY:</label>
+        <label for="nativity-slicer">Nativity:</label>
         <select id="nativity-slicer">
             <option value="Domestic" selected>Domestic</option> <!-- Default selection -->
         </select>
@@ -304,6 +305,10 @@
             }
 
             function highlightRegionOnHover(regionId) {
+                const paths = document.querySelectorAll('path');
+            }
+
+            function resetHoverBorders() {
                 const paths = document.querySelectorAll('path');
             }
 
