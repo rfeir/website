@@ -222,6 +222,28 @@
                 svgContainer.addEventListener('click', deselectRegion);
             }
 
+            function enableTableSorting() {
+                const headers = document.querySelectorAll('#data-table th');
+                const tbody = document.querySelector('#data-table tbody');
+
+                headers.forEach((header, index) => {
+                    header.addEventListener('click', () => {
+                        const isAscending = header.classList.contains('sort-asc');
+                        resetSortIcons(headers);
+                        sortTableByColumn(tbody, index, !isAscending);
+                        header.classList.toggle('sort-asc', !isAscending);
+                        header.classList.toggle('sort-desc', isAscending);
+                    });
+                });
+
+                function sortTableByColumn(tbody, columnIndex, ascending = true) {
+                    // Sorting logic here
+                }
+
+                function resetSortIcons(headers) {
+                    headers.forEach(header => header.classList.remove('sort-asc', 'sort-desc'));
+                }
+
             function showTooltip(event, regionId) {
                 tooltip.textContent = `Region: ${regionId}`;
                 tooltip.style.display = 'block';
