@@ -142,23 +142,7 @@
 </body>
 </html>
 
-
-<style>
-    #tooltip {
-        position: absolute;
-        background-color: rgba(0, 0, 0, 0.8);
-        color: #fff;
-        padding: 5px 10px;
-        border-radius: 5px;
-        font-size: 12px;
-        pointer-events: none;
-        display: none; /* Hidden by default */
-    }
-
-    #svg-container {
-        cursor: pointer; /* Default pointer cursor */
-    }
-</style>
+<!--try making the script section not indented tomorrow--> 
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -169,6 +153,7 @@
             let draggingActive = false;
             let selectedRegion = null;
             const tooltip = document.getElementById('tooltip');
+            let data = [];  // Declare a variable to hold the data
 
             fetch('paths.svg')
                 .then(response => response.text())
@@ -180,10 +165,11 @@
 
             fetch('aggregated_data.json')
                 .then(response => response.json())
-                .then(data => {
-                    populateTable(data);
+                .then(fetchedData => {
+                    data = fetchedData; // Store the data in the global variable
                     populateSlicers(data);
-                    filterTable();
+                    filterTable(); // Apply the filter when data is loaded and slicers are populated
+                    populateTable(data); // Populate the table after filtering
                 })
                 .catch(error => console.error('Error loading aggregated_data.json:', error));
 
@@ -248,8 +234,6 @@
                     svg.style.transition = 'transform 0.2s ease-out';
                     svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
                 });
-
-
 
                 // Path event listeners
                 paths.forEach(path => {
@@ -385,6 +369,10 @@
                 const indSlicer = document.getElementById('ind-slicer');
                 const nativitySlicer = document.getElementById('nativity-slicer');
 
+                // Add default "All" options
+                indSlicer.innerHTML = '<option value="">All</option>';
+                nativitySlicer.innerHTML = '<option value="">All</option>';
+
                 const indOptions = Array.from(new Set(data.map(item => item.IND)));
                 const nativityOptions = Array.from(new Set(data.map(item => item.NATIVITY)));
 
@@ -449,12 +437,11 @@
                 return `rgb(${intensity}, ${intensity}, ${intensity})`;
             }
 
+            // Listen for slicer changes to filter the table
             document.getElementById('ind-slicer').addEventListener('change', filterTable);
             document.getElementById('nativity-slicer').addEventListener('change', filterTable);
         });
-
     </script>
-
 
 
 </body>
