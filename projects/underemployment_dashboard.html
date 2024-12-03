@@ -421,14 +421,14 @@
 
             // Update SVG path colors based on UNDEREMPLOYMENT_LEVEL
             function updatePathColors(data) {
-                const paths = document.querySelectorAll('svg path');
+                const paths = document.querySelectorAll('#map path'); // Ensure paths are within the SVG element with id 'map'
                 const underemploymentMap = data.reduce((acc, item) => {
                     acc[item.ID] = item.UNDEREMPLOYMENT_LEVEL;
                     return acc;
                 }, {});
 
                 paths.forEach(path => {
-                    const regionId = path.id;
+                    const regionId = path.id; // Ensure your paths have appropriate IDs matching the data
                     const underemploymentLevel = underemploymentMap[regionId];
 
                     if (underemploymentLevel !== undefined) {
@@ -440,9 +440,9 @@
 
             // Define a color scale function from white (0) to black (2)
             function getColorForUnderemployment(level) {
-                const clampedLevel = Math.min(Math.max(level, 0), 2);
-                const intensity = Math.round((1 - clampedLevel / 2) * 255);
-                return `rgb(${intensity}, ${intensity}, ${intensity})`;
+                const clampedLevel = Math.min(Math.max(level, 0), 2); // Clamp values between 0 and 2
+                const intensity = Math.round((1 - clampedLevel / 2) * 255); // Calculate intensity for grayscale
+                return `rgb(${intensity}, ${intensity}, ${intensity})`; // Return grayscale color
             }
 
             document.getElementById('ind-slicer').addEventListener('change', filterTable);
