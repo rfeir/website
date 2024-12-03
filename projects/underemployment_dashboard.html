@@ -141,7 +141,7 @@
             let scale = 1;
             let isDragging = false;
             let draggingActive = false;
-            let selectedRegion = null;
+            let selectedRegions = [];
 
             const tooltip = document.getElementById('tooltip');
             const svgContainer = document.getElementById('svg-container');
@@ -214,7 +214,7 @@
                     path.addEventListener('mousemove', moveTooltip);
 
                     path.addEventListener('click', (e) => {
-                        toggleRegionSelection(path.id);
+                        toggleRegionSelection(path.id, e);  // Pass the event to check for the Control key
                         e.stopPropagation();
                     });
                 });
@@ -239,30 +239,44 @@
                 });
             }
 
-            function toggleRegionSelection(regionId) {
-                if (selectedRegion === regionId) {
-                    deselectRegion();
+            function toggleRegionSelection(regionId, e) {
+                if (e.ctrlKey) {
+                    // If control key is pressed, add/remove from the selectedRegions array
+                    if (selectedRegions.includes(regionId)) {
+                        deselectRegion(regionId);
+                    } else {
+                        selectRegion(regionId);
+                    }
                 } else {
+                    // Without control, deselect all and select the current one
+                    selectedRegions = [regionId];  // Reset to just this region
                     selectRegion(regionId);
                 }
+                e.stopPropagation();
             }
 
             function selectRegion(regionId) {
-                selectedRegion = regionId;
-                highlightRegion(regionId);
-                filterTableByRegion(regionId);
+                if (!selectedRegions.includes(regionId)) {
+                    selectedRegions.push(regionId); // Add the region to the selection array
+                }
+                highlightRegions();
+                filterTableByRegions();
             }
 
-            function deselectRegion() {
-                selectedRegion = null;
+            function deselectRegion(regionId) {
+                selectedRegions = selectedRegions.filter(region => region !== regionId); // Remove the specific region
                 resetRegion();
-                filterTable();
+                filterTableByRegions();
             }
 
-            function highlightRegion(regionId) {
+            function highlightRegions() {
                 const paths = document.querySelectorAll('path');
                 paths.forEach(path => {
-                    path.style.opacity = path.id === regionId ? '1' : '0.2';
+                    if (selectedRegions.includes(path.id)) {
+                        path.style.opacity = '1';
+                    } else {
+                        path.style.opacity = '0.2';
+                    }
                 });
             }
 
@@ -357,7 +371,7 @@
                 rows.forEach(row => {
                     const matchesInd = !indValue || row.cells[1].textContent === indValue;
                     const matchesNativity = !nativityValue || row.cells[2].textContent === nativityValue;
-                    const matchesRegion = !selectedRegion || row.dataset.region === selectedRegion;
+                    const matchesRegion = selectedRegions.length === 0 || selectedRegions.includes(row.dataset.region);
 
                     if (matchesInd && matchesNativity && matchesRegion) {
                         row.style.display = '';
@@ -368,13 +382,14 @@
             }
 
             // Filter table based on region selection
-            function filterTableByRegion(regionId) {
+            function filterTableByRegions() {
                 const rows = document.querySelectorAll('#data-table tbody tr');
                 rows.forEach(row => {
-                    if (row.dataset.region === regionId) {
-                        row.style.display = '';
+                    const regionId = row.dataset.region;
+                    if (selectedRegions.includes(regionId)) {
+                        row.style.display = ''; // Show the row if the region is selected
                     } else {
-                        row.style.display = 'none';
+                        row.style.display = 'none'; // Hide the row if the region is not selected
                     }
                 });
             }
