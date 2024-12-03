@@ -5,140 +5,154 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Underemployment Dashboard</title>
     <style>
+        /* General styles */
         body {
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-        }
-
-        .container {
             display: flex;
-            flex-direction: row;
-            justify-content: space-between;
-            margin: 10px; /* Reduced margin around the container */
-            gap: 10px; /* Smaller gap between the map and table */
+            flex-direction: column;
+            height: 100vh;
         }
 
-        .container .left,
-        .container .right {
-            flex: 1; /* Each takes up equal width */
-            max-width: 50%; /* Limit to 50% of the screen width */
-        }
-
-        #svg-container {
-            flex: 1;
-            min-width: 300px;
-            max-width: 100%;
-            height: 600px;
-            border: 0px solid #ff0000;
-            background: #ffffff;
+        #controls {
+            background: #f8f9fa;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            position: relative;
-            cursor: grab;
-            user-select: none;
+            gap: 20px;
         }
 
-        #svg-container svg {
-            cursor: pointer;
-            width: 100%; /* Ensure the SVG scales properly within the container */
-            height: 100%; /* Make sure the height is proportional */
-        }
-
-        #tooltip {
-            position: absolute;
-            background-color: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 5px;
-            border-radius: 3px;
-            display: none;
-            pointer-events: none;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 0;
-            overflow-x: auto;
-            max-height: 600px;
-            display: block;
-            overflow-y: scroll;
-        }
-
-        th, td {
-            padding: 8px 12px;
-            text-align: left;
-            border: 1px solid #ddd;
-        }
-
-        th {
-            color: rgb(0, 0, 0);
-            border-bottom: 2px solid rgb(7, 142, 50);
-        }
-
-        tr:nth-child(odd) {
-            background-color: white;
-        }
-
-        tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
-
-        .highlighted {
-            background-color: lightgray;
-        }
-
-        select {
-            margin: 10px;
-            padding: 5px;
+        #controls label, #controls select {
             font-size: 14px;
         }
+
+        /* Container for map and table */
+        #container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* SVG container for map */
+        #svg-container {
+            flex: 2;
+            position: relative;
+            overflow: hidden;
+            background: #f4f4f4;
+            border-right: 1px solid #ddd;
+        }
+
+        /* Loading spinner */
+        #loading-spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 14px;
+            display: none;
+        }
+
+        /* Table styles */
+        #data-table {
+            flex: 1;
+            border-collapse: collapse;
+            width: 100%;
+            overflow-y: auto;
+        }
+
+        #data-table thead {
+            background: #f1f1f1;
+            position: sticky;
+            top: 0;
+        }
+
+        #data-table th, #data-table td {
+            text-align: left;
+            padding: 8px;
+            border: 1px solid #ddd;
+            font-size: 13px;
+        }
+
+        #data-table tbody tr:hover {
+            background: #f9f9f9;
+        }
+
+        /* Tooltip */
+        #tooltip {
+            position: absolute;
+            background: #333;
+            color: #fff;
+            font-size: 12px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            pointer-events: none;
+            display: none;
+            z-index: 1000;
+        }
+
+        /* Dynamic resizing */
+        @media (max-width: 768px) {
+            #container {
+                flex-direction: column;
+            }
+
+            #svg-container {
+                flex: 1;
+            }
+
+            #data-table {
+                flex: 1;
+            }
+        }
+
     </style>
 </head>
 <body>
-    <div>
-        <label for="ind-slicer">IND:</label>
+    <div id="controls">
+        <label for="ind-slicer">Industry:</label>
         <select id="ind-slicer">
-            <option value="Utilities" selected>Utilities</option> <!-- Default selection -->
+            <option value="">All Industries</option>
         </select>
 
-        <label for="nativity-slicer">NATIVITY:</label>
+        <label for="nativity-slicer">Nativity:</label>
         <select id="nativity-slicer">
-            <option value="Domestic" selected>Domestic</option> <!-- Default selection -->
+            <option value="">All Nativity</option>
         </select>
     </div>
 
-    <div class="container">
-        <div class="left">
-            <div id="svg-container">
-                <svg id="map"></svg>
-            </div>
-            <div id="tooltip"></div>
+    <div id="container">
+        <div id="svg-container">
+            <!-- Map SVG will be dynamically loaded here -->
         </div>
-
-        <div class="right">
-            <table id="data-table">
-                <thead>
-                    <tr>
-                        <th>Region</th>
-                        <th>IND</th>
-                        <th>NATIVITY</th>
-                        <th>Mean Wage</th>
-                        <th>Mean Other Income</th>
-                        <th>Mean Age</th>
-                        <th>Underemployment Level</th>
-                        <th>Education Level</th>
-                        <th>Required Education Level</th>
-                        <th>Nativity Percentage</th>
-                        <th>ID</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </div>
+        <table id="data-table">
+            <thead>
+                <tr>
+                    <th>State</th>
+                    <th>Industry</th>
+                    <th>Nativity</th>
+                    <th>Mean Wage</th>
+                    <th>Mean Other Income</th>
+                    <th>Mean Age</th>
+                    <th>Underemployment Level</th>
+                    <th>Education Level</th>
+                    <th>Required Education Level</th>
+                    <th>Nativity Percentage</th>
+                    <th>Region ID</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Table data will be dynamically populated -->
+            </tbody>
+        </table>
     </div>
+
+    <div id="tooltip"></div>
+
 </body>
 </html>
 
@@ -160,301 +174,249 @@
     }
 </style>
 
-<!--try making the script section not indented tomorrow. It went back to loading full table. Still need to fix zooming. Coloring works though!--> 
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            let offsetX = 0;
+            let offsetY = 0;
+            let scale = 1;
+            let isDragging = false;
+            let draggingActive = false;
+            let selectedRegion = null;
+            const tooltip = document.getElementById('tooltip');
+            const spinner = document.createElement('div');
+            spinner.id = 'loading-spinner';
+            spinner.textContent = 'Loading...';
+            spinner.style.cssText = `
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(0, 0, 0, 0.7);
+                color: white;
+                padding: 10px 20px;
+                border-radius: 5px;
+                display: none;
+            `;
+            document.body.appendChild(spinner);
 
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        let offsetX = 0;
-        let offsetY = 0;
-        let scale = 1;
-        let isDragging = false;
-        let draggingActive = false;
-        let selectedRegion = null;
-        const tooltip = document.getElementById('tooltip');
-        let data = [];  // Declare a variable to hold the data
+            let data = []; // Holds fetched data
 
-        fetch('paths.svg')
-            .then(response => response.text())
-            .then(svgContent => {
-                document.getElementById('svg-container').innerHTML = svgContent;
-                initMap();
-            })
-            .catch(error => console.error('Error loading paths.svg:', error));
-
-        fetch('aggregated_data.json')
-            .then(response => response.json())
-            .then(fetchedData => {
-                data = fetchedData; // Store the data in the global variable
-                populateSlicers(data);
-                filterTable(); // Apply the filter when data is loaded and slicers are populated
-                populateTable(data); // Populate the table after filtering
-            })
-            .catch(error => console.error('Error loading aggregated_data.json:', error));
-
-        function initMap() {
-            const svgContainer = document.getElementById('svg-container');
-            const svg = svgContainer.querySelector('svg');
-            const paths = svg.querySelectorAll('path');
-
-            // Dragging functionality
-            svgContainer.addEventListener('mousedown', (e) => {
-                if (e.button !== 0) return;
-                isDragging = true;
-                draggingActive = true;
-                const startX = e.clientX - offsetX;
-                const startY = e.clientY - offsetY;
-                svgContainer.style.cursor = 'grabbing';
-
-                const onMouseMove = (moveEvent) => {
-                    offsetX = moveEvent.clientX - startX;
-                    offsetY = moveEvent.clientY - startY;
-                    svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
-                };
-
-                const onMouseUp = () => {
-                    isDragging = false;
-                    draggingActive = false;
-                    svgContainer.style.cursor = 'default';
-                    window.removeEventListener('mousemove', onMouseMove);
-                    window.removeEventListener('mouseup', onMouseUp);
-                };
-
-                window.addEventListener('mousemove', onMouseMove);
-                window.addEventListener('mouseup', onMouseUp);
-            });
-
-            // Zooming functionality with centering on 50% from top and bottom of the container
-            svgContainer.addEventListener('wheel', (e) => {
-                e.preventDefault();
-
-                // Simple zoom adjustment (zoom in for up wheel, zoom out for down wheel)
-                const zoomFactor = e.deltaY < 0 ? 0.1 : -0.1;
-                const newScale = scale + zoomFactor; // Linear zoom
-                scale = Math.min(Math.max(0.8, newScale), 10); // Clamp between 0.8 and 10
-
-                // Get center position of the container (for centering zoom)
-                const rect = svgContainer.getBoundingClientRect();
-                const containerCenterX = rect.width / 2;
-                const containerCenterY = rect.height / 2;
-
-                // Scale factor calculation
-                const scaleFactor = scale / (scale - zoomFactor);
-
-                // Adjust the offset directly based on zooming into the center
-                offsetX = containerCenterX - (containerCenterX - offsetX) * scaleFactor;
-                offsetY = containerCenterY - (containerCenterY - offsetY) * scaleFactor;
-
-                // Ensure the image stays within bounds by clamping the offsets
-                offsetX = Math.max(Math.min(offsetX, 0), rect.width - rect.width * scale);
-                offsetY = Math.max(Math.min(offsetY, 0), rect.height - rect.height * scale);
-
-                // Apply smooth transformation for zooming
-                svg.style.transition = 'transform 0.2s ease-out';
-                svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
-            });
-
-            // Path event listeners
-            paths.forEach(path => {
-                path.addEventListener('mouseenter', (e) => {
-                    if (!draggingActive) {
-                        highlightRegionOnHover(path.id);
-                        showTooltip(e, path.id);
-                    }
-                });
-
-                path.addEventListener('mouseleave', () => {
-                    if (!draggingActive) {
-                        resetHoverBorders();
-                        hideTooltip();
-                    }
-                });
-
-                path.addEventListener('mousemove', (e) => {
-                    if (!draggingActive) {
-                        moveTooltip(e);
-                    }
-                });
-
-                path.addEventListener('click', (e) => {
-                    const regionId = path.id;
-                    toggleRegionSelection(regionId);
-                    e.stopPropagation();
-                });
-            });
-
-            // Clicking outside to deselect region
-            svgContainer.addEventListener('click', (e) => {
-                if (!e.target.closest('path')) {
-                    deselectRegion();
-                }
-            });
-        }
-
-        function toggleRegionSelection(regionId) {
-            if (selectedRegion === regionId) {
-                deselectRegion();
-            } else {
-                selectRegion(regionId);
+            // Show loading spinner during map loading
+            function showSpinner() {
+                spinner.style.display = 'block';
             }
-        }
 
-        function selectRegion(regionId) {
-            selectedRegion = regionId;
-            highlightRegion(regionId);
-            filterTableByRegion(regionId);
-        }
+            function hideSpinner() {
+                spinner.style.display = 'none';
+            }
 
-        function deselectRegion() {
-            selectedRegion = null;
-            resetRegion();
-            filterTable();
-        }
+            showSpinner();
+            fetch('paths.svg')
+                .then(response => response.text())
+                .then(svgContent => {
+                    hideSpinner();
+                    document.getElementById('svg-container').innerHTML = svgContent;
+                    initMap();
+                })
+                .catch(error => {
+                    console.error('Error loading paths.svg:', error);
+                    hideSpinner();
+                });
 
-        function highlightRegion(regionId) {
-            const paths = document.querySelectorAll('path');
-            paths.forEach(path => {
-                path.style.opacity = path.id === regionId ? '1' : '0.3';
-            });
-        }
+            fetch('aggregated_data.json')
+                .then(response => response.json())
+                .then(fetchedData => {
+                    data = fetchedData; // Store data globally
+                    populateSlicers(data);
+                    filterTable(); // Apply filter on page load
+                    populateTable(data); // Populate table after filtering
+                })
+                .catch(error => console.error('Error loading aggregated_data.json:', error));
 
-        function resetRegion() {
-            const paths = document.querySelectorAll('path');
-            paths.forEach(path => {
-                path.style.opacity = '1';
-            });
-        }
+            function initMap() {
+                const svgContainer = document.getElementById('svg-container');
+                const svg = svgContainer.querySelector('svg');
+                const paths = svg.querySelectorAll('path');
 
-        function highlightRegionOnHover(regionId) {
-            const paths = document.querySelectorAll('path');
-            paths.forEach(path => {
-                if (path.id === regionId) {
-                    path.style.stroke = 'black';
-                    path.style.strokeWidth = '2px';
-                }
-            });
-        }
+                // Dragging functionality
+                svgContainer.addEventListener('mousedown', (e) => {
+                    if (e.button !== 0) return;
+                    isDragging = true;
+                    draggingActive = true;
+                    const startX = e.clientX - offsetX;
+                    const startY = e.clientY - offsetY;
+                    svgContainer.style.cursor = 'grabbing';
 
-        function resetHoverBorders() {
-            const paths = document.querySelectorAll('path');
-            paths.forEach(path => {
-                path.style.stroke = 'none';
-                path.style.strokeWidth = '0';
-            });
-        }
+                    const onMouseMove = (moveEvent) => {
+                        offsetX = moveEvent.clientX - startX;
+                        offsetY = moveEvent.clientY - startY;
+                        svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+                    };
 
-        function showTooltip(event, regionId) {
-            tooltip.textContent = `Region: ${regionId}`;
-            tooltip.style.display = 'block';
-            moveTooltip(event);
-        }
+                    const onMouseUp = () => {
+                        isDragging = false;
+                        draggingActive = false;
+                        svgContainer.style.cursor = 'default';
+                        window.removeEventListener('mousemove', onMouseMove);
+                        window.removeEventListener('mouseup', onMouseUp);
+                    };
 
-        function hideTooltip() {
-            tooltip.style.display = 'none';
-        }
+                    window.addEventListener('mousemove', onMouseMove);
+                    window.addEventListener('mouseup', onMouseUp);
+                });
 
-        function moveTooltip(event) {
-            tooltip.style.left = `${event.pageX + 10}px`;
-            tooltip.style.top = `${event.pageY + 10}px`;
-        }
+                // Zooming functionality with dynamic scaling
+                svgContainer.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    const zoomFactor = e.deltaY < 0 ? 0.1 : -0.1;
+                    scale = Math.min(Math.max(0.8, scale + zoomFactor), 10);
 
-        // Populate table with data
-        function populateTable(data) {
-            const table = document.getElementById('data-table').getElementsByTagName('tbody')[0];
-            table.innerHTML = '';
+                    // Adjust transformation on zoom
+                    svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+                });
 
-            data.forEach(item => {
-                const row = document.createElement('tr');
-                row.dataset.region = item.ID;
-                row.innerHTML = `
-                    <td>${item.STATE}</td>
-                    <td>${item.IND}</td>
-                    <td>${item.NATIVITY}</td>
-                    <td>${item.MEAN_WAGE}</td>
-                    <td>${item.MEAN_OTHER_INCOME}</td>
-                    <td>${item.MEAN_AGE}</td>
-                    <td>${item.UNDEREMPLOYMENT_LEVEL}</td>
-                    <td>${item.EDUCATION_LEVEL}</td>
-                    <td>${item.REQUIRED_EDUCATION_LEVEL}</td>
-                    <td>${item.NATIVITY_PERCENTAGE}</td>
-                    <td>${item.ID}</td>
-                `;
-                table.appendChild(row);
-            });
-        }
+                // Path hover and selection logic
+                paths.forEach(path => {
+                    path.addEventListener('mouseenter', (e) => {
+                        if (!draggingActive) {
+                            highlightRegionOnHover(path.id);
+                            showTooltip(e, path.id);
+                        }
+                    });
 
-        // Populate slicers with options
-        function populateSlicers(data) {
-            const indSlicer = document.getElementById('ind-slicer');
-            const nativitySlicer = document.getElementById('nativity-slicer');
+                    path.addEventListener('mouseleave', () => {
+                        if (!draggingActive) {
+                            resetHoverBorders();
+                            hideTooltip();
+                        }
+                    });
 
-            const indOptions = Array.from(new Set(data.map(item => item.IND)));
-            const nativityOptions = Array.from(new Set(data.map(item => item.NATIVITY)));
+                    path.addEventListener('mousemove', (e) => {
+                        if (!draggingActive) {
+                            moveTooltip(e);
+                        }
+                    });
 
-            indOptions.forEach(ind => {
-                if (ind !== 'Utilities') {
-                    const option = document.createElement('option');
-                    option.value = ind;
-                    option.textContent = ind;
-                    indSlicer.appendChild(option);
-                }
-            });
+                    path.addEventListener('click', (e) => {
+                        const regionId = path.id;
+                        toggleRegionSelection(regionId);
+                        e.stopPropagation();
+                    });
+                });
 
-            nativityOptions.forEach(nativity => {
-                if (nativity !== 'Domestic') {
-                    const option = document.createElement('option');
-                    option.value = nativity;
-                    option.textContent = nativity;
-                    nativitySlicer.appendChild(option);
-                }
-            });
-        }
+                // Clicking outside to deselect
+                svgContainer.addEventListener('click', () => deselectRegion());
+            }
 
-        // Filter table and update SVG path colors
-        function filterTable() {
-            const indValue = document.getElementById('ind-slicer').value;
-            const nativityValue = document.getElementById('nativity-slicer').value;
+            // Tooltip functionality
+            function showTooltip(event, regionId) {
+                tooltip.textContent = `Region: ${regionId}`;
+                tooltip.style.display = 'block';
+                moveTooltip(event);
+            }
 
-            const filteredData = data.filter(item => {
-                const matchesInd = indValue ? item.IND === indValue : true;
-                const matchesNativity = nativityValue ? item.NATIVITY === nativityValue : true;
-                return matchesInd && matchesNativity;
-            });
+            function hideTooltip() {
+                tooltip.style.display = 'none';
+            }
 
-            // Update table display
-            populateTable(filteredData);
-            updatePathColors(filteredData);
-        }
+            function moveTooltip(event) {
+                tooltip.style.left = `${event.pageX + 10}px`;
+                tooltip.style.top = `${event.pageY + 10}px`;
+            }
 
-        // Update SVG path colors based on UNDEREMPLOYMENT_LEVEL
-        function updatePathColors(data) {
-            const paths = document.querySelectorAll('svg path');
-            const underemploymentMap = data.reduce((acc, item) => {
-                acc[item.ID] = item.UNDEREMPLOYMENT_LEVEL;
-                return acc;
-            }, {});
+            // Table and slicer logic
+            function populateTable(data) {
+                const table = document.getElementById('data-table').getElementsByTagName('tbody')[0];
+                table.innerHTML = '';
 
-            paths.forEach(path => {
-                const regionId = path.id;
-                const underemploymentLevel = underemploymentMap[regionId];
+                data.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.dataset.region = item.ID;
+                    row.innerHTML = `
+                        <td>${item.STATE}</td>
+                        <td>${item.IND}</td>
+                        <td>${item.NATIVITY}</td>
+                        <td>${item.MEAN_WAGE}</td>
+                        <td>${item.MEAN_OTHER_INCOME}</td>
+                        <td>${item.MEAN_AGE}</td>
+                        <td>${item.UNDEREMPLOYMENT_LEVEL}</td>
+                        <td>${item.EDUCATION_LEVEL}</td>
+                        <td>${item.REQUIRED_EDUCATION_LEVEL}</td>
+                        <td>${item.NATIVITY_PERCENTAGE}</td>
+                        <td>${item.ID}</td>
+                    `;
+                    table.appendChild(row);
+                });
+            }
 
-                if (underemploymentLevel !== undefined) {
-                    const color = getColorForUnderemployment(underemploymentLevel);
-                    path.style.fill = color;
-                }
-            });
-        }
+            function populateSlicers(data) {
+                const indSlicer = document.getElementById('ind-slicer');
+                const nativitySlicer = document.getElementById('nativity-slicer');
 
-        // Define a color scale function from white (0) to black (2)
-        function getColorForUnderemployment(level) {
-            const clampedLevel = Math.min(Math.max(level, 0), 2);
-            const intensity = Math.round((1 - clampedLevel / 2) * 255);
-            return `rgb(${intensity}, ${intensity}, ${intensity})`;
-        }
+                const indOptions = Array.from(new Set(data.map(item => item.IND)));
+                const nativityOptions = Array.from(new Set(data.map(item => item.NATIVITY)));
 
-        // Listen for slicer changes to filter the table
-        document.getElementById('ind-slicer').addEventListener('change', filterTable);
-        document.getElementById('nativity-slicer').addEventListener('change', filterTable);
-    });
+                indOptions.forEach(ind => {
+                    if (ind !== 'Utilities') {
+                        const option = document.createElement('option');
+                        option.value = ind;
+                        option.textContent = ind;
+                        indSlicer.appendChild(option);
+                    }
+                });
+
+                nativityOptions.forEach(nativity => {
+                    if (nativity !== 'Domestic') {
+                        const option = document.createElement('option');
+                        option.value = nativity;
+                        option.textContent = nativity;
+                        nativitySlicer.appendChild(option);
+                    }
+                });
+            }
+
+            function filterTable() {
+                const indValue = document.getElementById('ind-slicer').value;
+                const nativityValue = document.getElementById('nativity-slicer').value;
+
+                const filteredData = data.filter(item => {
+                    const matchesInd = indValue ? item.IND === indValue : true;
+                    const matchesNativity = nativityValue ? item.NATIVITY === nativityValue : true;
+                    return matchesInd && matchesNativity;
+                });
+
+                populateTable(filteredData);
+                updatePathColors(filteredData);
+            }
+
+            function updatePathColors(filteredData) {
+                const paths = document.querySelectorAll('svg path');
+                const underemploymentMap = filteredData.reduce((acc, item) => {
+                    acc[item.ID] = item.UNDEREMPLOYMENT_LEVEL;
+                    return acc;
+                }, {});
+
+                paths.forEach(path => {
+                    const regionId = path.id;
+                    const underemploymentLevel = underemploymentMap[regionId];
+                    if (underemploymentLevel !== undefined) {
+                        const color = getColorForUnderemployment(underemploymentLevel);
+                        path.style.fill = color;
+                    }
+                });
+            }
+
+            function getColorForUnderemployment(level) {
+                const clampedLevel = Math.min(Math.max(level, 0), 2);
+                const intensity = Math.round((1 - clampedLevel / 2) * 255);
+                return `rgb(${intensity}, ${intensity}, ${intensity})`;
+            }
+
+            // Attach slicer change listeners
+            document.getElementById('ind-slicer').addEventListener('change', filterTable);
+            document.getElementById('nativity-slicer').addEventListener('change', filterTable);
+        });
+
     </script>
 
 
