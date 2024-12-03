@@ -508,18 +508,6 @@
                 updatePathColors(filteredData);
             }
 
-            // Update the map when data is first loaded
-            fetch('aggregated_data.json')
-                .then(response => response.json())
-                .then(data => {
-                    populateTable(data);
-                    populateSlicers(data);
-                    filterTable(); // Apply filter and color on initial load
-                })
-                .catch(error => console.error('Error loading aggregated_data.json:', error));
-
-
-
             document.getElementById('ind-slicer').addEventListener('change', filterTable);
             document.getElementById('nativity-slicer').addEventListener('change', filterTable);
         });
