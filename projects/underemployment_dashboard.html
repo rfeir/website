@@ -93,7 +93,7 @@
         select {
             margin: 10px;
             padding: 5px;
-            font-size: 14px;
+            font-size: 12px;
         }
     </style>
 </head>
@@ -291,7 +291,7 @@
             function highlightRegion(regionId) {
                 const paths = document.querySelectorAll('path');
                 paths.forEach(path => {
-                    path.style.opacity = path.id === regionId ? '1' : '0.3';
+                    path.style.opacity = path.id === regionId ? '1' : '0.2';
                 });
             }
 
@@ -466,7 +466,6 @@
                 });
             }
 
-
             // Define a color scale function from the custom colorscale
             function getColorForUnderemployment(level) {
                 // Log the level being processed to ensure the data is correct
@@ -495,8 +494,6 @@
                 console.error('Unexpected scaleValue:', scaleValue);
                 return '#e9e9e9';
             }
-
-
 
             // Update map color on table filter
             function filterTable() {
@@ -529,6 +526,5 @@
         });
 
     </script>
-
 </body>
 </html>
