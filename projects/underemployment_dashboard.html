@@ -299,17 +299,17 @@
 
             // Populate table with data
             function populateTable(data) {
-                const table = document.getElementById('data-table').getElementsByTagName('tbody')[0];
-                table.innerHTML = '';
+                const table = document.querySelector('#data-table tbody'); // Ensure your table has a <tbody> element
+                table.innerHTML = ''; // Clear any existing rows
 
                 data.forEach(item => {
                     const row = document.createElement('tr');
-                    row.dataset.region = item.ID;
+                    row.dataset.region = item.ID; // Assign the region ID to the row
+
                     row.innerHTML = `
                         <td>${item.STATE}</td>
                         <td>${item.COUNTIES}</td>
                         <td>${item.INDUSTRY}</td>
-                        <td>${item.NATIVITY}</td>
                         <td>${item.MEANWAGE}</td>
                         <td>${item.MEANOTHERINCOME}</td>
                         <td>${item.MEANAGE}</td>
@@ -318,8 +318,9 @@
                         <td>${item.REQUIREDEDUCATIONLEVEL}</td>
                         <td>${item.NATIVITYPERCENTAGE}</td>
                         <td>${item.ID}</td>
+                        <td>${item.NATIVITY}</td>
                     `;
-                    table.appendChild(row);
+                    table.appendChild(row); // Append the row to the table
                 });
             }
 
