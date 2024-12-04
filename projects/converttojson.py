@@ -17,7 +17,7 @@ def csv_to_json(csv_file_path, json_file_path):
         print(f"Error: {e}")
 
 # File paths
-csv_file = "aggregated_data_2.csv"
+csv_file = "aggregated_data.csv"
 json_file = "aggregated_data.json"
 
 # Convert CSV to JSON
