@@ -306,17 +306,17 @@
                     const row = document.createElement('tr');
                     row.dataset.region = item.ID;
                     row.innerHTML = `
-                        <td>${item.State}</td>
-                        <td>${item.Counties}</td>
-                        <td>${item.Industry}</td>
-                        <td>${item.Nativity}</td>
-                        <td>${item['Mean Wage']}</td>
-                        <td>${item['Mean Other Income']}</td>
-                        <td>${item['Mean Age']}</td>
-                        <td>${item['Underemployment Level']}</td>
-                        <td>${item['Education Level']}</td>
-                        <td>${item['Required Education Level']}</td>
-                        <td>${item['Nativity Percentage']}</td>
+                        <td>${item.STATE}</td>
+                        <td>${item.COUNTIES}</td>
+                        <td>${item.INDUSTRY}</td>
+                        <td>${item.NATIVITY}</td>
+                        <td>${item.MEANWAGE}</td>
+                        <td>${item.MEANOTHERINCOME}</td>
+                        <td>${item.MEANAGE}</td>
+                        <td>${item.UNDEREMPLOYMENTLEVEL}</td>
+                        <td>${item.EDUCATIONLEVEL}</td>
+                        <td>${item.REQUIREDEDUCATIONLEVEL}</td>
+                        <td>${item.NATIVITYPERCENTAGE}</td>
                         <td>${item.ID}</td>
                     `;
                     table.appendChild(row);
