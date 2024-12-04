@@ -406,7 +406,7 @@
 
                 // Map the data to associate region IDs with UNDEREMPLOYMENT_LEVEL
                 const underemploymentMap = data.reduce((acc, item) => {
-                    acc[item.ID] = item.UNDEREMPLOYMENT_LEVEL;
+                    acc[item.ID] = item.UNDEREMPLOYMENTLEVEL;
                     return acc;
                 }, {});
 
@@ -474,7 +474,7 @@
                     if (matchesInd && matchesNativity && matchesRegion) {
                         row.style.display = ''; // Show row
                         const regionId = row.dataset.region;
-                        filteredData.push({ ID: regionId, UNDEREMPLOYMENT_LEVEL: row.cells[6].textContent });
+                        filteredData.push({ ID: regionId, UNDEREMPLOYMENTLEVEL: row.cells[6].textContent });
                     } else {
                         row.style.display = 'none'; // Hide row
                     }
