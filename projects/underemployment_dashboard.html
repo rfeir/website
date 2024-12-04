@@ -310,6 +310,7 @@
                         <td>${item.STATE}</td>
                         <td>${item.COUNTIES}</td>
                         <td>${item.INDUSTRY}</td>
+                        <td>${item.NATIVITY}</td>
                         <td>${item.MEANWAGE}</td>
                         <td>${item.MEANOTHERINCOME}</td>
                         <td>${item.MEANAGE}</td>
@@ -318,7 +319,6 @@
                         <td>${item.REQUIREDEDUCATIONLEVEL}</td>
                         <td>${item.NATIVITYPERCENTAGE}</td>
                         <td>${item.ID}</td>
-                        <td>${item.NATIVITY}</td>
                     `;
                     table.appendChild(row); // Append the row to the table
                 });
@@ -358,8 +358,8 @@
                 const rows = document.querySelectorAll('#data-table tbody tr');
 
                 rows.forEach(row => {
-                    const matchesInd = !indValue || row.cells[1].textContent === indValue;
-                    const matchesNativity = !nativityValue || row.cells[2].textContent === nativityValue;
+                    const matchesInd = !indValue || row.cells[2].textContent === indValue;
+                    const matchesNativity = !nativityValue || row.cells[3].textContent === nativityValue;
                     const matchesRegion = !selectedRegion || row.dataset.region === selectedRegion;
 
                     if (matchesInd && matchesNativity && matchesRegion) {
@@ -402,30 +402,26 @@
 
             // Update SVG path colors based on UNDEREMPLOYMENT_LEVEL using the new colorscale
             function updatePathColors(data) {
-                const svg = document.querySelector('#svg-container svg'); // Get the SVG element
-                const paths = svg.querySelectorAll('path'); // Select all path elements
+                const paths = document.querySelectorAll('#svg-container path');
 
-                // Map the data to associate region IDs with UNDEREMPLOYMENT_LEVEL
-                const underemploymentMap = data.reduce((acc, item) => {
-                    acc[item.ID] = item.UNDEREMPLOYMENTLEVEL;
-                    return acc;
+                // Create a map of ID to UNDEREMPLOYMENTLEVEL
+                const underemploymentMap = data.reduce((map, item) => {
+                    map[item.ID] = item.UNDEREMPLOYMENTLEVEL;
+                    return map;
                 }, {});
 
-                // Debug the data mapping
-                console.log('Underemployment Map:', underemploymentMap);
-
-                // Loop over all the paths and update their color based on the data
                 paths.forEach(path => {
-                    const regionId = path.id; // Get the ID of the current path (should match the data region ID)
-                    const underemploymentLevel = underemploymentMap[regionId];
+                    const regionId = path.id;
+                    const level = underemploymentMap[regionId];
 
-                    // Debug the path ID and level
-                    console.log(`Region ID: ${regionId}, Level: ${underemploymentLevel}`);
+                    // Check for missing level values
+                    if (level == null) {
+                        path.style.fill = '#e9e9e9'; // Default color for missing values
+                        return;
+                    }
 
-                    // Get the color for the level
-                    const color = getColorForUnderemployment(underemploymentLevel);
-
-                    // Apply the color
+                    // Get the color based on level
+                    const color = getColorForUnderemployment(level);
                     path.style.fill = color;
                 });
             }
