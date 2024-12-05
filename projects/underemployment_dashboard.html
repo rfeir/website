@@ -330,16 +330,19 @@
                         <td>${item.STATE}</td>
                         <td>${item.IND}</td>
                         <td>${item.NATIVITY}</td>
-                        <td>${item.MEAN_WAGE ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(item.MEAN_WAGE) : 'N/A'}</td>
-                        <td>${item.MEAN_OTHER_INCOME ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(item.MEAN_OTHER_INCOME) : 'N/A'}</td>
-                        <td>${item.MEAN_AGE ? parseFloat(item.MEAN_AGE).toFixed(0) : 'N/A'}</td>
-                        <td>${item.UNDEREMPLOYMENT_LEVEL ? parseFloat(item.UNDEREMPLOYMENT_LEVEL).toFixed(2) : 'N/A'}</td>
-                        <td>${item.EDUCATION_LEVEL ? parseFloat(item.EDUCATION_LEVEL).toFixed(2) : 'N/A'}</td>
-                        <td>${item.REQUIRED_EDUCATION_LEVEL ? parseFloat(item.EDUCATION_LEVEL).toFixed(2) : 'N/A'}</td>
-                        <td>${item.NATIVITY_PERCENTAGE ? 
+                        <td>${item.MEAN_WAGE !== null && item.MEAN_WAGE !== undefined ? 
+                            new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(item.MEAN_WAGE) 
+                            : ''}</td>
+                        <td>${item.MEAN_OTHER_INCOME !== null && item.MEAN_OTHER_INCOME !== undefined ? 
+                            new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(item.MEAN_OTHER_INCOME) 
+                            : ''}</td>
+                        <td>${item.MEAN_AGE !== null && item.MEAN_AGE !== undefined ? parseFloat(item.MEAN_AGE).toFixed(0) : ''}</td>
+                        <td>${item.UNDEREMPLOYMENT_LEVEL !== null && item.UNDEREMPLOYMENT_LEVEL !== undefined ? parseFloat(item.UNDEREMPLOYMENT_LEVEL).toFixed(2) : ''}</td>
+                        <td>${item.EDUCATION_LEVEL !== null && item.EDUCATION_LEVEL !== undefined ? parseFloat(item.UNDEREMPLOYMENT_LEVEL).toFixed(2) : ''}</td>
+                        <td>${item.NATIVITY_PERCENTAGE !== null && item.NATIVITY_PERCENTAGE !== undefined ? 
                             (item.NATIVITY_PERCENTAGE === 1 ? '100%' 
                             : (item.NATIVITY_PERCENTAGE * 100).toFixed(1) + '%') 
-                            : 'N/A'}</td>
+                            : ''}</td>
                         <td>${item.ID}</td>
                     `;
                     table.appendChild(row);
