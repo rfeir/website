@@ -324,27 +324,60 @@
                 });
             }
     
-            // D3 color scale for UNDEREMPLOYMENT_LEVEL
-            const colorScale = d3.scaleSequential()
-                .domain([0, 2]) // Data range
-                .interpolator(d3.interpolateGnBu); // Smooth gradient
+            // Define the new colorscale
+            const colorscale = [
+                [0.0, "#F7FCF0"],
+                [0.2, "#E0F3DB"],
+                [0.4, "#CCEBC5"],
+                [0.6, "#A8DDB5"],
+                [0.8, "#7BCCC4"],
+                [1.0, "#43A2CA"],
+                [1.2, "#0868AC"],
+                [1.4, "#084081"]
+            ];
     
-            // Determine color for underemployment level
             function getColorForUnderemployment(level) {
-                if (level == null || isNaN(parseFloat(level))) {
-                    return '#e9e9e9'; // Default color for invalid data
+                if (level == null || isNaN(level)) {
+                    return "#e9e9e9"; // Default color for invalid data
                 }
-                return colorScale(Math.min(Math.max(level, 0), 2));
+    
+                const clampedLevel = Math.min(Math.max(level, 0), 2); // Clamp between 0 and 2
+                const scaledValue = clampedLevel / 2; // Scale to 0–1
+    
+                for (let i = 0; i < colorscale.length - 1; i++) {
+                    const [start, startColor] = colorscale[i];
+                    const [end, endColor] = colorscale[i + 1];
+                    if (scaledValue >= start && scaledValue <= end) {
+                        const ratio = (scaledValue - start) / (end - start);
+                        return interpolateColor(startColor, endColor, ratio);
+                    }
+                }
+                return "#e9e9e9";
             }
     
-            // Update path colors
-            function updatePathColors(data) {
-                const svg = document.querySelector('#svg-container svg');
-                const paths = svg.querySelectorAll('path');
+            function interpolateColor(color1, color2, factor) {
+                const c1 = parseInt(color1.slice(1), 16);
+                const c2 = parseInt(color2.slice(1), 16);
     
-                const underemploymentMap = data.reduce((acc, item) => {
-                    acc[item.ID] = parseFloat(item.UNDEREMPLOYMENT_LEVEL);
-                    return acc;
+                const r1 = (c1 >> 16) & 0xFF;
+                const g1 = (c1 >> 8) & 0xFF;
+                const b1 = c1 & 0xFF;
+    
+                const r2 = (c2 >> 16) & 0xFF;
+                const g2 = (c2 >> 8) & 0xFF;
+                const b2 = c2 & 0xFF;
+    
+                const r = Math.round(r1 + factor * (r2 - r1));
+                const g = Math.round(g1 + factor * (g2 - g1));
+                const b = Math.round(b1 + factor * (b2 - b1));
+    
+                return `rgb(${r}, ${g}, ${b})`;
+            }
+    
+            function updatePathColors(data) {
+                const underemploymentMap = data.reduce((map, item) => {
+                    map[item.ID] = parseFloat(item.UNDEREMPLOYMENT_LEVEL);
+                    return map;
                 }, {});
     
                 paths.forEach(path => {
@@ -353,7 +386,6 @@
                 });
             }
     
-            // Filter table
             function filterTable() {
                 const indValue = document.getElementById('ind-slicer').value;
                 const nativityValue = document.getElementById('nativity-slicer').value;
@@ -379,11 +411,11 @@
                 updatePathColors(filteredData);
             }
     
-            // Event listeners for slicers
             document.getElementById('ind-slicer').addEventListener('change', filterTable);
             document.getElementById('nativity-slicer').addEventListener('change', filterTable);
         });
     </script>
+    
     
 </body>
 </html>
