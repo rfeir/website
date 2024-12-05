@@ -108,7 +108,31 @@
         <div class="left">
             <div id="svg-container">
                 <svg id="map"></svg>
-            </div>
+                <!-- Color Key -->
+                <div id="color-key" style="
+                    position: absolute;
+                    bottom: 20px;
+                    left: 20px;
+                    background: white;
+                    padding: 10px;
+                    border: 1px solid #ddd;
+                    border-radius: 5px;
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                    font-size: 12px;">
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <div style="width: 20px; height: 10px; background: #fde725;"></div>
+                        <span>0 (Low)</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <div style="width: 20px; height: 10px; background: #86d549;"></div>
+                        <span>1 (Mid)</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <div style="width: 20px; height: 10px; background: #440154;"></div>
+                        <span>2 (High)</span>
+                    </div>
+                </div>
+            </div>            
             <div id="tooltip"></div>
         </div>
 
