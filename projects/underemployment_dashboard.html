@@ -462,7 +462,9 @@
                         return interpolateColor(startColor, endColor, ratio);
                     }
                 }
-                return "#e9e9e9";
+                // Fallback (should not be reached in normal cases)
+                console.error('Unexpected scaleValue:', scaleValue);
+                return '#e9e9e9';
             }
 
             // Update map color on table filter
