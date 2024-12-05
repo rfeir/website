@@ -108,28 +108,24 @@
         <div class="left">
             <div id="svg-container">
                 <svg id="map"></svg>
-                <!-- Color Key -->
-                <div id="svg-container">
-                    <svg id="map"></svg>
-                    <!-- Continuous Color Key -->
-                    <div id="color-key" style="
-                        position: absolute;
-                        bottom: 20px;
-                        left: 20px;
-                        width: 300px;
-                        height: 20px;
-                        background: linear-gradient(to right, 
-                            #fde725, #c2df23, #86d549, #52c569, #2ab07f, 
-                            #1e9b8a, #25858e, #2d708e, #38588c, #433e85, 
-                            #482173, #440154);
-                        border: 1px solid #ddd;
-                        border-radius: 5px;
-                        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-                        font-size: 12px;
-                        padding: 5px;">
-                        <span style="position: absolute; left: 0; bottom: -20px;">0 (Low)</span>
-                        <span style="position: absolute; right: 0; bottom: -20px;">2 (High)</span>
-                    </div>
+                <!-- Continuous Color Key -->
+                <div id="color-key" style="
+                    position: absolute;
+                    bottom: 20px;
+                    left: 20px;
+                    width: 300px;
+                    height: 20px;
+                    background: linear-gradient(to right, 
+                        #fde725, #c2df23, #86d549, #52c569, #2ab07f, 
+                        #1e9b8a, #25858e, #2d708e, #38588c, #433e85, 
+                        #482173, #440154);
+                    border: 1px solid #ddd;
+                    border-radius: 5px;
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                    font-size: 12px;
+                    padding: 5px;">
+                    <span style="position: absolute; left: 0; bottom: -20px;">0 (Low)</span>
+                    <span style="position: absolute; right: 0; bottom: -20px;">2 (High)</span>
                 </div>
             </div>            
             <div id="tooltip"></div>
@@ -402,7 +398,7 @@
                 });
             }
 
-            // Define the custom colorscale (same as before)
+            // Define the custom colorscale
             const colorscale = [
                 [0/11, "#fde725"],
                 [1/11, "#c2df23"],
@@ -418,73 +414,24 @@
                 [11/11, "#440154"],
             ];
 
-            // Update path colors based on UNDEREMPLOYMENT_LEVEL
-            function updatePathColors(data) {
-                const svg = document.querySelector('#svg-container svg'); // Get the SVG element
-                const paths = svg.querySelectorAll('path'); // Select all path elements
-
-                // Map the data to associate region IDs with UNDEREMPLOYMENT_LEVEL
-                const underemploymentMap = data.reduce((acc, item) => {
-                    acc[item.ID] = item.UNDEREMPLOYMENT_LEVEL;
-                    return acc;
-                }, {});
-
-                // Loop over all the paths and update their color based on the data
-                paths.forEach(path => {
-                    const regionId = path.id; // Get the ID of the current path (should match the data region ID)
-                    const underemploymentLevel = underemploymentMap[regionId];
-
-                    // Get the color for the level
-                    const color = getColorForUnderemployment(underemploymentLevel);
-
-                    // Apply the color
-                    path.style.fill = color;
-                });
-            }
-
-            // Get color for underemployment level (uses interpolation)
-            function getColorForUnderemployment(level) {
-                if (level == null || isNaN(parseFloat(level))) {
-                    console.warn('Invalid level (null, undefined, or NaN):', level);
-                    return '#e9e9e9'; // Default color for missing or invalid data
-                }
-
-                const clampedLevel = Math.min(Math.max(level, 0), 2); // Clamp between 0 and 2
-                const scaledValue = clampedLevel / 2; // Scale to 0–1
-
-                for (let i = 0; i < colorscale.length - 1; i++) {
-                    const [start, startColor] = colorscale[i];
-                    const [end, endColor] = colorscale[i + 1];
-                    if (scaledValue >= start && scaledValue <= end) {
-                        const ratio = (scaledValue - start) / (end - start);
-                        return interpolateColor(startColor, endColor, ratio);
-                    }
-                }
-                // Fallback (should not be reached in normal cases)
-                console.error('Unexpected scaledValue:', scaledValue);
-                return '#e9e9e9';
-            }
-
-            // Interpolate between two colors based on a factor
             function interpolateColor(color1, color2, factor) {
                 const c1 = parseInt(color1.slice(1), 16);
                 const c2 = parseInt(color2.slice(1), 16);
-
+    
                 const r1 = (c1 >> 16) & 0xFF;
                 const g1 = (c1 >> 8) & 0xFF;
                 const b1 = c1 & 0xFF;
-
+    
                 const r2 = (c2 >> 16) & 0xFF;
                 const g2 = (c2 >> 8) & 0xFF;
                 const b2 = c2 & 0xFF;
-
+    
                 const r = Math.round(r1 + factor * (r2 - r1));
                 const g = Math.round(g1 + factor * (g2 - g1));
                 const b = Math.round(b1 + factor * (b2 - b1));
-
+    
                 return `rgb(${r}, ${g}, ${b})`;
             }
-
 
             // Update SVG path colors based on UNDEREMPLOYMENT_LEVEL using the new colorscale
             function updatePathColors(data) {
