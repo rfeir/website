@@ -104,9 +104,9 @@
         </select>
     </div>
 
-    <div class="container">
-        <div class="left">
-            <div id="svg-container">
+    <div class="container" style="display: flex; justify-content: space-between;">
+        <div class="left" style="flex: 1; position: relative;">
+            <div id="svg-container" style="position: relative;">
                 <svg id="map"></svg>
                 <!-- Continuous Color Key -->
                 <div id="color-key" style="
@@ -129,12 +129,11 @@
                     <span style="position: absolute; left: 0; bottom: -20px;">0 (Low)</span>
                     <span style="position: absolute; right: 0; bottom: -20px;">2 (High)</span>
                 </div>
-            </div>            
+            </div>
             <div id="tooltip"></div>
         </div>
-    </div>    
-
-        <div class="right">
+    
+        <div class="right" style="flex: 1; max-width: 50%; padding-left: 10px;">
             <table id="data-table">
                 <thead>
                     <tr>
@@ -155,6 +154,7 @@
             </table>
         </div>
     </div>
+    
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
