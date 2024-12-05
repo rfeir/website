@@ -271,7 +271,30 @@
                     path.style.opacity = '1';
                 });
             }
-    
+
+            function highlightRegionOnHover(regionId) {
+                const paths = document.querySelectorAll('path');
+            }
+
+            function resetHoverBorders() {
+                const paths = document.querySelectorAll('path');
+            }
+
+            function showTooltip(event, regionId) {
+                tooltip.textContent = `Region: ${regionId}`;
+                tooltip.style.display = 'block';
+                moveTooltip(event);
+            }
+
+            function hideTooltip() {
+                tooltip.style.display = 'none';
+            }
+
+            function moveTooltip(event) {
+                tooltip.style.left = `${event.pageX + 10}px`;
+                tooltip.style.top = `${event.pageY + 10}px`;
+            }            
+
             // Populate table with data
             function populateTable(data) {
                 const table = document.getElementById('data-table').getElementsByTagName('tbody')[0];
