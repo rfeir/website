@@ -446,33 +446,23 @@
                 });
             }
 
-            // Define a color scale function from the custom colorscale
             function getColorForUnderemployment(level) {
-                // Log the level being processed to ensure the data is correct
-                console.log('Processing level:', level);
-
-                // Handle explicitly invalid values (null, undefined, NaN, or empty strings)
-                if (level == null || isNaN(parseFloat(level))) {
-                    console.warn('Invalid level (null, undefined, or NaN):', level);
-                    return '#e9e9e9'; // Default color for missing or invalid data
+                if (level == null || isNaN(level)) {
+                    return "#e9e9e9"; // Default color for invalid data
                 }
-
-                // Clamp the level to the range 0–2
-                const clampedLevel = Math.min(Math.max(level, 0), 2);
-
-                // Scale the value to the range used by the colorscale (0 to 13)
-                const scaleValue = (clampedLevel / 2) * 13;
-
-                // Map the value to the colorscale
-                for (let i = 0; i < colorscale.length; i++) {
-                    if (scaleValue <= colorscale[i][0] * 13) {
-                        return colorscale[i][1];
+    
+                const clampedLevel = Math.min(Math.max(level, 0), 2); // Clamp between 0 and 2
+                const scaledValue = clampedLevel / 2; // Scale to 0–1
+    
+                for (let i = 0; i < colorscale.length - 1; i++) {
+                    const [start, startColor] = colorscale[i];
+                    const [end, endColor] = colorscale[i + 1];
+                    if (scaledValue >= start && scaledValue <= end) {
+                        const ratio = (scaledValue - start) / (end - start);
+                        return interpolateColor(startColor, endColor, ratio);
                     }
                 }
-
-                // Fallback (should not be reached in normal cases)
-                console.error('Unexpected scaleValue:', scaleValue);
-                return '#e9e9e9';
+                return "#e9e9e9";
             }
 
             // Update map color on table filter
