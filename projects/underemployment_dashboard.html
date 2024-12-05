@@ -330,15 +330,14 @@
                         <td>${item.STATE}</td>
                         <td>${item.IND}</td>
                         <td>${item.NATIVITY}</td>
-                        <td>${item.MEAN_WAGE}</td>
-                        <td>${item.MEAN_OTHER_INCOME}</td>
-                        <td>${item.MEAN_AGE}</td>
-                        <td>${item.UNDEREMPLOYMENT_LEVEL}</td>
+                        <td>${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.MEAN_WAGE)}</td>
+                        <td>${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.MEAN_OTHER_INCOME)}</td>
+                        <td>${parseFloat(item.MEAN_AGE).toFixed(1)}</td>
+                        <td>${parseFloat(item.UNDEREMPLOYMENT_LEVEL).toFixed(2)}</td>
                         <td>${item.EDUCATION_LEVEL}</td>
                         <td>${item.REQUIRED_EDUCATION_LEVEL}</td>
-                        <td>${item.NATIVITY_PERCENTAGE}</td>
+                        <td>${(item.NATIVITY_PERCENTAGE * 100).toFixed(2)}%</td>
                         <td>${item.ID}</td>
-                    `;
                     table.appendChild(row);
                 });
             }
