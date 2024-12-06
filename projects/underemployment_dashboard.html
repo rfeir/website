@@ -339,13 +339,13 @@
                             }).format(Number(item.MEAN_WAGE)) 
                             : ""}
                         </td>                        
-                        <td>${item.MEAN_OTHER_INCOME != null && !isNaN(Number(item.MEAN_WAGE)) 
+                        <td>${item.MEAN_OTHER_INCOME != null && !isNaN(Number(item.MEAN_OTHER_INCOME)) 
                             ? new Intl.NumberFormat('en-US', { 
                                 style: 'currency', 
                                 currency: 'USD', 
                                 minimumFractionDigits: 0, 
                                 maximumFractionDigits: 0 
-                            }).format(Number(item.MEAN_WAGE)) 
+                            }).format(Number(item.MEAN_OTHER_INCOME)) 
                             : ""}
                         </td>
                         <td>${item.MEAN_AGE != null && !isNaN(item.MEAN_AGE) ? Number(item.MEAN_AGE).toFixed(1) : ""}</td>
