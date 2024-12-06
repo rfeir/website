@@ -149,6 +149,7 @@
                         <th>Required Education Level</th>
                         <th>Nativity Percentage</th>
                         <th>ID</th>
+                        <th>ID</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -354,6 +355,7 @@
                         <td>${item.REQUIRED_EDUCATION_LEVEL != null && !isNaN(item.REQUIRED_EDUCATION_LEVEL) ? Number(item.REQUIRED_EDUCATION_LEVEL).toFixed(2) : ""}</td>
                         <td>${item.NATIVITY_PERCENTAGE != null && !isNaN(item.NATIVITY_PERCENTAGE) ? (Number(item.NATIVITY_PERCENTAGE) * 100).toFixed(1).replace(/\.0$/, '') + "%" : ""}</td>
                         <td>${item.ID || ""}</td>
+                        <td>${item.COUNTIES || ""}</td>
                     `;
                     table.appendChild(row);
                 });
