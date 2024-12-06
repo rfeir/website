@@ -330,8 +330,22 @@
                         <td>${item.STATE || ""}</td>
                         <td>${item.IND || ""}</td>
                         <td>${item.NATIVITY || ""}</td>
-                        <td>${item.MEAN_WAGE != null && !isNaN(Number(item.MEAN_WAGE)) ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Math.round(Number(item.MEAN_WAGE))) : ""}</td>
-                        <td>${item.MEAN_OTHER_INCOME != null && !isNaN(Number(item.MEAN_OTHER_INCOME)) ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Math.round(Number(item.MEAN_OTHER_INCOME))) : ""}</td>
+                        <td>
+                            ${item.MEAN_WAGE != null && !isNaN(item.MEAN_WAGE) ? 
+                                new Intl.NumberFormat('en-US', { 
+                                    style: 'currency', 
+                                    currency: 'USD', 
+                                    maximumSignificantDigits: 3 
+                                }).format(item.MEAN_WAGE) : ""}
+                        </td>
+                        <td>
+                            ${item.MEAN_OTHER_INCOME != null && !isNaN(item.MEAN_OTHER_INCOME) ? 
+                                new Intl.NumberFormat('en-US', { 
+                                    style: 'currency', 
+                                    currency: 'USD', 
+                                    maximumSignificantDigits: 3 
+                                }).format(item.MEAN_OTHER_INCOME) : ""}
+                        </td>
                         <td>${item.MEAN_AGE != null && !isNaN(item.MEAN_AGE) ? Number(item.MEAN_AGE).toFixed(1) : ""}</td>
                         <td>${item.UNDEREMPLOYMENT_LEVEL != null && !isNaN(item.UNDEREMPLOYMENT_LEVEL) ? Number(item.UNDEREMPLOYMENT_LEVEL).toFixed(2) : ""}</td>
                         <td>${item.EDUCATION_LEVEL != null && !isNaN(item.EDUCATION_LEVEL) ? Number(item.EDUCATION_LEVEL).toFixed(2) : ""}</td>
