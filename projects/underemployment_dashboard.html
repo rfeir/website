@@ -335,7 +335,7 @@
                                 new Intl.NumberFormat('en-US', { 
                                     style: 'currency', 
                                     currency: 'USD', 
-                                    maximumSignificantDigits: 3 
+                                    maximumSignificantDigits: 6 
                                 }).format(item.MEAN_WAGE) : ""}
                         </td>
                         <td>
@@ -343,7 +343,7 @@
                                 new Intl.NumberFormat('en-US', { 
                                     style: 'currency', 
                                     currency: 'USD', 
-                                    maximumSignificantDigits: 3 
+                                    maximumSignificantDigits: 6 
                                 }).format(item.MEAN_OTHER_INCOME) : ""}
                         </td>
                         <td>${item.MEAN_AGE != null && !isNaN(item.MEAN_AGE) ? Number(item.MEAN_AGE).toFixed(1) : ""}</td>
