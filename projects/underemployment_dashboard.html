@@ -327,17 +327,17 @@
                     const row = document.createElement('tr');
                     row.dataset.region = item.ID;
                     row.innerHTML = `
-                        <td>${item.STATE}</td>
-                        <td>${item.IND}</td>
-                        <td>${item.NATIVITY}</td>
-                        <td>${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.MEAN_WAGE)}</td>
-                        <td>${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.MEAN_OTHER_INCOME)}</td>
-                        <td>${parseFloat(item.MEAN_AGE).toFixed(1)}</td>
-                        <td>${parseFloat(item.UNDEREMPLOYMENT_LEVEL).toFixed(2)}</td>
-                        <td>${item.EDUCATION_LEVEL}</td>
-                        <td>${item.REQUIRED_EDUCATION_LEVEL}</td>
-        <td>${item.NATIVITY_PERCENTAGE != null ? (Number(item.NATIVITY_PERCENTAGE) * 100).toFixed(1).replace(/\.0$/, '') + "%" : ""}</td>
-                        <td>${item.ID}</td>
+                        <td>${item.STATE || ""}</td>
+                        <td>${item.IND || ""}</td>
+                        <td>${item.NATIVITY || ""}</td>
+                        <td>${item.MEAN_WAGE != null && !isNaN(item.MEAN_WAGE) ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.MEAN_WAGE) : ""}</td>
+                        <td>${item.MEAN_OTHER_INCOME != null && !isNaN(item.MEAN_OTHER_INCOME) ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.MEAN_OTHER_INCOME) : ""}</td>
+                        <td>${item.MEAN_AGE != null && !isNaN(item.MEAN_AGE) ? Number(item.MEAN_AGE).toFixed(1) : ""}</td>
+                        <td>${item.UNDEREMPLOYMENT_LEVEL != null && !isNaN(item.UNDEREMPLOYMENT_LEVEL) ? Number(item.UNDEREMPLOYMENT_LEVEL).toFixed(2) : ""}</td>
+                        <td>${item.EDUCATION_LEVEL != null && !isNaN(item.EDUCATION_LEVEL) ? Number(item.EDUCATION_LEVEL).toFixed(2) : ""}</td>
+                        <td>${item.REQUIRED_EDUCATION_LEVEL != null && !isNaN(item.REQUIRED_EDUCATION_LEVEL) ? Number(item.REQUIRED_EDUCATION_LEVEL).toFixed(2) : ""}</td>
+                        <td>${item.NATIVITY_PERCENTAGE != null && !isNaN(item.NATIVITY_PERCENTAGE) ? (Number(item.NATIVITY_PERCENTAGE) * 100).toFixed(1).replace(/\.0$/, '') + "%" : ""}</td>
+                        <td>${item.ID || ""}</td>
                     `;
 
                     table.appendChild(row);
