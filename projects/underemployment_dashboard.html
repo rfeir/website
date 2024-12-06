@@ -139,7 +139,6 @@
                 <thead>
                     <tr>
                         <th>Region</th>
-                        <th>COUNTIES</th>
                         <th>IND</th>
                         <th>NATIVITY</th>
                         <th>Mean Wage</th>
@@ -329,11 +328,9 @@
                     row.dataset.region = item.ID;
                     row.innerHTML = `
                         <td>${item.STATE || ""}</td>
-                        <td>${item.COUNTIES || ""}</td>
                         <td>${item.IND || ""}</td>
                         <td>${item.NATIVITY || ""}</td>
-                        <td>
-                        ${item.MEAN_WAGE != null && !isNaN(Number(item.MEAN_WAGE)) 
+                        <td>${item.MEAN_WAGE != null && !isNaN(Number(item.MEAN_WAGE)) 
                             ? new Intl.NumberFormat('en-US', { 
                                 style: 'currency', 
                                 currency: 'USD', 
