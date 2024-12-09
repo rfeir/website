@@ -78,7 +78,6 @@
             position: sticky;
             top: 0;
             cursor: default;
-            background-color: white;
         }
 
         .sort-icon {
@@ -574,8 +573,17 @@
 
         // Append sorted rows back to the table
         rows.forEach(row => tbody.appendChild(row));
+    }
 
-        
+    // Add click listeners to headers
+    const headers = table.querySelectorAll('thead th');
+    headers.forEach((header, index) => {
+        header.addEventListener('click', () => {
+            const isNumeric = !isNaN(parseFloat(table.querySelector('tbody tr').cells[index]?.textContent || ''));
+            sortTableByColumn(index, isNumeric);
+        });
+    });
+});
 
         document.addEventListener('DOMContentLoaded', () => {
             const table = document.getElementById('data-table');
