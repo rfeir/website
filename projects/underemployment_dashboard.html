@@ -149,7 +149,7 @@
                         <th>Required Education Level</th>
                         <th>Nativity Percentage</th>
                         <th>ID</th>
-                        <th>ID</th>
+                        <th>Counties</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -536,6 +536,87 @@
             document.getElementById('ind-slicer').addEventListener('change', filterTable);
             document.getElementById('nativity-slicer').addEventListener('change', filterTable);
         });
+
+        document.addEventListener('DOMContentLoaded', () => {
+    const table = document.getElementById('data-table');
+
+    // Function to sort table by column
+    function sortTableByColumn(columnIndex, isNumeric) {
+        const tbody = table.querySelector('tbody');
+        const rows = Array.from(tbody.rows);
+
+        rows.sort((a, b) => {
+            const cellA = a.cells[columnIndex].textContent.trim() || null;
+            const cellB = b.cells[columnIndex].textContent.trim() || null;
+
+            let valA = isNumeric ? parseFloat(cellA) : cellA;
+            let valB = isNumeric ? parseFloat(cellB) : cellB;
+
+            if (isNumeric) {
+                valA = isNaN(valA) ? -Infinity : valA; // Treat nulls as very small
+                valB = isNaN(valB) ? -Infinity : valB;
+            } else {
+                valA = valA || ''; // Treat nulls as empty strings
+                valB = valB || '';
+            }
+
+            return valA > valB ? 1 : valA < valB ? -1 : 0;
+        });
+
+        // Append sorted rows back to the table
+        rows.forEach(row => tbody.appendChild(row));
+    }
+
+    // Add click listeners to headers
+    const headers = table.querySelectorAll('thead th');
+    headers.forEach((header, index) => {
+        header.addEventListener('click', () => {
+            const isNumeric = !isNaN(parseFloat(table.querySelector('tbody tr').cells[index]?.textContent || ''));
+            sortTableByColumn(index, isNumeric);
+        });
+    });
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    const table = document.getElementById('data-table');
+
+    // Function to sort table by column
+    function sortTableByColumn(columnIndex, isNumeric) {
+        const tbody = table.querySelector('tbody');
+        const rows = Array.from(tbody.rows);
+
+        rows.sort((a, b) => {
+            const cellA = a.cells[columnIndex].textContent.trim() || null;
+            const cellB = b.cells[columnIndex].textContent.trim() || null;
+
+            let valA = isNumeric ? parseFloat(cellA) : cellA;
+            let valB = isNumeric ? parseFloat(cellB) : cellB;
+
+            if (isNumeric) {
+                valA = isNaN(valA) ? -Infinity : valA; // Treat nulls as very small
+                valB = isNaN(valB) ? -Infinity : valB;
+            } else {
+                valA = valA || ''; // Treat nulls as empty strings
+                valB = valB || '';
+            }
+
+            return valA > valB ? 1 : valA < valB ? -1 : 0;
+        });
+
+        // Append sorted rows back to the table
+        rows.forEach(row => tbody.appendChild(row));
+    }
+
+    // Add click listeners to headers
+    const headers = table.querySelectorAll('thead th');
+    headers.forEach((header, index) => {
+        header.addEventListener('click', () => {
+            const isNumeric = !isNaN(parseFloat(table.querySelector('tbody tr').cells[index]?.textContent || ''));
+            sortTableByColumn(index, isNumeric);
+        });
+    });
+});
+
 
     </script>
 </body>
