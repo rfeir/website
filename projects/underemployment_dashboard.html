@@ -171,50 +171,149 @@
             let offsetX = 0;
             let offsetY = 0;
             let scale = 1;
+            let isDragging = false;
+            let draggingActive = false;
             let selectedRegion = null;
+
             const tooltip = document.getElementById('tooltip');
             const svgContainer = document.getElementById('svg-container');
-            const tableBody = document.querySelector('#data-table tbody');
-            const paths = new Map(); // To store paths by ID for efficient lookup
-            let data = []; // To store loaded JSON data
+            const dataTable = document.getElementById('data-table');
+            let paths = null;
 
-            // Load SVG and initialize map
             fetch('paths.svg')
                 .then(response => response.text())
                 .then(svgContent => {
-                    svgContainer.querySelector('svg').innerHTML = svgContent;
-                    initializePaths();
+                    svgContainer.innerHTML = svgContent;
+                    paths = svgContainer.querySelectorAll('path');
+                    initMap();
                 })
-                .catch(error => console.error('Error loading SVG:', error));
+                .catch(error => console.error('Error loading paths.svg:', error));
 
-            // Load JSON data and populate table and slicers
             fetch('aggregated_data.json')
                 .then(response => response.json())
-                .then(jsonData => {
-                    data = jsonData;
+                .then(data => {
                     populateTable(data);
                     populateSlicers(data);
-                    updateMapColors();
+                    filterTable(data);
                 })
-                .catch(error => console.error('Error loading JSON:', error));
+                .catch(error => console.error('Error loading aggregated_data.json:', error));
 
-            // Initialize SVG paths
-            function initializePaths() {
-                svgContainer.querySelectorAll('path').forEach(path => {
-                    const id = path.id;
-                    if (id) {
-                        paths.set(id, path);
-                        path.addEventListener('mouseenter', showTooltip);
-                        path.addEventListener('mouseleave', hideTooltip);
-                        path.addEventListener('mousemove', moveTooltip);
-                        path.addEventListener('click', () => toggleRegionSelection(id));
-                    }
+            function initMap() {
+                const svg = svgContainer.querySelector('svg');
+
+                // Dragging
+                svgContainer.addEventListener('mousedown', (e) => {
+                    if (e.button !== 0) return;
+                    isDragging = true;
+                    draggingActive = true;
+                    const startX = e.clientX - offsetX;
+                    const startY = e.clientY - offsetY;
+
+                    svgContainer.style.cursor = 'grabbing';
+                    const onMouseMove = (moveEvent) => {
+                        offsetX = moveEvent.clientX - startX;
+                        offsetY = moveEvent.clientY - startY;
+                        svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+                    };
+
+                    const onMouseUp = () => {
+                        isDragging = false;
+                        draggingActive = false;
+                        svgContainer.style.cursor = 'default';
+                        window.removeEventListener('mousemove', onMouseMove);
+                        window.removeEventListener('mouseup', onMouseUp);
+                    };
+
+                    window.addEventListener('mousemove', onMouseMove);
+                    window.addEventListener('mouseup', onMouseUp);
+                });
+
+                // Zooming
+                svgContainer.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    const zoomFactor = e.deltaY < 0 ? 0.1 : -0.1;
+                    scale = Math.min(Math.max(scale + zoomFactor, 0.8), 10);
+                    svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+                });
+
+                paths.forEach(path => {
+                    path.addEventListener('mouseenter', (e) => {
+                        if (!draggingActive) showTooltip(e, path.id);
+                    });
+
+                    path.addEventListener('mouseleave', hideTooltip);
+
+                    path.addEventListener('mousemove', moveTooltip);
+
+                    path.addEventListener('click', (e) => {
+                        toggleRegionSelection(path.id);
+                        e.stopPropagation();
+                    });
+                });
+
+                svgContainer.addEventListener('click', deselectRegion);
+            }
+
+            function showTooltip(event, regionId) {
+                tooltip.textContent = `Region: ${regionId}`;
+                tooltip.style.display = 'block';
+                moveTooltip(event);
+            }
+
+            function hideTooltip() {
+                tooltip.style.display = 'none';
+            }
+
+            function moveTooltip(event) {
+                requestAnimationFrame(() => {
+                    tooltip.style.left = `${event.pageX + 10}px`;
+                    tooltip.style.top = `${event.pageY + 10}px`;
                 });
             }
 
-            // Tooltip handling
-            function showTooltip(event) {
-                const regionId = event.target.id;
+            function toggleRegionSelection(regionId) {
+                if (selectedRegion === regionId) {
+                    deselectRegion();
+                } else {
+                    selectRegion(regionId);
+                }
+            }
+
+            function selectRegion(regionId) {
+                selectedRegion = regionId;
+                highlightRegion(regionId);
+                filterTableByRegion(regionId);
+            }
+
+            function deselectRegion() {
+                selectedRegion = null;
+                resetRegion();
+                filterTable();
+            }
+
+            function highlightRegion(regionId) {
+                const paths = document.querySelectorAll('path');
+                paths.forEach(path => {
+                    path.style.opacity = path.id === regionId ? '1' : '0.2';
+                });
+            }
+
+            function resetRegion() {
+                const paths = document.querySelectorAll('path');
+                paths.forEach(path => {
+                    path.style.opacity = '1';
+                });
+            }
+
+            function highlightRegionOnHover(regionId) {
+                const paths = document.querySelectorAll('path');
+            }
+
+            function resetHoverBorders() {
+                const paths = document.querySelectorAll('path');
+            }
+
+            function showTooltip(event, regionId) {
                 tooltip.textContent = `Region: ${regionId}`;
                 tooltip.style.display = 'block';
                 moveTooltip(event);
@@ -229,124 +328,309 @@
                 tooltip.style.top = `${event.pageY + 10}px`;
             }
 
-            // Region selection
-            function toggleRegionSelection(regionId) {
-                selectedRegion = selectedRegion === regionId ? null : regionId;
-                updateRegionHighlight();
-                filterTable();
-            }
-
-            function updateRegionHighlight() {
-                paths.forEach((path, id) => {
-                    path.style.opacity = id === selectedRegion ? '1' : '0.3';
-                });
-            }
-
-            // Populate table
+            // Populate table with data
             function populateTable(data) {
-                tableBody.innerHTML = '';
+                const table = document.getElementById('data-table').getElementsByTagName('tbody')[0];
+                table.innerHTML = '';
+
                 data.forEach(item => {
                     const row = document.createElement('tr');
                     row.dataset.region = item.ID;
                     row.innerHTML = `
-                        <td>${item.STATE || ''}</td>
-                        <td>${item.IND || ''}</td>
-                        <td>${item.NATIVITY || ''}</td>
-                        <td>${formatCurrency(item.MEAN_WAGE)}</td>
-                        <td>${formatCurrency(item.MEAN_OTHER_INCOME)}</td>
-                        <td>${formatNumber(item.MEAN_AGE, 1)}</td>
-                        <td>${formatNumber(item.UNDEREMPLOYMENT_LEVEL, 2)}</td>
-                        <td>${formatNumber(item.EDUCATION_LEVEL, 2)}</td>
-                        <td>${formatNumber(item.REQUIRED_EDUCATION_LEVEL, 2)}</td>
-                        <td>${formatPercentage(item.NATIVITY_PERCENTAGE)}</td>
-                        <td>${item.ID || ''}</td>
-                        <td>${item.COUNTIES || ''}</td>
+                        <td>${item.STATE || ""}</td>
+                        <td>${item.IND || ""}</td>
+                        <td>${item.NATIVITY || ""}</td>
+                        <td>${item.MEAN_WAGE != null && !isNaN(Number(item.MEAN_WAGE)) 
+                            ? new Intl.NumberFormat('en-US', { 
+                                style: 'currency', 
+                                currency: 'USD', 
+                                minimumFractionDigits: 0, 
+                                maximumFractionDigits: 0 
+                            }).format(Number(item.MEAN_WAGE)) 
+                            : ""}
+                        </td>                        
+                        <td>${item.MEAN_OTHER_INCOME != null && !isNaN(Number(item.MEAN_OTHER_INCOME)) 
+                            ? new Intl.NumberFormat('en-US', { 
+                                style: 'currency', 
+                                currency: 'USD', 
+                                minimumFractionDigits: 0, 
+                                maximumFractionDigits: 0 
+                            }).format(Number(item.MEAN_OTHER_INCOME)) 
+                            : ""}
+                        </td>
+                        <td>${item.MEAN_AGE != null && !isNaN(item.MEAN_AGE) ? Number(item.MEAN_AGE).toFixed(1) : ""}</td>
+                        <td>${item.UNDEREMPLOYMENT_LEVEL != null && !isNaN(item.UNDEREMPLOYMENT_LEVEL) ? Number(item.UNDEREMPLOYMENT_LEVEL).toFixed(2) : ""}</td>
+                        <td>${item.EDUCATION_LEVEL != null && !isNaN(item.EDUCATION_LEVEL) ? Number(item.EDUCATION_LEVEL).toFixed(2) : ""}</td>
+                        <td>${item.REQUIRED_EDUCATION_LEVEL != null && !isNaN(item.REQUIRED_EDUCATION_LEVEL) ? Number(item.REQUIRED_EDUCATION_LEVEL).toFixed(2) : ""}</td>
+                        <td>${item.NATIVITY_PERCENTAGE != null && !isNaN(item.NATIVITY_PERCENTAGE) ? (Number(item.NATIVITY_PERCENTAGE) * 100).toFixed(1).replace(/\.0$/, '') + "%" : ""}</td>
+                        <td>${item.ID || ""}</td>
+                        <td>${item.COUNTIES || ""}</td>
                     `;
-                    tableBody.appendChild(row);
+                    table.appendChild(row);
                 });
             }
 
-            // Populate slicers
+            // Populate slicers with options
             function populateSlicers(data) {
                 const indSlicer = document.getElementById('ind-slicer');
                 const nativitySlicer = document.getElementById('nativity-slicer');
-                populateSlicer(indSlicer, [...new Set(data.map(item => item.IND))]);
-                populateSlicer(nativitySlicer, [...new Set(data.map(item => item.NATIVITY))]);
 
-                indSlicer.addEventListener('change', filterTable);
-                nativitySlicer.addEventListener('change', filterTable);
-            }
+                const indOptions = Array.from(new Set(data.map(item => item.IND)));
+                const nativityOptions = Array.from(new Set(data.map(item => item.NATIVITY)));
 
-            function populateSlicer(slicer, options) {
-                slicer.innerHTML = '<option value="">All</option>';
-                options.forEach(option => {
-                    const opt = document.createElement('option');
-                    opt.value = option;
-                    opt.textContent = option;
-                    slicer.appendChild(opt);
+                indOptions.forEach(ind => {
+                    if (ind !== 'Utilities') {
+                        const option = document.createElement('option');
+                        option.value = ind;
+                        option.textContent = ind;
+                        indSlicer.appendChild(option);
+                    }
+                });
+
+                nativityOptions.forEach(nativity => {
+                    if (nativity !== 'Domestic') {
+                        const option = document.createElement('option');
+                        option.value = nativity;
+                        option.textContent = nativity;
+                        nativitySlicer.appendChild(option);
+                    }
                 });
             }
 
-            // Filter table and update map
+            // Filter table based on slicer selections
             function filterTable() {
                 const indValue = document.getElementById('ind-slicer').value;
                 const nativityValue = document.getElementById('nativity-slicer').value;
+                const rows = document.querySelectorAll('#data-table tbody tr');
 
-                const filteredData = data.filter(item => {
-                    const matchesInd = !indValue || item.IND === indValue;
-                    const matchesNativity = !nativityValue || item.NATIVITY === nativityValue;
-                    const matchesRegion = !selectedRegion || item.ID === selectedRegion;
-                    return matchesInd && matchesNativity && matchesRegion;
-                });
+                rows.forEach(row => {
+                    const matchesInd = !indValue || row.cells[1].textContent === indValue;
+                    const matchesNativity = !nativityValue || row.cells[2].textContent === nativityValue;
+                    const matchesRegion = !selectedRegion || row.dataset.region === selectedRegion;
 
-                populateTable(filteredData);
-                updateMapColors(filteredData);
-            }
-
-            // Update map colors
-            function updateMapColors(filteredData = data) {
-                const underemploymentMap = new Map(
-                    filteredData.map(item => [item.ID, item.UNDEREMPLOYMENT_LEVEL])
-                );
-
-                paths.forEach((path, id) => {
-                    const level = underemploymentMap.get(id);
-                    path.style.fill = getColorForUnderemployment(level);
+                    if (matchesInd && matchesNativity && matchesRegion) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
                 });
             }
 
-            // Color scale logic
+            // Filter table based on region selection
+            function filterTableByRegion(regionId) {
+                const rows = document.querySelectorAll('#data-table tbody tr');
+                rows.forEach(row => {
+                    if (row.dataset.region === regionId) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            }
+
+            // Define the custom colorscale
+            const colorscale = [
+                [0/11, "#fde725"],
+                [1/11, "#c2df23"],
+                [2/11, "#86d549"],
+                [3/11, "#52c569"],
+                [4/11, "#2ab07f"],
+                [5/11, "#1e9b8a"],
+                [6/11, "#25858e"],
+                [7/11, "#2d708e"],
+                [8/11, "#38588c"],
+                [9/11, "#433e85"],
+                [10/11, "#482173"],
+                [11/11, "#440154"],
+            ];
+
+            function interpolateColor(color1, color2, factor) {
+                const c1 = parseInt(color1.slice(1), 16);
+                const c2 = parseInt(color2.slice(1), 16);
+    
+                const r1 = (c1 >> 16) & 0xFF;
+                const g1 = (c1 >> 8) & 0xFF;
+                const b1 = c1 & 0xFF;
+    
+                const r2 = (c2 >> 16) & 0xFF;
+                const g2 = (c2 >> 8) & 0xFF;
+                const b2 = c2 & 0xFF;
+    
+                const r = Math.round(r1 + factor * (r2 - r1));
+                const g = Math.round(g1 + factor * (g2 - g1));
+                const b = Math.round(b1 + factor * (b2 - b1));
+    
+                return `rgb(${r}, ${g}, ${b})`;
+            }
+
+            // Update SVG path colors based on UNDEREMPLOYMENT_LEVEL using the new colorscale
+            function updatePathColors(data) {
+                const svg = document.querySelector('#svg-container svg'); // Get the SVG element
+                const paths = svg.querySelectorAll('path'); // Select all path elements
+
+                // Map the data to associate region IDs with UNDEREMPLOYMENT_LEVEL
+                const underemploymentMap = data.reduce((acc, item) => {
+                    acc[item.ID] = item.UNDEREMPLOYMENT_LEVEL;
+                    return acc;
+                }, {});
+
+                // Debug the data mapping
+                console.log('Underemployment Map:', underemploymentMap);
+
+                // Loop over all the paths and update their color based on the data
+                paths.forEach(path => {
+                    const regionId = path.id; // Get the ID of the current path (should match the data region ID)
+                    const underemploymentLevel = underemploymentMap[regionId];
+
+                    // Debug the path ID and level
+                    console.log(`Region ID: ${regionId}, Level: ${underemploymentLevel}`);
+
+                    // Get the color for the level
+                    const color = getColorForUnderemployment(underemploymentLevel);
+
+                    // Apply the color
+                    path.style.fill = color;
+                });
+            }
+
             function getColorForUnderemployment(level) {
-                if (level == null || isNaN(level)) return '#e9e9e9';
-                const clampedLevel = Math.min(Math.max(level, 0), 2);
-                const ratio = clampedLevel / 2;
-                const colors = ['#440154', '#3b528b', '#21918c', '#5ec962', '#fde725'];
-                const index = Math.floor(ratio * (colors.length - 1));
-                return colors[index];
+                // Handle explicitly invalid values (null, undefined, NaN, or empty strings)
+                if (level == null || isNaN(parseFloat(level))) {
+                    console.warn('Invalid level (null, undefined, or NaN):', level);
+                    return '#e9e9e9'; // Default color for missing or invalid data
+                }
+    
+                const clampedLevel = Math.min(Math.max(level, 0), 2); // Clamp between 0 and 2
+                const scaledValue = clampedLevel / 2; // Scale to 0–1
+    
+                for (let i = 0; i < colorscale.length - 1; i++) {
+                    const [start, startColor] = colorscale[i];
+                    const [end, endColor] = colorscale[i + 1];
+                    if (scaledValue >= start && scaledValue <= end) {
+                        const ratio = (scaledValue - start) / (end - start);
+                        return interpolateColor(startColor, endColor, ratio);
+                    }
+                }
+                // Fallback (should not be reached in normal cases)
+                console.error('Unexpected scaleValue:', scaleValue);
+                return '#e9e9e9';
             }
 
-            // Formatting helpers
-            function formatCurrency(value) {
-                return value != null && !isNaN(value)
-                    ? `$${Number(value).toLocaleString()}`
-                    : '';
+            // Update map color on table filter
+            function filterTable() {
+                const indValue = document.getElementById('ind-slicer').value;
+                const nativityValue = document.getElementById('nativity-slicer').value;
+                const rows = document.querySelectorAll('#data-table tbody tr');
+
+                // Filter table rows based on slicer selection
+                const filteredData = [];
+                rows.forEach(row => {
+                    const matchesInd = !indValue || row.cells[1].textContent === indValue;
+                    const matchesNativity = !nativityValue || row.cells[2].textContent === nativityValue;
+                    const matchesRegion = !selectedRegion || row.dataset.region === selectedRegion;
+
+                    if (matchesInd && matchesNativity && matchesRegion) {
+                        row.style.display = ''; // Show row
+                        const regionId = row.dataset.region;
+                        filteredData.push({ ID: regionId, UNDEREMPLOYMENT_LEVEL: row.cells[6].textContent });
+                    } else {
+                        row.style.display = 'none'; // Hide row
+                    }
+                });
+
+                // Update map with filtered data
+                updatePathColors(filteredData);
             }
 
-            function formatNumber(value, decimals = 0) {
-                return value != null && !isNaN(value)
-                    ? Number(value).toFixed(decimals)
-                    : '';
+            document.getElementById('ind-slicer').addEventListener('change', filterTable);
+            document.getElementById('nativity-slicer').addEventListener('change', filterTable);
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+    const table = document.getElementById('data-table');
+
+    // Function to sort table by column
+    function sortTableByColumn(columnIndex, isNumeric) {
+        const tbody = table.querySelector('tbody');
+        const rows = Array.from(tbody.rows);
+
+        rows.sort((a, b) => {
+            const cellA = a.cells[columnIndex].textContent.trim() || null;
+            const cellB = b.cells[columnIndex].textContent.trim() || null;
+
+            let valA = isNumeric ? parseFloat(cellA) : cellA;
+            let valB = isNumeric ? parseFloat(cellB) : cellB;
+
+            if (isNumeric) {
+                valA = isNaN(valA) ? -Infinity : valA; // Treat nulls as very small
+                valB = isNaN(valB) ? -Infinity : valB;
+            } else {
+                valA = valA || ''; // Treat nulls as empty strings
+                valB = valB || '';
             }
 
-            function formatPercentage(value) {
-                return value != null && !isNaN(value)
-                    ? `${(value * 100).toFixed(1)}%`
-                    : '';
+            return valA > valB ? 1 : valA < valB ? -1 : 0;
+        });
+
+        // Append sorted rows back to the table
+        rows.forEach(row => tbody.appendChild(row));
+
+        
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const table = document.getElementById('data-table');
+            const headers = table.querySelectorAll('th');
+
+            headers.forEach((header, index) => {
+                let ascending = true;
+
+                header.addEventListener('click', () => {
+                    sortTableByColumn(table, index, ascending);
+                    updateSortIcons(headers, header, ascending);
+                    ascending = !ascending; // Toggle sorting direction
+                });
+            });
+
+            function sortTableByColumn(table, columnIndex, ascending = true) {
+                const tbody = table.querySelector('tbody');
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+
+                rows.sort((rowA, rowB) => {
+                    const cellA = rowA.cells[columnIndex]?.textContent.trim() || '';
+                    const cellB = rowB.cells[columnIndex]?.textContent.trim() || '';
+
+                    const valueA = isNaN(cellA) || cellA === '' ? cellA : parseFloat(cellA);
+                    const valueB = isNaN(cellB) || cellB === '' ? cellB : parseFloat(cellB);
+
+                    if (typeof valueA === 'number' && typeof valueB === 'number') {
+                        return ascending ? valueA - valueB : valueB - valueA;
+                    } else {
+                        return ascending
+                            ? valueA.localeCompare(valueB)
+                            : valueB.localeCompare(valueA);
+                    }
+                });
+
+                tbody.innerHTML = '';
+                rows.forEach(row => tbody.appendChild(row));
+            }
+
+            function updateSortIcons(headers, activeHeader, ascending) {
+                headers.forEach(header => {
+                    const icon = header.querySelector('.sort-icon');
+                    if (icon) {
+                        icon.textContent = ''; // Clear all icons
+                    }
+                });
+
+                const activeIcon = activeHeader.querySelector('.sort-icon');
+                if (activeIcon) {
+                    activeIcon.textContent = ascending ? '▲' : '▼'; // Update active header
+                }
             }
         });
 
 
     </script>
-    
 </body>
 </html>
