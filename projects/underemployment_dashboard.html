@@ -76,6 +76,14 @@
             border-bottom: 2px solid rgb(30, 155, 138);
             font-weight: normal;
             position: sticky;
+            top: 0;
+            cursor: default;
+        }
+
+        .sort-icon {
+            margin-left: 5px;
+            font-size: 0.8em;
+            color: gray;
         }
 
         tr:nth-child(odd) {
@@ -140,17 +148,17 @@
                 <thead>
                     <tr>
                         <th><span>Region</span><span class="sort-icon"></span></th>
-                        <th>IND</th>
-                        <th>NATIVITY</th>
-                        <th>Mean Wage</th>
-                        <th>Mean Other Income</th>
-                        <th>Mean Age</th>
-                        <th>Underemployment Level</th>
-                        <th>Education Level</th>
-                        <th>Required Education Level</th>
-                        <th>Nativity Percentage</th>
-                        <th>ID</th>
-                        <th>Counties</th>
+                        <th><span>IND</span><span class="sort-icon"></span></th>
+                        <th><span>NATIVITY</span><span class="sort-icon"></span></th>
+                        <th><span>Mean Wage</span><span class="sort-icon"></span></th>
+                        <th><span>Mean Other Income</span><span class="sort-icon"></span></th>
+                        <th><span>Mean Age</span><span class="sort-icon"></span></th>
+                        <th><span>Underemployment Level</span><span class="sort-icon"></span></th>
+                        <th><span>Education Level</span><span class="sort-icon"></span></th>
+                        <th><span>Required Education Level</span><span class="sort-icon"></span></th>
+                        <th><span>Nativity Percentage</span><span class="sort-icon"></span></th>
+                        <th><span>ID</span><span class="sort-icon"></span></th>
+                        <th><span>Counties</span><span class="sort-icon"></span></th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -578,47 +586,59 @@
     });
 });
 
-document.addEventListener('DOMContentLoaded', () => {
-    const table = document.getElementById('data-table');
-    const headers = table.querySelectorAll('th');
+        document.addEventListener('DOMContentLoaded', () => {
+            const table = document.getElementById('data-table');
+            const headers = table.querySelectorAll('th');
 
-    headers.forEach((header, index) => {
-        const sortIcon = header.querySelector('.sort-icon');
-        let ascending = true;
+            headers.forEach((header, index) => {
+                let ascending = true;
 
-        header.addEventListener('click', () => {
-            sortTableByColumn(table, index, ascending);
-            updateSortIcon(sortIcon, ascending);
-            ascending = !ascending; // Toggle sorting direction
+                header.addEventListener('click', () => {
+                    sortTableByColumn(table, index, ascending);
+                    updateSortIcons(headers, header, ascending);
+                    ascending = !ascending; // Toggle sorting direction
+                });
+            });
+
+            function sortTableByColumn(table, columnIndex, ascending = true) {
+                const tbody = table.querySelector('tbody');
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+
+                rows.sort((rowA, rowB) => {
+                    const cellA = rowA.cells[columnIndex]?.textContent.trim() || '';
+                    const cellB = rowB.cells[columnIndex]?.textContent.trim() || '';
+
+                    const valueA = isNaN(cellA) || cellA === '' ? cellA : parseFloat(cellA);
+                    const valueB = isNaN(cellB) || cellB === '' ? cellB : parseFloat(cellB);
+
+                    if (typeof valueA === 'number' && typeof valueB === 'number') {
+                        return ascending ? valueA - valueB : valueB - valueA;
+                    } else {
+                        return ascending
+                            ? valueA.localeCompare(valueB)
+                            : valueB.localeCompare(valueA);
+                    }
+                });
+
+                tbody.innerHTML = '';
+                rows.forEach(row => tbody.appendChild(row));
+            }
+
+            function updateSortIcons(headers, activeHeader, ascending) {
+                headers.forEach(header => {
+                    const icon = header.querySelector('.sort-icon');
+                    if (icon) {
+                        icon.textContent = ''; // Clear all icons
+                    }
+                });
+
+                const activeIcon = activeHeader.querySelector('.sort-icon');
+                if (activeIcon) {
+                    activeIcon.textContent = ascending ? '▲' : '▼'; // Update active header
+                }
+            }
         });
-    });
 
-    function sortTableByColumn(table, columnIndex, ascending = true) {
-        const tbody = table.querySelector('tbody');
-        const rows = Array.from(tbody.querySelectorAll('tr'));
-
-        rows.sort((rowA, rowB) => {
-            const cellA = rowA.cells[columnIndex]?.textContent.trim() || '';
-            const cellB = rowB.cells[columnIndex]?.textContent.trim() || '';
-
-            const valueA = isNaN(cellA) || cellA === '' ? -Infinity : parseFloat(cellA) || cellA;
-            const valueB = isNaN(cellB) || cellB === '' ? -Infinity : parseFloat(cellB) || cellB;
-
-            if (valueA < valueB) return ascending ? -1 : 1;
-            if (valueA > valueB) return ascending ? 1 : -1;
-            return 0;
-        });
-
-        tbody.innerHTML = '';
-        rows.forEach(row => tbody.appendChild(row));
-    }
-
-    function updateSortIcon(icon, ascending) {
-        const icons = document.querySelectorAll('.sort-icon');
-        icons.forEach(i => i.textContent = ''); // Reset all icons
-        icon.textContent = ascending ? '▲' : '▼'; // Show the current sorting icon
-    }
-});
 
     </script>
 </body>
