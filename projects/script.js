@@ -23,7 +23,6 @@ document.addEventListener('DOMContentLoaded', () => {
             paths = svgContainer.querySelectorAll('path');
             initMap();
         })
-        .catch(error => console.error('Error loading paths.svg:', error));
 
     fetch('aggregated_data.json')
         .then(response => response.json())
@@ -32,7 +31,6 @@ document.addEventListener('DOMContentLoaded', () => {
             populateSlicers(data);
             filterTable(data);
         })
-        .catch(error => console.error('Error loading aggregated_data.json:', error));
 
     // creating functions for map and table
     function initMap() {
@@ -173,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function populateTable(data) {
         const table = document.getElementById('data-table').getElementsByTagName('tbody')[0];
         table.innerHTML = '';
-
+    
         data.forEach(item => {
             const row = document.createElement('tr');
             row.dataset.region = item.ID;
@@ -181,35 +179,48 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${item.STATE || ""}</td>
                 <td>${item.IND || ""}</td>
                 <td>${item.NATIVITY || ""}</td>
-                <td>${item.MEAN_WAGE != null && !isNaN(Number(item.MEAN_WAGE)) 
-                    ? new Intl.NumberFormat('en-US', { 
-                        style: 'currency', 
-                        currency: 'USD', 
-                        minimumFractionDigits: 0, 
-                        maximumFractionDigits: 0 
-                    }).format(Number(item.MEAN_WAGE)) 
-                    : ""}
+                <td data-value="${item.MEAN_WAGE}">
+                    ${item.MEAN_WAGE != null && !isNaN(Number(item.MEAN_WAGE)) 
+                        ? new Intl.NumberFormat('en-US', { 
+                            style: 'currency', 
+                            currency: 'USD', 
+                            minimumFractionDigits: 0, 
+                            maximumFractionDigits: 0 
+                        }).format(Number(item.MEAN_WAGE)) 
+                        : ""}
                 </td>                        
-                <td>${item.MEAN_OTHER_INCOME != null && !isNaN(Number(item.MEAN_OTHER_INCOME)) 
-                    ? new Intl.NumberFormat('en-US', { 
-                        style: 'currency', 
-                        currency: 'USD', 
-                        minimumFractionDigits: 0, 
-                        maximumFractionDigits: 0 
-                    }).format(Number(item.MEAN_OTHER_INCOME)) 
-                    : ""}
+                <td data-value="${item.MEAN_OTHER_INCOME}">
+                    ${item.MEAN_OTHER_INCOME != null && !isNaN(Number(item.MEAN_OTHER_INCOME)) 
+                        ? new Intl.NumberFormat('en-US', { 
+                            style: 'currency', 
+                            currency: 'USD', 
+                            minimumFractionDigits: 0, 
+                            maximumFractionDigits: 0 
+                        }).format(Number(item.MEAN_OTHER_INCOME)) 
+                        : ""}
                 </td>
-                <td>${item.MEAN_AGE != null && !isNaN(item.MEAN_AGE) ? Number(item.MEAN_AGE).toFixed(1) : ""}</td>
-                <td>${item.UNDEREMPLOYMENT_LEVEL != null && !isNaN(item.UNDEREMPLOYMENT_LEVEL) ? Number(item.UNDEREMPLOYMENT_LEVEL).toFixed(2) : ""}</td>
-                <td>${item.EDUCATION_LEVEL != null && !isNaN(item.EDUCATION_LEVEL) ? Number(item.EDUCATION_LEVEL).toFixed(2) : ""}</td>
-                <td>${item.REQUIRED_EDUCATION_LEVEL != null && !isNaN(item.REQUIRED_EDUCATION_LEVEL) ? Number(item.REQUIRED_EDUCATION_LEVEL).toFixed(2) : ""}</td>
-                <td>${item.NATIVITY_PERCENTAGE != null && !isNaN(item.NATIVITY_PERCENTAGE) ? (Number(item.NATIVITY_PERCENTAGE) * 100).toFixed(1).replace(/\.0$/, '') + "%" : ""}</td>
+                <td data-value="${item.MEAN_AGE}">
+                    ${item.MEAN_AGE != null && !isNaN(item.MEAN_AGE) ? Number(item.MEAN_AGE).toFixed(1) : ""}
+                </td>
+                <td data-value="${item.UNDEREMPLOYMENT_LEVEL}">
+                    ${item.UNDEREMPLOYMENT_LEVEL != null && !isNaN(item.UNDEREMPLOYMENT_LEVEL) ? Number(item.UNDEREMPLOYMENT_LEVEL).toFixed(2) : ""}
+                </td>
+                <td data-value="${item.EDUCATION_LEVEL}">
+                    ${item.EDUCATION_LEVEL != null && !isNaN(item.EDUCATION_LEVEL) ? Number(item.EDUCATION_LEVEL).toFixed(2) : ""}
+                </td>
+                <td data-value="${item.REQUIRED_EDUCATION_LEVEL}">
+                    ${item.REQUIRED_EDUCATION_LEVEL != null && !isNaN(item.REQUIRED_EDUCATION_LEVEL) ? Number(item.REQUIRED_EDUCATION_LEVEL).toFixed(2) : ""}
+                </td>
+                <td data-value="${item.NATIVITY_PERCENTAGE}">
+                    ${item.NATIVITY_PERCENTAGE != null && !isNaN(item.NATIVITY_PERCENTAGE) ? (Number(item.NATIVITY_PERCENTAGE) * 100).toFixed(1).replace(/\.0$/, '') + "%" : ""}
+                </td>
                 <td>${item.ID || ""}</td>
                 <td>${item.COUNTIES || ""}</td>
             `;
             table.appendChild(row);
         });
     }
+    
 
     // Populate slicers with options
     function populateSlicers(data) {
@@ -318,16 +329,10 @@ document.addEventListener('DOMContentLoaded', () => {
             return acc;
         }, {});
 
-        // Debug the data mapping
-        console.log('Underemployment Map:', underemploymentMap);
-
         // Loop over all the paths and update their color based on the data
         paths.forEach(path => {
             const regionId = path.id; // Get the ID of the current path (should match the data region ID)
             const underemploymentLevel = underemploymentMap[regionId];
-
-            // Debug the path ID and level
-            console.log(`Region ID: ${regionId}, Level: ${underemploymentLevel}`);
 
             // Get the color for the level
             const color = getColorForUnderemployment(underemploymentLevel);
@@ -393,92 +398,104 @@ document.addEventListener('DOMContentLoaded', () => {
 
 document.addEventListener('DOMContentLoaded', () => {
     const table = document.getElementById('data-table');
-
-    // Function to sort table by column
-    function sortTableByColumn(columnIndex, isNumeric) {
-        const tbody = table.querySelector('tbody');
-        const rows = Array.from(tbody.rows);
-
-        rows.sort((a, b) => {
-            const cellA = a.cells[columnIndex].textContent.trim() || null;
-            const cellB = b.cells[columnIndex].textContent.trim() || null;
-
-            let valA = isNumeric ? parseNumeric(cellA) : cellA;
-            let valB = isNumeric ? parseNumeric(cellB) : cellB;
-
-            if (isNumeric) {
-                valA = valA === null ? -Infinity : valA; // Treat nulls as very small
-                valB = valB === null ? -Infinity : valB;
-            } else {
-                valA = valA || ''; // Treat nulls as empty strings
-                valB = valB || '';
-            }
-
-            return valA > valB ? 1 : valA < valB ? -1 : 0;
-        });
-
-        // Append sorted rows back to the table
-        rows.forEach(row => tbody.appendChild(row));
-    }
-
-    // Helper function to parse numeric strings
-    function parseNumeric(value) {
-        if (!value) return null;
-        // Remove commas and parse as float
-        const numericValue = parseFloat(value.replace(/,/g, ''));
-        return isNaN(numericValue) ? null : numericValue;
-    }
-});
-
-
-// Add click listeners to headers
-const headers = table.querySelectorAll('thead th');
-headers.forEach((header, index) => {
-header.addEventListener('click', () => {
-    const isNumeric = !isNaN(parseFloat(table.querySelector('tbody tr').cells[index]?.textContent || ''));
-    sortTableByColumn(index, isNumeric);
-});
-});
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-    const table = document.getElementById('data-table');
     const headers = table.querySelectorAll('th');
 
-    headers.forEach((header, index) => {
-        let ascending = true;
+    // Sorting function for table columns
+    function sortTableByColumn(columnIndex, ascending = true) {
+        // Select the table body
+        const tbody = document.querySelector('#data-table tbody');
 
+        // Convert table rows to an array for sorting
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+
+        // Sort the rows based on the specified column index
+        rows.sort((rowA, rowB) => {
+            // Retrieve displayed text for comparison
+            const valueA = rowA.cells[columnIndex]?.textContent.trim() || null;
+            const valueB = rowB.cells[columnIndex]?.textContent.trim() || null;
+
+            // Determine type of data
+            const parsedA = parseValue(valueA);
+            const parsedB = parseValue(valueB);
+
+            // Compare the parsed values
+            if (parsedA === parsedB) return 0;
+            return (parsedA > parsedB ? 1 : -1) * (ascending ? 1 : -1);
+        });
+
+        // Append the sorted rows back to the table body
+        tbody.append(...rows);
+    }
+
+    // Helper function to parse values based on format
+    function parseValue(value) {
+        // Treat null or empty values as -Infinity
+        if (value === null || value === '') {
+            return -Infinity;
+        }
+
+        // Check if the value is a currency (starts with $ or contains commas)
+        if (/^\$\d|,\d/.test(value)) {
+            return parseRawNumericValue(value);
+        }
+
+        // Check if the value is a percentage (ends with %)
+        if (/%$/.test(value)) {
+            return parseFloat(value.replace('%', '')) / 100; // Convert percentage to decimal
+        }
+
+        // Otherwise, attempt to parse as a raw number
+        const rawNumber = parseFloat(value.replace(/[^\d.-]/g, ''));
+        return isNaN(rawNumber) ? value : rawNumber;
+    }
+
+    // Helper function to parse raw numeric value (currency or raw numbers)
+    function parseRawNumericValue(value) {
+        return parseFloat(value.replace(/[^\d.-]/g, ''));
+    }
+
+    // Add click listeners to headers for sorting
+    headers.forEach((header, index) => {
+        let ascending = true; // Start with ascending order
+
+        // Add click event listener for each header
         header.addEventListener('click', () => {
-            sortTableByColumn(table, index, ascending);
+            // Perform sorting on the table by calling the sortTableByColumn function
+            sortTableByColumn(index, ascending);
+
+            // Toggle sorting direction for the next click
+            ascending = !ascending;
+
+            // Optional: Update visual indicators
             updateSortIcons(headers, header, ascending);
-            ascending = !ascending; // Toggle sorting direction
         });
     });
 
-    function sortTableByColumn(table, columnIndex, ascending = true) {
-        const tbody = table.querySelector('tbody');
-        const rows = Array.from(tbody.querySelectorAll('tr'));
-
-        rows.sort((rowA, rowB) => {
-            const cellA = rowA.cells[columnIndex]?.textContent.trim() || '';
-            const cellB = rowB.cells[columnIndex]?.textContent.trim() || '';
-
-            const valueA = isNaN(cellA) || cellA === '' ? cellA : parseFloat(cellA);
-            const valueB = isNaN(cellB) || cellB === '' ? cellB : parseFloat(cellB);
-
-            if (typeof valueA === 'number' && typeof valueB === 'number') {
-                return ascending ? valueA - valueB : valueB - valueA;
-            } else {
-                return ascending
-                    ? valueA.localeCompare(valueB)
-                    : valueB.localeCompare(valueA);
-            }
-        });
-
-        tbody.innerHTML = '';
-        rows.forEach(row => tbody.appendChild(row));
+    // Helper function to parse raw numeric value (strips out currency symbols, commas, etc.)
+    function parseRawNumericValue(value) {
+        // Remove all non-numeric characters (currency symbols, commas, etc.) and convert to float
+        return parseFloat(value.replace(/[^\d.-]/g, ''));
     }
 
+    // Add click listeners to headers for sorting
+    headers.forEach((header, index) => {
+        let ascending = true; // Start with ascending order
+
+        // Add click event listener for each header
+        header.addEventListener('click', () => {
+
+            // Perform sorting on the table by calling the sortTableByColumn function
+            sortTableByColumn(index, ascending);
+
+            // Toggle sorting direction for the next click
+            ascending = !ascending;
+
+            // Optional: You can also add a visual indicator of sorting direction
+            updateSortIcons(headers, header, ascending);
+        });
+    });
+
+    // Function to update sort icons in the headers
     function updateSortIcons(headers, activeHeader, ascending) {
         headers.forEach(header => {
             const icon = header.querySelector('.sort-icon');
@@ -489,7 +506,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const activeIcon = activeHeader.querySelector('.sort-icon');
         if (activeIcon) {
-            activeIcon.textContent = ascending ? '▲' : '▼'; // Update active header
+            activeIcon.textContent = ascending ? '▲' : '▼'; // Update active header icon
         }
     }
 });
