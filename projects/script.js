@@ -1,4 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
+    
+    // setting some defaults to help with operations
     let offsetX = 0;
     let offsetY = 0;
     let scale = 1;
@@ -6,11 +8,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let draggingActive = false;
     let selectedRegion = null;
 
+    // sending to html
     const tooltip = document.getElementById('tooltip');
     const svgContainer = document.getElementById('svg-container');
     const dataTable = document.getElementById('data-table');
     let paths = null;
 
+
+    // loading map paths and dataframe
     fetch('paths.svg')
         .then(response => response.text())
         .then(svgContent => {
@@ -29,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .catch(error => console.error('Error loading aggregated_data.json:', error));
 
+    // creating functions for map and table
     function initMap() {
         const svg = svgContainer.querySelector('svg');
 
@@ -85,6 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
         svgContainer.addEventListener('click', deselectRegion);
     }
 
+    // Tooltip hover display
     function showTooltip(event, regionId) {
         tooltip.textContent = `Region: ${regionId}`;
         tooltip.style.display = 'block';
@@ -102,6 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Selecting region
     function toggleRegionSelection(regionId) {
         if (selectedRegion === regionId) {
             deselectRegion();
@@ -136,6 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // unused, but could add border outlines here
     function highlightRegionOnHover(regionId) {
         const paths = document.querySelectorAll('path');
     }
@@ -144,6 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const paths = document.querySelectorAll('path');
     }
 
+    // More Tooltip things
     function showTooltip(event, regionId) {
         tooltip.textContent = `Region: ${regionId}`;
         tooltip.style.display = 'block';
@@ -209,6 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const indOptions = Array.from(new Set(data.map(item => item.IND)));
         const nativityOptions = Array.from(new Set(data.map(item => item.NATIVITY)));
 
+        // Set as Utilities now so AI doesn't mess up and add external 'All' option. Functions this way so 'All' appears at top of both lists.
         indOptions.forEach(ind => {
             if (ind !== 'Utilities') {
                 const option = document.createElement('option');
@@ -218,6 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        // Set as Domestic for now. Will be premade 'All' category later. Functions this way so 'All' appears at top of both lists.
         nativityOptions.forEach(nativity => {
             if (nativity !== 'Domestic') {
                 const option = document.createElement('option');
@@ -275,6 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
         [11/11, "#440154"],
     ];
 
+    // Create colors between predefined colorscale
     function interpolateColor(color1, color2, factor) {
         const c1 = parseInt(color1.slice(1), 16);
         const c2 = parseInt(color2.slice(1), 16);
@@ -324,6 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Set color on map for underemployment. Null values are grayed out.
     function getColorForUnderemployment(level) {
         // Handle explicitly invalid values (null, undefined, NaN, or empty strings)
         if (level == null || isNaN(parseFloat(level))) {
