@@ -171,10 +171,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function populateTable(data) {
         const table = document.getElementById('data-table').getElementsByTagName('tbody')[0];
         table.innerHTML = '';
-    
-        data.forEach(item => {
+        
+        data.forEach((item, index) => {
             const row = document.createElement('tr');
             row.dataset.region = item.ID;
+            row.dataset.index = index;  // Add the hidden index here
+    
+            // Insert row data as before
             row.innerHTML = `
                 <td>${item.STATE || ""}</td>
                 <td>${item.IND || ""}</td>
@@ -219,7 +222,10 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             table.appendChild(row);
         });
+    
+        applyRowColors();  // Apply colors after populating the table
     }
+    
     
 
     // Populate slicers with options
@@ -256,19 +262,35 @@ document.addEventListener('DOMContentLoaded', () => {
         const indValue = document.getElementById('ind-slicer').value;
         const nativityValue = document.getElementById('nativity-slicer').value;
         const rows = document.querySelectorAll('#data-table tbody tr');
-
+    
         rows.forEach(row => {
             const matchesInd = !indValue || row.cells[1].textContent === indValue;
             const matchesNativity = !nativityValue || row.cells[2].textContent === nativityValue;
             const matchesRegion = !selectedRegion || row.dataset.region === selectedRegion;
-
+    
             if (matchesInd && matchesNativity && matchesRegion) {
-                row.style.display = '';
+                row.style.display = ''; // Show row
             } else {
-                row.style.display = 'none';
+                row.style.display = 'none'; // Hide row
             }
         });
-    }
+    
+        applyRowColors();  // Reapply colors after filtering
+    }    
+
+    function applyRowColors() {
+        const rows = document.querySelectorAll('#data-table tbody tr');
+        rows.forEach(row => {
+            const index = row.dataset.index;  // Get the hidden index
+            
+            // Apply alternating colors based on the index
+            if (index % 2 === 0) {
+                row.style.backgroundColor = "rgb(235, 235, 235)";  // Light color for even rows
+            } else {
+                row.style.backgroundColor = "rgb(255, 255, 255)";  // White for odd rows
+            }
+        });
+    }    
 
     // Filter table based on region selection
     function filterTableByRegion(regionId) {
@@ -394,57 +416,50 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('ind-slicer').addEventListener('change', filterTable);
     document.getElementById('nativity-slicer').addEventListener('change', filterTable);
-});
 
-document.addEventListener('DOMContentLoaded', () => {
+
     const table = document.getElementById('data-table');
     const headers = table.querySelectorAll('th');
 
     // Sorting function for table columns
     function sortTableByColumn(columnIndex, ascending = true) {
-        // Select the table body
         const tbody = document.querySelector('#data-table tbody');
-
-        // Convert table rows to an array for sorting
         const rows = Array.from(tbody.querySelectorAll('tr'));
-
-        // Sort the rows based on the specified column index
+        
         rows.sort((rowA, rowB) => {
-            // Retrieve displayed text for comparison
             const valueA = rowA.cells[columnIndex]?.textContent.trim() || null;
             const valueB = rowB.cells[columnIndex]?.textContent.trim() || null;
-
-            // Determine type of data
+    
             const parsedA = parseValue(valueA);
             const parsedB = parseValue(valueB);
-
-            // Compare the parsed values
+    
             if (parsedA === parsedB) return 0;
             return (parsedA > parsedB ? 1 : -1) * (ascending ? 1 : -1);
         });
-
-        // Append the sorted rows back to the table body
-        tbody.append(...rows);
-    }
+    
+        // Reattach the rows to tbody and update the index after sorting
+        rows.forEach((row, index) => {
+            row.dataset.index = index;  // Update the index
+            tbody.appendChild(row);  // Reattach row
+        });
+    
+        applyRowColors();  // Reapply colors after sorting
+    }    
 
     // Helper function to parse values based on format
     function parseValue(value) {
-        // Treat null or empty values as -Infinity
         if (value === null || value === '') {
             return -Infinity;
         }
 
-        // Check if the value is a currency (starts with $ or contains commas)
         if (/^\$\d|,\d/.test(value)) {
             return parseRawNumericValue(value);
         }
 
-        // Check if the value is a percentage (ends with %)
         if (/%$/.test(value)) {
-            return parseFloat(value.replace('%', '')) / 100; // Convert percentage to decimal
+            return parseFloat(value.replace('%', '')) / 100;
         }
 
-        // Otherwise, attempt to parse as a raw number
         const rawNumber = parseFloat(value.replace(/[^\d.-]/g, ''));
         return isNaN(rawNumber) ? value : rawNumber;
     }
@@ -456,41 +471,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Add click listeners to headers for sorting
     headers.forEach((header, index) => {
-        let ascending = true; // Start with ascending order
+        let ascending = true;
 
         // Add click event listener for each header
         header.addEventListener('click', () => {
-            // Perform sorting on the table by calling the sortTableByColumn function
             sortTableByColumn(index, ascending);
-
-            // Toggle sorting direction for the next click
             ascending = !ascending;
-
-            // Optional: Update visual indicators
-            updateSortIcons(headers, header, ascending);
-        });
-    });
-
-    // Helper function to parse raw numeric value (strips out currency symbols, commas, etc.)
-    function parseRawNumericValue(value) {
-        // Remove all non-numeric characters (currency symbols, commas, etc.) and convert to float
-        return parseFloat(value.replace(/[^\d.-]/g, ''));
-    }
-
-    // Add click listeners to headers for sorting
-    headers.forEach((header, index) => {
-        let ascending = true; // Start with ascending order
-
-        // Add click event listener for each header
-        header.addEventListener('click', () => {
-
-            // Perform sorting on the table by calling the sortTableByColumn function
-            sortTableByColumn(index, ascending);
-
-            // Toggle sorting direction for the next click
-            ascending = !ascending;
-
-            // Optional: You can also add a visual indicator of sorting direction
             updateSortIcons(headers, header, ascending);
         });
     });
@@ -500,13 +486,13 @@ document.addEventListener('DOMContentLoaded', () => {
         headers.forEach(header => {
             const icon = header.querySelector('.sort-icon');
             if (icon) {
-                icon.textContent = ''; // Clear all icons
+                icon.textContent = '';
             }
         });
 
         const activeIcon = activeHeader.querySelector('.sort-icon');
         if (activeIcon) {
-            activeIcon.textContent = ascending ? '▲' : '▼'; // Update active header icon
+            activeIcon.textContent = ascending ? '▲' : '▼';
         }
     }
 });

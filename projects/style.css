@@ -65,6 +65,14 @@ th, td {
     text-align: left;
 }
 
+tr:nth-child(even){
+    background-color:rgb(235, 235, 235);
+}
+
+tr:nth-child(odd){
+    background-color:rgb(255, 255, 255);
+}
+
 th {
     border-bottom: 2px solid rgb(30, 155, 138);
     font-weight: normal;
@@ -77,14 +85,6 @@ th {
 .sort-icon {
     margin-left: 5px;
     font-size: 0.8em;
-}
-
-table tr:nth-child(odd) {
-    background-color: white;
-}
-
-table tr:nth-child(even) {
-    background-color: #f2f2f2;
 }
 
 table select {
