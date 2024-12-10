@@ -1,60 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Underemployment Dashboard</title>
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-    <div>
-        <label for="ind-slicer">Industry:</label>
-        <select id="ind-slicer">
-            <option value="Utilities" selected>Utilities</option>
-        </select>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Underemployment Dashboard</title>
+        <link rel="stylesheet" href="style.css" />
+    </head>
+    <body>
+        <div>
+            <label for="ind-slicer">Industry:</label>
+            <select id="ind-slicer">
+                <option value="Utilities" selected>Utilities</option>
+            </select>
 
-        <label for="nativity-slicer">Nativity:</label>
-        <select id="nativity-slicer">
-            <option value="Domestic" selected>Domestic</option>
-        </select>
-    </div>
-
-    <div class="container">
-        <div class="left">
-            <div id="svg-container">
-                <svg id="map"></svg>
-            </div>
-            <div id="color-key">
-                <span>0</span>
-                <span>1</span>
-                <span>2</span>
-            </div>
-            <div id="tooltip"></div>
+            <label for="nativity-slicer">Nativity:</label>
+            <select id="nativity-slicer">
+                <option value="Domestic" selected>Domestic</option>
+            </select>
         </div>
-    
-        <div class="right">
-            <table id="data-table">
-                <thead>
-                    <tr>
-                        <th><span>Region</span><span class="sort-icon"></span></th>
-                        <th><span>IND</span><span class="sort-icon"></span></th>
-                        <th><span>NATIVITY</span><span class="sort-icon"></span></th>
-                        <th><span>Mean Wage</span><span class="sort-icon"></span></th>
-                        <th><span>Mean Other Income</span><span class="sort-icon"></span></th>
-                        <th><span>Mean Age</span><span class="sort-icon"></span></th>
-                        <th><span>Underemployment Level</span><span class="sort-icon"></span></th>
-                        <th><span>Education Level</span><span class="sort-icon"></span></th>
-                        <th><span>Required Education Level</span><span class="sort-icon"></span></th>
-                        <th><span>Nativity Percentage</span><span class="sort-icon"></span></th>
-                        <th><span>ID</span><span class="sort-icon"></span></th>
-                        <th><span>Counties</span><span class="sort-icon"></span></th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </div>
-    </div>
 
-    <script src="main.js"></script>
-</body>
+        <div class="container">
+            <div class="left">
+                <div id="svg-container">
+                    <svg id="map"></svg>
+                </div>
+                <div id="color-key">
+                    <span>0</span>
+                    <span>1</span>
+                    <span>2</span>
+                </div>
+                <div id="tooltip"></div>
+            </div>
+        
+            <div class="right">
+                <table id="data-table">
+                    <thead>
+                        <tr>
+                            <th><span>Region</span><span class="sort-icon"></span></th>
+                            <th><span>IND</span><span class="sort-icon"></span></th>
+                            <th><span>NATIVITY</span><span class="sort-icon"></span></th>
+                            <th><span>Mean Wage</span><span class="sort-icon"></span></th>
+                            <th><span>Mean Other Income</span><span class="sort-icon"></span></th>
+                            <th><span>Mean Age</span><span class="sort-icon"></span></th>
+                            <th><span>Underemployment Level</span><span class="sort-icon"></span></th>
+                            <th><span>Education Level</span><span class="sort-icon"></span></th>
+                            <th><span>Required Education Level</span><span class="sort-icon"></span></th>
+                            <th><span>Nativity Percentage</span><span class="sort-icon"></span></th>
+                            <th><span>ID</span><span class="sort-icon"></span></th>
+                            <th><span>Counties</span><span class="sort-icon"></span></th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <script src="main.js"></script>
+    </body>
 </html>
