@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Set defaults for map operations
+    
+    // setting some defaults to help with operations
     let offsetX = 0;
     let offsetY = 0;
     let scale = 1;
@@ -7,29 +8,33 @@ document.addEventListener('DOMContentLoaded', () => {
     let draggingActive = false;
     let selectedRegion = null;
 
-    // DOM Elements
+    // sending to html
     const tooltip = document.getElementById('tooltip');
     const svgContainer = document.getElementById('svg-container');
     const dataTable = document.getElementById('data-table');
     let paths = null;
 
-    // Load SVG and JSON data
-    Promise.all([
-        fetch('paths.svg').then(res => res.text()).catch(err => console.error('Error loading paths.svg:', err)),
-        fetch('aggregated_data.json').then(res => res.json()).catch(err => console.error('Error loading aggregated_data.json:', err))
-    ]).then(([svgContent, data]) => {
-        // Initialize SVG
-        svgContainer.innerHTML = svgContent;
-        paths = svgContainer.querySelectorAll('path');
-        initMap();
 
-        // Populate table and slicers
-        populateTable(data);
-        populateSlicers(data);
-        filterTable(data);
-    });
+    // loading map paths and dataframe
+    fetch('paths.svg')
+        .then(response => response.text())
+        .then(svgContent => {
+            svgContainer.innerHTML = svgContent;
+            paths = svgContainer.querySelectorAll('path');
+            initMap();
+        })
+        .catch(error => console.error('Error loading paths.svg:', error));
 
-    // Initialize map interactions
+    fetch('aggregated_data.json')
+        .then(response => response.json())
+        .then(data => {
+            populateTable(data);
+            populateSlicers(data);
+            filterTable(data);
+        })
+        .catch(error => console.error('Error loading aggregated_data.json:', error));
+
+    // creating functions for map and table
     function initMap() {
         const svg = svgContainer.querySelector('svg');
 
@@ -68,14 +73,15 @@ document.addEventListener('DOMContentLoaded', () => {
             svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
         });
 
-        // Path interactions
         paths.forEach(path => {
             path.addEventListener('mouseenter', (e) => {
                 if (!draggingActive) showTooltip(e, path.id);
             });
 
             path.addEventListener('mouseleave', hideTooltip);
+
             path.addEventListener('mousemove', moveTooltip);
+
             path.addEventListener('click', (e) => {
                 toggleRegionSelection(path.id);
                 e.stopPropagation();
@@ -85,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
         svgContainer.addEventListener('click', deselectRegion);
     }
 
-    // Tooltip Functions
+    // Tooltip hover display
     function showTooltip(event, regionId) {
         tooltip.textContent = `Region: ${regionId}`;
         tooltip.style.display = 'block';
@@ -103,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Region Selection
+    // Selecting region
     function toggleRegionSelection(regionId) {
         if (selectedRegion === regionId) {
             deselectRegion();
@@ -125,21 +131,48 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function highlightRegion(regionId) {
+        const paths = document.querySelectorAll('path');
         paths.forEach(path => {
             path.style.opacity = path.id === regionId ? '1' : '0.2';
         });
     }
 
     function resetRegion() {
+        const paths = document.querySelectorAll('path');
         paths.forEach(path => {
             path.style.opacity = '1';
         });
     }
 
+    // unused, but could add border outlines here
+    function highlightRegionOnHover(regionId) {
+        const paths = document.querySelectorAll('path');
+    }
+
+    function resetHoverBorders() {
+        const paths = document.querySelectorAll('path');
+    }
+
+    // More Tooltip things
+    function showTooltip(event, regionId) {
+        tooltip.textContent = `Region: ${regionId}`;
+        tooltip.style.display = 'block';
+        moveTooltip(event);
+    }
+
+    function hideTooltip() {
+        tooltip.style.display = 'none';
+    }
+
+    function moveTooltip(event) {
+        tooltip.style.left = `${event.pageX + 10}px`;
+        tooltip.style.top = `${event.pageY + 10}px`;
+    }
+
     // Populate table with data
     function populateTable(data) {
-        const tableBody = dataTable.querySelector('tbody');
-        tableBody.innerHTML = '';
+        const table = document.getElementById('data-table').getElementsByTagName('tbody')[0];
+        table.innerHTML = '';
 
         data.forEach(item => {
             const row = document.createElement('tr');
@@ -148,35 +181,37 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${item.STATE || ""}</td>
                 <td>${item.IND || ""}</td>
                 <td>${item.NATIVITY || ""}</td>
-                <td>${formatCurrency(item.MEAN_WAGE)}</td>
-                <td>${formatCurrency(item.MEAN_OTHER_INCOME)}</td>
-                <td>${formatNumber(item.MEAN_AGE, 1)}</td>
-                <td>${formatNumber(item.UNDEREMPLOYMENT_LEVEL, 2)}</td>
-                <td>${formatNumber(item.EDUCATION_LEVEL, 2)}</td>
-                <td>${formatNumber(item.REQUIRED_EDUCATION_LEVEL, 2)}</td>
-                <td>${formatPercentage(item.NATIVITY_PERCENTAGE)}</td>
+                <td>${item.MEAN_WAGE != null && !isNaN(Number(item.MEAN_WAGE)) 
+                    ? new Intl.NumberFormat('en-US', { 
+                        style: 'currency', 
+                        currency: 'USD', 
+                        minimumFractionDigits: 0, 
+                        maximumFractionDigits: 0 
+                    }).format(Number(item.MEAN_WAGE)) 
+                    : ""}
+                </td>                        
+                <td>${item.MEAN_OTHER_INCOME != null && !isNaN(Number(item.MEAN_OTHER_INCOME)) 
+                    ? new Intl.NumberFormat('en-US', { 
+                        style: 'currency', 
+                        currency: 'USD', 
+                        minimumFractionDigits: 0, 
+                        maximumFractionDigits: 0 
+                    }).format(Number(item.MEAN_OTHER_INCOME)) 
+                    : ""}
+                </td>
+                <td>${item.MEAN_AGE != null && !isNaN(item.MEAN_AGE) ? Number(item.MEAN_AGE).toFixed(1) : ""}</td>
+                <td>${item.UNDEREMPLOYMENT_LEVEL != null && !isNaN(item.UNDEREMPLOYMENT_LEVEL) ? Number(item.UNDEREMPLOYMENT_LEVEL).toFixed(2) : ""}</td>
+                <td>${item.EDUCATION_LEVEL != null && !isNaN(item.EDUCATION_LEVEL) ? Number(item.EDUCATION_LEVEL).toFixed(2) : ""}</td>
+                <td>${item.REQUIRED_EDUCATION_LEVEL != null && !isNaN(item.REQUIRED_EDUCATION_LEVEL) ? Number(item.REQUIRED_EDUCATION_LEVEL).toFixed(2) : ""}</td>
+                <td>${item.NATIVITY_PERCENTAGE != null && !isNaN(item.NATIVITY_PERCENTAGE) ? (Number(item.NATIVITY_PERCENTAGE) * 100).toFixed(1).replace(/\.0$/, '') + "%" : ""}</td>
                 <td>${item.ID || ""}</td>
                 <td>${item.COUNTIES || ""}</td>
             `;
-            tableBody.appendChild(row);
+            table.appendChild(row);
         });
     }
 
-    function formatCurrency(value) {
-        return value != null && !isNaN(value)
-            ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value)
-            : "";
-    }
-
-    function formatNumber(value, decimals) {
-        return value != null && !isNaN(value) ? value.toFixed(decimals) : "";
-    }
-
-    function formatPercentage(value) {
-        return value != null && !isNaN(value) ? (value * 100).toFixed(1) + "%" : "";
-    }
-
-    // Populate slicers
+    // Populate slicers with options
     function populateSlicers(data) {
         const indSlicer = document.getElementById('ind-slicer');
         const nativitySlicer = document.getElementById('nativity-slicer');
@@ -184,65 +219,277 @@ document.addEventListener('DOMContentLoaded', () => {
         const indOptions = Array.from(new Set(data.map(item => item.IND)));
         const nativityOptions = Array.from(new Set(data.map(item => item.NATIVITY)));
 
-        addOptionsToSlicer(indSlicer, indOptions);
-        addOptionsToSlicer(nativitySlicer, nativityOptions);
-    }
+        // Set as Utilities now so AI doesn't mess up and add external 'All' option. Functions this way so 'All' appears at top of both lists.
+        indOptions.forEach(ind => {
+            if (ind !== 'Utilities') {
+                const option = document.createElement('option');
+                option.value = ind;
+                option.textContent = ind;
+                indSlicer.appendChild(option);
+            }
+        });
 
-    function addOptionsToSlicer(slicer, options) {
-        options.forEach(optionValue => {
-            const option = document.createElement('option');
-            option.value = optionValue;
-            option.textContent = optionValue;
-            slicer.appendChild(option);
+        // Set as Domestic for now. Will be premade 'All' category later. Functions this way so 'All' appears at top of both lists.
+        nativityOptions.forEach(nativity => {
+            if (nativity !== 'Domestic') {
+                const option = document.createElement('option');
+                option.value = nativity;
+                option.textContent = nativity;
+                nativitySlicer.appendChild(option);
+            }
         });
     }
 
-    // Filter Table
-    function filterTable(data) {
+    // Filter table based on slicer selections
+    function filterTable() {
         const indValue = document.getElementById('ind-slicer').value;
         const nativityValue = document.getElementById('nativity-slicer').value;
-        const rows = dataTable.querySelectorAll('tbody tr');
+        const rows = document.querySelectorAll('#data-table tbody tr');
 
         rows.forEach(row => {
             const matchesInd = !indValue || row.cells[1].textContent === indValue;
             const matchesNativity = !nativityValue || row.cells[2].textContent === nativityValue;
             const matchesRegion = !selectedRegion || row.dataset.region === selectedRegion;
 
-            row.style.display = matchesInd && matchesNativity && matchesRegion ? '' : 'none';
+            if (matchesInd && matchesNativity && matchesRegion) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
         });
     }
 
+    // Filter table based on region selection
     function filterTableByRegion(regionId) {
-        const rows = dataTable.querySelectorAll('tbody tr');
+        const rows = document.querySelectorAll('#data-table tbody tr');
         rows.forEach(row => {
-            row.style.display = row.dataset.region === regionId ? '' : 'none';
+            if (row.dataset.region === regionId) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
         });
     }
 
-    // Sorting Functionality
-    const headers = dataTable.querySelectorAll('thead th');
+    // Define the custom colorscale
+    const colorscale = [
+        [0/11, "#fde725"],
+        [1/11, "#c2df23"],
+        [2/11, "#86d549"],
+        [3/11, "#52c569"],
+        [4/11, "#2ab07f"],
+        [5/11, "#1e9b8a"],
+        [6/11, "#25858e"],
+        [7/11, "#2d708e"],
+        [8/11, "#38588c"],
+        [9/11, "#433e85"],
+        [10/11, "#482173"],
+        [11/11, "#440154"],
+    ];
+
+    // Create colors between predefined colorscale
+    function interpolateColor(color1, color2, factor) {
+        const c1 = parseInt(color1.slice(1), 16);
+        const c2 = parseInt(color2.slice(1), 16);
+
+        const r1 = (c1 >> 16) & 0xFF;
+        const g1 = (c1 >> 8) & 0xFF;
+        const b1 = c1 & 0xFF;
+
+        const r2 = (c2 >> 16) & 0xFF;
+        const g2 = (c2 >> 8) & 0xFF;
+        const b2 = c2 & 0xFF;
+
+        const r = Math.round(r1 + factor * (r2 - r1));
+        const g = Math.round(g1 + factor * (g2 - g1));
+        const b = Math.round(b1 + factor * (b2 - b1));
+
+        return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    // Update SVG path colors based on UNDEREMPLOYMENT_LEVEL using the new colorscale
+    function updatePathColors(data) {
+        const svg = document.querySelector('#svg-container svg'); // Get the SVG element
+        const paths = svg.querySelectorAll('path'); // Select all path elements
+
+        // Map the data to associate region IDs with UNDEREMPLOYMENT_LEVEL
+        const underemploymentMap = data.reduce((acc, item) => {
+            acc[item.ID] = item.UNDEREMPLOYMENT_LEVEL;
+            return acc;
+        }, {});
+
+        // Debug the data mapping
+        console.log('Underemployment Map:', underemploymentMap);
+
+        // Loop over all the paths and update their color based on the data
+        paths.forEach(path => {
+            const regionId = path.id; // Get the ID of the current path (should match the data region ID)
+            const underemploymentLevel = underemploymentMap[regionId];
+
+            // Debug the path ID and level
+            console.log(`Region ID: ${regionId}, Level: ${underemploymentLevel}`);
+
+            // Get the color for the level
+            const color = getColorForUnderemployment(underemploymentLevel);
+
+            // Apply the color
+            path.style.fill = color;
+        });
+    }
+
+    // Set color on map for underemployment.
+    function getColorForUnderemployment(level) {
+        // Handle explicitly invalid values (null, undefined, NaN, or empty strings)
+        if (level == null || isNaN(parseFloat(level))) {
+            console.warn('Invalid level (null, undefined, or NaN):', level);
+            return '#e9e9e9'; // Default color for missing or invalid data
+        }
+
+        const clampedLevel = Math.min(Math.max(level, 0), 2); // Clamp between 0 and 2
+        const scaledValue = clampedLevel / 2; // Scale to 0–1
+
+        for (let i = 0; i < colorscale.length - 1; i++) {
+            const [start, startColor] = colorscale[i];
+            const [end, endColor] = colorscale[i + 1];
+            if (scaledValue >= start && scaledValue <= end) {
+                const ratio = (scaledValue - start) / (end - start);
+                return interpolateColor(startColor, endColor, ratio);
+            }
+        }
+        // Fallback (should not be reached in normal cases)
+        console.error('Unexpected scaleValue:', scaleValue);
+        return '#e9e9e9';
+    }
+
+    // Update map color on table filter
+    function filterTable() {
+        const indValue = document.getElementById('ind-slicer').value;
+        const nativityValue = document.getElementById('nativity-slicer').value;
+        const rows = document.querySelectorAll('#data-table tbody tr');
+
+        // Filter table rows based on slicer selection
+        const filteredData = [];
+        rows.forEach(row => {
+            const matchesInd = !indValue || row.cells[1].textContent === indValue;
+            const matchesNativity = !nativityValue || row.cells[2].textContent === nativityValue;
+            const matchesRegion = !selectedRegion || row.dataset.region === selectedRegion;
+
+            if (matchesInd && matchesNativity && matchesRegion) {
+                row.style.display = ''; // Show row
+                const regionId = row.dataset.region;
+                filteredData.push({ ID: regionId, UNDEREMPLOYMENT_LEVEL: row.cells[6].textContent });
+            } else {
+                row.style.display = 'none'; // Hide row
+            }
+        });
+
+        // Update map with filtered data
+        updatePathColors(filteredData);
+    }
+
+    document.getElementById('ind-slicer').addEventListener('change', filterTable);
+    document.getElementById('nativity-slicer').addEventListener('change', filterTable);
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    const table = document.getElementById('data-table');
+
+    // Function to sort table by column
+    function sortTableByColumn(columnIndex, isNumeric) {
+        const tbody = table.querySelector('tbody');
+        const rows = Array.from(tbody.rows);
+
+        rows.sort((a, b) => {
+            const cellA = a.cells[columnIndex].textContent.trim() || null;
+            const cellB = b.cells[columnIndex].textContent.trim() || null;
+
+            let valA = isNumeric ? parseNumeric(cellA) : cellA;
+            let valB = isNumeric ? parseNumeric(cellB) : cellB;
+
+            if (isNumeric) {
+                valA = valA === null ? -Infinity : valA; // Treat nulls as very small
+                valB = valB === null ? -Infinity : valB;
+            } else {
+                valA = valA || ''; // Treat nulls as empty strings
+                valB = valB || '';
+            }
+
+            return valA > valB ? 1 : valA < valB ? -1 : 0;
+        });
+
+        // Append sorted rows back to the table
+        rows.forEach(row => tbody.appendChild(row));
+    }
+
+    // Helper function to parse numeric strings
+    function parseNumeric(value) {
+        if (!value) return null;
+        // Remove commas and parse as float
+        const numericValue = parseFloat(value.replace(/,/g, ''));
+        return isNaN(numericValue) ? null : numericValue;
+    }
+});
+
+
+// Add click listeners to headers
+const headers = table.querySelectorAll('thead th');
+headers.forEach((header, index) => {
+header.addEventListener('click', () => {
+    const isNumeric = !isNaN(parseFloat(table.querySelector('tbody tr').cells[index]?.textContent || ''));
+    sortTableByColumn(index, isNumeric);
+});
+});
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    const table = document.getElementById('data-table');
+    const headers = table.querySelectorAll('th');
+
     headers.forEach((header, index) => {
         let ascending = true;
 
         header.addEventListener('click', () => {
-            sortTableByColumn(index, ascending);
-            ascending = !ascending;
+            sortTableByColumn(table, index, ascending);
+            updateSortIcons(headers, header, ascending);
+            ascending = !ascending; // Toggle sorting direction
         });
     });
 
-    function sortTableByColumn(columnIndex, ascending) {
-        const tableBody = dataTable.querySelector('tbody');
-        const rows = Array.from(tableBody.querySelectorAll('tr'));
+    function sortTableByColumn(table, columnIndex, ascending = true) {
+        const tbody = table.querySelector('tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr'));
 
-        rows.sort((a, b) => {
-            const cellA = a.cells[columnIndex]?.textContent.trim() || '';
-            const cellB = b.cells[columnIndex]?.textContent.trim() || '';
-            return ascending
-                ? cellA.localeCompare(cellB, undefined, { numeric: true })
-                : cellB.localeCompare(cellA, undefined, { numeric: true });
+        rows.sort((rowA, rowB) => {
+            const cellA = rowA.cells[columnIndex]?.textContent.trim() || '';
+            const cellB = rowB.cells[columnIndex]?.textContent.trim() || '';
+
+            const valueA = isNaN(cellA) || cellA === '' ? cellA : parseFloat(cellA);
+            const valueB = isNaN(cellB) || cellB === '' ? cellB : parseFloat(cellB);
+
+            if (typeof valueA === 'number' && typeof valueB === 'number') {
+                return ascending ? valueA - valueB : valueB - valueA;
+            } else {
+                return ascending
+                    ? valueA.localeCompare(valueB)
+                    : valueB.localeCompare(valueA);
+            }
         });
 
-        tableBody.innerHTML = '';
-        rows.forEach(row => tableBody.appendChild(row));
+        tbody.innerHTML = '';
+        rows.forEach(row => tbody.appendChild(row));
+    }
+
+    function updateSortIcons(headers, activeHeader, ascending) {
+        headers.forEach(header => {
+            const icon = header.querySelector('.sort-icon');
+            if (icon) {
+                icon.textContent = ''; // Clear all icons
+            }
+        });
+
+        const activeIcon = activeHeader.querySelector('.sort-icon');
+        if (activeIcon) {
+            activeIcon.textContent = ascending ? '▲' : '▼'; // Update active header
+        }
     }
 });
