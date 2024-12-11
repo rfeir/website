@@ -66,10 +66,29 @@ document.addEventListener('DOMContentLoaded', () => {
         // Zooming
         svgContainer.addEventListener('wheel', (e) => {
             e.preventDefault();
+        
+            const rect = svgContainer.getBoundingClientRect();
+            const svg = svgContainer.querySelector('svg');
+        
+            // Center of the container
+            const containerCenterX = rect.width / 2;
+            const containerCenterY = rect.height / 2;
+        
+            // Zoom factor
             const zoomFactor = e.deltaY < 0 ? 0.1 : -0.1;
-            scale = Math.min(Math.max(scale + zoomFactor, 0.8), 10);
+            const newScale = Math.min(Math.max(scale + zoomFactor, 0.8), 10);
+        
+            // Adjust offsets to keep zoom centered on the container's center
+            offsetX += containerCenterX * (1 - newScale / scale);
+            offsetY += containerCenterY * (1 - newScale / scale);
+        
+            scale = newScale;
+        
+            // Apply transform to the SVG directly
             svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
         });
+        
+        
 
         paths.forEach(path => {
             path.addEventListener('mouseenter', (e) => {
@@ -280,14 +299,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function applyRowColors() {
         const rows = document.querySelectorAll('#data-table tbody tr');
+        let visibleRowIndex = 0; // Track the visible row index for alternating colors
+        
         rows.forEach(row => {
-            const index = row.dataset.index;  // Get the hidden index
-            
-            // Apply alternating colors based on the index
-            if (index % 2 === 0) {
-                row.style.backgroundColor = "rgb(235, 235, 235)";  // Light color for even rows
+            if (row.style.display !== 'none') { // Check if the row is visible
+                if (visibleRowIndex % 2 === 0) {
+                    row.style.backgroundColor = "rgb(235, 235, 235)"; // Light color for even rows
+                } else {
+                    row.style.backgroundColor = "rgb(255, 255, 255)"; // White for odd rows
+                }
+                visibleRowIndex++; // Increment only for visible rows
             } else {
-                row.style.backgroundColor = "rgb(255, 255, 255)";  // White for odd rows
+                row.style.backgroundColor = ''; // Reset hidden rows' background
             }
         });
     }    
@@ -302,6 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 row.style.display = 'none';
             }
         });
+        applyRowColors();
     }
 
     // Define the custom colorscale
