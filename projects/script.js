@@ -139,6 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
         selectedRegion = regionId;
         highlightRegion(regionId);
         filterTableByRegion(regionId);
+        applyRowColors();
     }
 
     function deselectRegion() {
@@ -152,6 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
         paths.forEach(path => {
             path.style.opacity = path.id === regionId ? '1' : '0.2';
         });
+        applyRowColors();
     }
 
     function resetRegion() {
@@ -159,6 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
         paths.forEach(path => {
             path.style.opacity = '1';
         });
+        applyRowColors();
     }
 
     // unused, but could add border outlines here
@@ -241,12 +244,10 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             table.appendChild(row);
         });
-    
+
         applyRowColors();  // Apply colors after populating the table
     }
     
-    
-
     // Populate slicers with options
     function populateSlicers(data) {
         const indSlicer = document.getElementById('ind-slicer');
@@ -293,7 +294,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 row.style.display = 'none'; // Hide row
             }
         });
-    
         applyRowColors();  // Reapply colors after filtering
     }    
 
