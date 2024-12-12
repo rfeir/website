@@ -139,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
         selectedRegion = regionId;
         highlightRegion(regionId);
         filterTableByRegion(regionId);
-        applyRowColors();
+        applyRowColors(selectedRegion);
     }
 
     function deselectRegion() {
@@ -153,7 +153,6 @@ document.addEventListener('DOMContentLoaded', () => {
         paths.forEach(path => {
             path.style.opacity = path.id === regionId ? '1' : '0.2';
         });
-        applyRowColors();
     }
 
     function resetRegion() {
@@ -161,7 +160,6 @@ document.addEventListener('DOMContentLoaded', () => {
         paths.forEach(path => {
             path.style.opacity = '1';
         });
-        applyRowColors();
     }
 
     // unused, but could add border outlines here
@@ -244,8 +242,6 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             table.appendChild(row);
         });
-
-        applyRowColors();  // Apply colors after populating the table
     }
     
     // Populate slicers with options
@@ -294,7 +290,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 row.style.display = 'none'; // Hide row
             }
         });
-        applyRowColors();  // Reapply colors after filtering
     }    
 
     function applyRowColors() {
@@ -325,7 +320,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 row.style.display = 'none';
             }
         });
-        applyRowColors();
+        
     }
 
     // Define the custom colorscale
@@ -434,8 +429,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Update map with filtered data
+        // Update map and alternating table shades with filtered data
         updatePathColors(filteredData);
+        applyRowColors(filteredData);
     }
 
     document.getElementById('ind-slicer').addEventListener('change', filterTable);
