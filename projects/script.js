@@ -24,13 +24,22 @@ document.addEventListener('DOMContentLoaded', () => {
             initMap();
         })
 
+    //Load data globally
+    let mapData = [];
     fetch('aggregated_data.json')
         .then(response => response.json())
         .then(data => {
+            mapData = data;
             populateTable(data);
             populateSlicers(data);
             filterTable(data);
-        })
+        });
+
+    // Use mapData in getUnderemploymentForRegion
+    function getUnderemploymentForRegion(regionId) {
+        const regionData = mapData.find(item => item.ID === regionId);
+        return regionData ? regionData.UNDEREMPLOYMENT_LEVEL : null;
+    }
 
     // creating functions for map and table
     function initMap() {
@@ -108,12 +117,15 @@ document.addEventListener('DOMContentLoaded', () => {
         svgContainer.addEventListener('click', deselectRegion);
     }
 
-    // Tooltip hover display
+    // More Tooltip things
     function showTooltip(event, regionId) {
-        tooltip.textContent = `Region: ${regionId}`;
+        console.log("Showing tooltip for:", regionId); // Debug
+        const underemploymentLevel = getUnderemploymentForRegion(regionId);
+        tooltip.textContent = `Underemployment: ${underemploymentLevel != null ? underemploymentLevel.toFixed(2) : 'N/A'}`;
         tooltip.style.display = 'block';
         moveTooltip(event);
     }
+    
 
     function hideTooltip() {
         tooltip.style.display = 'none';
@@ -169,22 +181,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function resetHoverBorders() {
         const paths = document.querySelectorAll('path');
-    }
-
-    // More Tooltip things
-    function showTooltip(event, regionId) {
-        tooltip.textContent = `Region: ${regionId}`;
-        tooltip.style.display = 'block';
-        moveTooltip(event);
-    }
-
-    function hideTooltip() {
-        tooltip.style.display = 'none';
-    }
-
-    function moveTooltip(event) {
-        tooltip.style.left = `${event.pageX + 10}px`;
-        tooltip.style.top = `${event.pageY + 10}px`;
     }
 
     // Populate table with data
@@ -361,27 +357,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Update SVG path colors based on UNDEREMPLOYMENT_LEVEL using the new colorscale
     function updatePathColors(data) {
-        const svg = document.querySelector('#svg-container svg'); // Get the SVG element
-        const paths = svg.querySelectorAll('path'); // Select all path elements
-
-        // Map the data to associate region IDs with UNDEREMPLOYMENT_LEVEL
+        const svg = document.querySelector('#svg-container svg');
+        const paths = svg.querySelectorAll('path');
+    
         const underemploymentMap = data.reduce((acc, item) => {
-            acc[item.ID] = item.UNDEREMPLOYMENT_LEVEL;
+            acc[item.ID] = parseFloat(item.UNDEREMPLOYMENT_LEVEL) || null; // Map region ID to level
             return acc;
         }, {});
-
-        // Loop over all the paths and update their color based on the data
+    
         paths.forEach(path => {
-            const regionId = path.id; // Get the ID of the current path (should match the data region ID)
+            const regionId = path.id;
             const underemploymentLevel = underemploymentMap[regionId];
-
-            // Get the color for the level
             const color = getColorForUnderemployment(underemploymentLevel);
-
-            // Apply the color
             path.style.fill = color;
         });
-    }
+    }    
 
     // Set color on map for underemployment.
     function getColorForUnderemployment(level) {
@@ -406,7 +396,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('Unexpected scaleValue:', scaleValue);
         return '#e9e9e9';
     }
-
+    
     // Update map color on table filter
     function filterTable() {
         const indValue = document.getElementById('ind-slicer').value;
@@ -512,7 +502,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const activeIcon = activeHeader.querySelector('.sort-icon');
         if (activeIcon) {
-            activeIcon.textContent = ascending ? '▲' : '▼';
+            activeIcon.textContent = ascending ? '▼' : '▲';
         }
     }
 });
