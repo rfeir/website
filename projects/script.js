@@ -164,15 +164,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // unused, but could add border outlines here
-    function highlightRegionOnHover(regionId) {
-        const paths = document.querySelectorAll('path');
-    }
-
-    function resetHoverBorders() {
-        const paths = document.querySelectorAll('path');
-    }
-
     // Populate table with data
     function populateTable(data) {
         const table = document.getElementById('data-table').getElementsByTagName('tbody')[0];
@@ -385,11 +376,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // Fallback (should not be reached in normal cases)
         console.error('Unexpected scaleValue:', scaleValue);
         return '#e9e9e9';
-    }
-
-    function getUnderemploymentForRegion(regionId) {
-        // Example: You might already have a map of data in your `underemploymentMap`
-        return underemploymentMap[regionId];
     }
     
     // Update map color on table filter
