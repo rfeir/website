@@ -1,8 +1,7 @@
-//version check 2
+//version check 5
 
 document.addEventListener('DOMContentLoaded', () => {
-    
-    // setting some defaults to help with operations
+    // Setting some defaults to help with operations
     let offsetX = 0;
     let offsetY = 0;
     let scale = 1;
@@ -10,31 +9,30 @@ document.addEventListener('DOMContentLoaded', () => {
     let draggingActive = false;
     let selectedRegion = null;
 
-    // sending to html
+    // Sending to HTML
     const tooltip = document.getElementById('tooltip');
     const svgContainer = document.getElementById('svg-container');
     const dataTable = document.getElementById('data-table');
     let paths = null;
 
-
-    // loading map paths and dataframe
+    // Load map paths and dataframe
     fetch('paths.svg')
         .then(response => response.text())
         .then(svgContent => {
             svgContainer.innerHTML = svgContent;
             paths = svgContainer.querySelectorAll('path');
             initMap();
-        })
+        });
 
     fetch('aggregated_data.json')
         .then(response => response.json())
         .then(data => {
             populateTable(data);
             populateSlicers(data);
-            filterTable(data);
-        })
+            filterTable(); // Apply filter on initial load
+        });
 
-    // creating functions for map and table
+    // Initialize map functionality
     function initMap() {
         const svg = svgContainer.querySelector('svg');
 
@@ -68,30 +66,29 @@ document.addEventListener('DOMContentLoaded', () => {
         // Zooming
         svgContainer.addEventListener('wheel', (e) => {
             e.preventDefault();
-        
+
             const rect = svgContainer.getBoundingClientRect();
             const svg = svgContainer.querySelector('svg');
-        
+
             // Center of the container
             const containerCenterX = rect.width / 2;
             const containerCenterY = rect.height / 2;
-        
+
             // Zoom factor
             const zoomFactor = e.deltaY < 0 ? 0.1 : -0.1;
             const newScale = Math.min(Math.max(scale + zoomFactor, 0.8), 10);
-        
+
             // Adjust offsets to keep zoom centered on the container's center
             offsetX += containerCenterX * (1 - newScale / scale);
             offsetY += containerCenterY * (1 - newScale / scale);
-        
+
             scale = newScale;
-        
+
             // Apply transform to the SVG directly
             svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
         });
-        
-        
 
+        // Path interaction (hover, click, etc.)
         paths.forEach(path => {
             path.addEventListener('mouseenter', (e) => {
                 if (!draggingActive) showTooltip(e, path.id);
@@ -110,12 +107,12 @@ document.addEventListener('DOMContentLoaded', () => {
         svgContainer.addEventListener('click', deselectRegion);
     }
 
-    // More Tooltip things
+    // Tooltip functions
     function showTooltip(event, regionId) {
         tooltip.textContent = `Region: ${regionId}`;
         tooltip.style.display = 'block';
         moveTooltip(event);
-    }  
+    }
 
     function hideTooltip() {
         tooltip.style.display = 'none';
@@ -140,14 +137,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function selectRegion(regionId) {
         selectedRegion = regionId;
         highlightRegion(regionId);
-        filterTableByRegion(regionId);
-        applyRowColors(selectedRegion);
+        filterTableByRegion(regionId); // Filter table on region selection
     }
 
     function deselectRegion() {
         selectedRegion = null;
         resetRegion();
-        filterTable();
+        filterTable(); // Reset filter on region deselect
     }
 
     function highlightRegion(regionId) {
@@ -168,13 +164,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function populateTable(data) {
         const table = document.getElementById('data-table').getElementsByTagName('tbody')[0];
         table.innerHTML = '';
-        
+
         data.forEach((item, index) => {
             const row = document.createElement('tr');
             row.dataset.region = item.ID;
             row.dataset.index = index;  // Add the hidden index here
-    
-            // Insert row data as before
+
             row.innerHTML = `
                 <td>${item.STATE || ""}</td>
                 <td>${item.IND || ""}</td>
@@ -217,10 +212,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${item.ID || ""}</td>
                 <td>${item.COUNTIES || ""}</td>
             `;
+
             table.appendChild(row);
         });
     }
-    
+
     // Populate slicers with options
     function populateSlicers(data) {
         const indSlicer = document.getElementById('ind-slicer');
@@ -229,7 +225,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const indOptions = Array.from(new Set(data.map(item => item.IND)));
         const nativityOptions = Array.from(new Set(data.map(item => item.NATIVITY)));
 
-        // Set as Utilities now so AI doesn't mess up and add external 'All' option. Functions this way so 'All' appears at top of both lists.
         indOptions.forEach(ind => {
             if (ind !== 'Utilities') {
                 const option = document.createElement('option');
@@ -239,7 +234,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Set as Domestic for now. Will be premade 'All' category later. Functions this way so 'All' appears at top of both lists.
         nativityOptions.forEach(nativity => {
             if (nativity !== 'Domestic') {
                 const option = document.createElement('option');
@@ -255,24 +249,27 @@ document.addEventListener('DOMContentLoaded', () => {
         const indValue = document.getElementById('ind-slicer').value;
         const nativityValue = document.getElementById('nativity-slicer').value;
         const rows = document.querySelectorAll('#data-table tbody tr');
-    
+
         rows.forEach(row => {
             const matchesInd = !indValue || row.cells[1].textContent === indValue;
             const matchesNativity = !nativityValue || row.cells[2].textContent === nativityValue;
             const matchesRegion = !selectedRegion || row.dataset.region === selectedRegion;
-    
+
             if (matchesInd && matchesNativity && matchesRegion) {
                 row.style.display = ''; // Show row
             } else {
                 row.style.display = 'none'; // Hide row
             }
         });
-    }    
 
-    function applyRowColors() {
+        applyRowColors(); // Reapply row colors based on visibility
+    }
+
+    // Apply alternating row colors
+    function applyRowColors(filteredData) {
         const rows = document.querySelectorAll('#data-table tbody tr');
         let visibleRowIndex = 0; // Track the visible row index for alternating colors
-        
+
         rows.forEach(row => {
             if (row.style.display !== 'none') { // Check if the row is visible
                 if (visibleRowIndex % 2 === 0) {
@@ -285,35 +282,46 @@ document.addEventListener('DOMContentLoaded', () => {
                 row.style.backgroundColor = ''; // Reset hidden rows' background
             }
         });
-    }    
-
-    // Filter table based on region selection
-    function filterTableByRegion(regionId) {
-        const rows = document.querySelectorAll('#data-table tbody tr');
-        rows.forEach(row => {
-            if (row.dataset.region === regionId) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
-        });
-        
     }
+
+// Filter table by region selection
+function filterTableByRegion(regionId) {
+    const indValue = document.getElementById('ind-slicer').value;
+    const nativityValue = document.getElementById('nativity-slicer').value;
+    const rows = document.querySelectorAll('#data-table tbody tr');
+
+    rows.forEach(row => {
+        const rowInd = row.cells[1].textContent; // Assuming IND is in the second column
+        const rowNativity = row.cells[2].textContent; // Assuming NATIVITY is in the third column
+
+        const matchesInd = !indValue || rowInd === indValue;
+        const matchesNativity = !nativityValue || rowNativity === nativityValue;
+
+        if (row.dataset.region === regionId && matchesInd && matchesNativity) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    applyRowColors(); // Reapply row colors when filtering by region
+}
+
 
     // Define the custom colorscale
     const colorscale = [
-        [0/11, "#fde725"],
-        [1/11, "#c2df23"],
-        [2/11, "#86d549"],
-        [3/11, "#52c569"],
-        [4/11, "#2ab07f"],
-        [5/11, "#1e9b8a"],
-        [6/11, "#25858e"],
-        [7/11, "#2d708e"],
-        [8/11, "#38588c"],
-        [9/11, "#433e85"],
-        [10/11, "#482173"],
-        [11/11, "#440154"],
+        [0 / 11, "#fde725"],
+        [1 / 11, "#c2df23"],
+        [2 / 11, "#86d549"],
+        [3 / 11, "#52c569"],
+        [4 / 11, "#2ab07f"],
+        [5 / 11, "#1e9b8a"],
+        [6 / 11, "#25858e"],
+        [7 / 11, "#2d708e"],
+        [8 / 11, "#38588c"],
+        [9 / 11, "#433e85"],
+        [10 / 11, "#482173"],
+        [11 / 11, "#440154"],
     ];
 
     // Create colors between predefined colorscale
@@ -338,21 +346,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Update SVG path colors based on UNDEREMPLOYMENT_LEVEL using the new colorscale
     function updatePathColors(data) {
-        const svg = document.querySelector('#svg-container svg');
-        const paths = svg.querySelectorAll('path');
-    
-        const underemploymentMap = data.reduce((acc, item) => {
-            acc[item.ID] = parseFloat(item.UNDEREMPLOYMENT_LEVEL) || null; // Map region ID to level
-            return acc;
-        }, {});
-    
         paths.forEach(path => {
             const regionId = path.id;
-            const underemploymentLevel = underemploymentMap[regionId];
+            const underemploymentLevel = data.find(item => item.ID === regionId)?.UNDEREMPLOYMENT_LEVEL || null;
             const color = getColorForUnderemployment(underemploymentLevel);
             path.style.fill = color;
         });
-    }    
+    }
 
     // Set color on map for underemployment.
     function getColorForUnderemployment(level) {
@@ -416,26 +416,25 @@ document.addEventListener('DOMContentLoaded', () => {
     function sortTableByColumn(columnIndex, ascending = true) {
         const tbody = document.querySelector('#data-table tbody');
         const rows = Array.from(tbody.querySelectorAll('tr'));
-        
+
         rows.sort((rowA, rowB) => {
             const valueA = rowA.cells[columnIndex]?.textContent.trim() || null;
             const valueB = rowB.cells[columnIndex]?.textContent.trim() || null;
-    
+
             const parsedA = parseValue(valueA);
             const parsedB = parseValue(valueB);
-    
+
             if (parsedA === parsedB) return 0;
             return (parsedA > parsedB ? 1 : -1) * (ascending ? 1 : -1);
         });
-    
-        // Reattach the rows to tbody and update the index after sorting
+
         rows.forEach((row, index) => {
-            row.dataset.index = index;  // Update the index
-            tbody.appendChild(row);  // Reattach row
+            row.dataset.index = index; // Update index attribute
+            tbody.appendChild(row);
         });
-    
-        applyRowColors();  // Reapply colors after sorting
-    }    
+
+        applyRowColors(); // Reapply colors after sorting
+    }
 
     // Helper function to parse values based on format
     function parseValue(value) {
@@ -459,31 +458,27 @@ document.addEventListener('DOMContentLoaded', () => {
     function parseRawNumericValue(value) {
         return parseFloat(value.replace(/[^\d.-]/g, ''));
     }
-
+    
     // Add click listeners to headers for sorting
-    headers.forEach((header, index) => {
+    document.querySelectorAll('#data-table th').forEach((header, index) => {
         let ascending = true;
 
-        // Add click event listener for each header
         header.addEventListener('click', () => {
             sortTableByColumn(index, ascending);
             ascending = !ascending;
-            updateSortIcons(headers, header, ascending);
+            updateSortIcons(header, ascending);
         });
     });
 
     // Function to update sort icons in the headers
-    function updateSortIcons(headers, activeHeader, ascending) {
-        headers.forEach(header => {
-            const icon = header.querySelector('.sort-icon');
-            if (icon) {
-                icon.textContent = '';
-            }
+    function updateSortIcons(activeHeader, ascending) {
+        document.querySelectorAll('#data-table th .sort-icon').forEach(icon => {
+            icon.textContent = '';
         });
 
-        const activeIcon = activeHeader.querySelector('.sort-icon');
-        if (activeIcon) {
-            activeIcon.textContent = ascending ? '▼' : '▲';
+        const sortIcon = activeHeader.querySelector('.sort-icon');
+        if (sortIcon) {
+            sortIcon.textContent = ascending ? '▼' : '▲';
         }
     }
 });
