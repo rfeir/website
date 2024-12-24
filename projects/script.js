@@ -64,30 +64,38 @@ document.addEventListener('DOMContentLoaded', () => {
             window.addEventListener('mouseup', onMouseUp);
         });
 
-        // Zooming
+        // Zooming functionality for the SVG container
         svgContainer.addEventListener('wheel', (e) => {
             e.preventDefault();
 
+            const MIN_SCALE = 1; // Minimum zoom level
+            const MAX_SCALE = 15; // Maximum zoom level
+
+            // Mouse position within the container
             const rect = svgContainer.getBoundingClientRect();
-            const svg = svgContainer.querySelector('svg');
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
 
-            // Center of the container
-            const containerCenterX = rect.width / 2;
-            const containerCenterY = rect.height / 2;
+            // Calculate zoom direction and factor
+            const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+            const newScale = Math.min(Math.max(scale * zoomFactor, MIN_SCALE), MAX_SCALE);
 
-            // Zoom factor
-            const zoomFactor = e.deltaY < 0 ? 0.1 : -0.1;
-            const newScale = Math.min(Math.max(scale + zoomFactor, 0.8), 10);
+            // Adjust offsets to zoom relative to the mouse pointer
+            const scaleRatio = newScale / scale;
+            offsetX = mouseX - scaleRatio * (mouseX - offsetX);
+            offsetY = mouseY - scaleRatio * (mouseY - offsetY);
 
-            // Adjust offsets to keep zoom centered on the container's center
-            offsetX += containerCenterX * (1 - newScale / scale);
-            offsetY += containerCenterY * (1 - newScale / scale);
-
+            // Update scale
             scale = newScale;
 
-            // Apply transform to the SVG directly
-            svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+            // Apply transformation
+            applyTransform(svg);
         });
+
+        function applyTransform(svg) {
+            svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+            svg.style.transformOrigin = '0 0'; // Ensure zoom origin is at the top-left
+        }
 
         // Path interaction (hover, click, etc.)
         paths.forEach(path => {
@@ -105,8 +113,16 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        svgContainer.addEventListener('click', deselectAllRegions);
+        // Handle clicks outside valid regions
+        svgContainer.addEventListener('click', (e) => {
+            const clickedElement = e.target;
+            // Check if the click is outside a valid path
+            if (!clickedElement.closest('path')) {
+                deselectAllRegions(); // Reset everything when clicking outside a region
+            }
+        });
     }
+
 
     // Tooltip functions
     function showTooltip(event, regionId) {
@@ -180,9 +196,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }    
 
     function deselectAllRegions() {
-        selectedRegions.clear();
+        selectedRegions.clear(); // Clear all selections
         highlightSelectedRegions(); // Reset map highlights
-        updateRowSelectionFromRegions(); // Reset table row highlights
+        filterTableByRegion(); // Reset table to show all rows
     }
     
 
@@ -218,9 +234,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
-    
-    
-    
 
     function resetAllRowsAndRegions() {
         const rows = document.querySelectorAll('#data-table tbody tr');
@@ -233,6 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
             path.style.opacity = '1'; // Reset map region opacity
         });
     }
+
 
     // Populate table with data
     function populateTable(data) {
@@ -373,7 +387,6 @@ function filterTableByRegion() {
 
     applyRowColors(); // Reapply alternating row colors
 }
-
 
 
     // Define the custom colorscale
