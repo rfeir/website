@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let isDragging = false;
     let draggingActive = false;
     let selectedRegion = null;
+    let selectedRegions = new Set(); // Store selected region IDs
 
     // Sending to HTML
     const tooltip = document.getElementById('tooltip');
@@ -99,12 +100,12 @@ document.addEventListener('DOMContentLoaded', () => {
             path.addEventListener('mousemove', moveTooltip);
 
             path.addEventListener('click', (e) => {
-                toggleRegionSelection(path.id);
+                handleMapRegionClick(e, path.id);
                 e.stopPropagation();
             });
         });
 
-        svgContainer.addEventListener('click', deselectRegion);
+        svgContainer.addEventListener('click', deselectAllRegions);
     }
 
     // Tooltip functions
@@ -125,38 +126,111 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Selecting region
-    function toggleRegionSelection(regionId) {
-        if (selectedRegion === regionId) {
-            deselectRegion();
+    // Map region click handling
+    function handleMapRegionClick(event, regionId) {
+        const isMultiSelect = event.ctrlKey || event.metaKey;
+
+        if (isMultiSelect) {
+            if (selectedRegions.has(regionId)) {
+                selectedRegions.delete(regionId); // Deselect region
+            } else {
+                selectedRegions.add(regionId); // Add region
+            }
         } else {
-            selectRegion(regionId);
+            if (selectedRegions.has(regionId)) {
+                selectedRegions.clear(); // Deselect all regions
+            } else {
+                selectedRegions.clear(); // Clear previous selections
+                selectedRegions.add(regionId); // Add selected region
+            }
         }
+
+        highlightSelectedRegions(); // Update map highlights
+        filterTableByRegion(regionId);
     }
 
-    function selectRegion(regionId) {
-        selectedRegion = regionId;
-        highlightRegion(regionId);
-        filterTableByRegion(regionId); // Filter table on region selection
-    }
-
-    function deselectRegion() {
-        selectedRegion = null;
-        resetRegion();
-        filterTable(); // Reset filter on region deselect
-    }
-
-    function highlightRegion(regionId) {
+    function highlightSelectedRegions() {
         const paths = document.querySelectorAll('path');
         paths.forEach(path => {
-            path.style.opacity = path.id === regionId ? '1' : '0.2';
+            if (selectedRegions.size > 0) {
+                // Reduce opacity for unselected regions
+                path.style.opacity = selectedRegions.has(path.id) ? '1' : '0.3';
+            } else {
+                // Reset all regions to full opacity
+                path.style.opacity = '1';
+            }
         });
     }
+    
 
-    function resetRegion() {
+    function updateRowSelectionFromRegions() {
+        const rows = document.querySelectorAll('#data-table tbody tr');
+    
+        if (selectedRegions.size > 0) {
+            // Highlight selected rows and dim unselected rows
+            rows.forEach(row => {
+                row.style.opacity = selectedRegions.has(row.dataset.region) ? '1' : '0.3';
+            });
+        } else {
+            // Reset all rows to full opacity if nothing is selected
+            rows.forEach(row => {
+                row.style.opacity = '1';
+            });
+        }
+    }    
+
+    function deselectAllRegions() {
+        selectedRegions.clear();
+        highlightSelectedRegions(); // Reset map highlights
+        updateRowSelectionFromRegions(); // Reset table row highlights
+    }
+    
+
+    // Adding an event listener for clicking on the rows
+    function addRowClickListeners() {
+        const rows = document.querySelectorAll('#data-table tbody tr');
+    
+        rows.forEach(row => {
+            row.addEventListener('click', function (event) {
+                const regionId = this.dataset.region;
+                const isMultiSelect = event.ctrlKey || event.metaKey;
+    
+                if (isMultiSelect) {
+                    // Multi-select logic: toggle region in selection
+                    if (selectedRegions.has(regionId)) {
+                        selectedRegions.delete(regionId);
+                    } else {
+                        selectedRegions.add(regionId);
+                    }
+                } else {
+                    // Single-select logic: deselect if already selected
+                    if (selectedRegions.has(regionId)) {
+                        selectedRegions.clear(); // Clear all selections
+                    } else {
+                        selectedRegions.clear(); // Clear previous selections
+                        selectedRegions.add(regionId); // Select this region
+                    }
+                }
+    
+                // Update both map and rows after changes
+                highlightSelectedRegions();
+                updateRowSelectionFromRegions();
+            });
+        });
+    }
+    
+    
+    
+
+    function resetAllRowsAndRegions() {
+        const rows = document.querySelectorAll('#data-table tbody tr');
+        rows.forEach(row => {
+            row.style.opacity = '1'; // Reset row opacity
+        });
+
         const paths = document.querySelectorAll('path');
         paths.forEach(path => {
-            path.style.opacity = '1';
+            path.style.opacity = '1'; // Reset map region opacity
         });
     }
 
@@ -168,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
         data.forEach((item, index) => {
             const row = document.createElement('tr');
             row.dataset.region = item.ID;
-            row.dataset.index = index;  // Add the hidden index here
+            row.dataset.index = index; // Add the hidden index here
 
             row.innerHTML = `
                 <td>${item.STATE || ""}</td>
@@ -215,6 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             table.appendChild(row);
         });
+        addRowClickListeners();
     }
 
     // Populate slicers with options
@@ -244,27 +319,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Filter table based on slicer selections
-    function filterTable() {
-        const indValue = document.getElementById('ind-slicer').value;
-        const nativityValue = document.getElementById('nativity-slicer').value;
-        const rows = document.querySelectorAll('#data-table tbody tr');
-
-        rows.forEach(row => {
-            const matchesInd = !indValue || row.cells[1].textContent === indValue;
-            const matchesNativity = !nativityValue || row.cells[2].textContent === nativityValue;
-            const matchesRegion = !selectedRegion || row.dataset.region === selectedRegion;
-
-            if (matchesInd && matchesNativity && matchesRegion) {
-                row.style.display = ''; // Show row
-            } else {
-                row.style.display = 'none'; // Hide row
-            }
-        });
-
-        applyRowColors(); // Reapply row colors based on visibility
-    }
-
     // Apply alternating row colors
     function applyRowColors(filteredData) {
         const rows = document.querySelectorAll('#data-table tbody tr');
@@ -285,27 +339,41 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 // Filter table by region selection
-function filterTableByRegion(regionId) {
+function filterTableByRegion() {
     const indValue = document.getElementById('ind-slicer').value;
     const nativityValue = document.getElementById('nativity-slicer').value;
     const rows = document.querySelectorAll('#data-table tbody tr');
 
-    rows.forEach(row => {
-        const rowInd = row.cells[1].textContent; // Assuming IND is in the second column
-        const rowNativity = row.cells[2].textContent; // Assuming NATIVITY is in the third column
+    if (selectedRegions.size > 0) {
+        // Show rows matching any of the selected regions
+        rows.forEach(row => {
+            const rowRegion = row.dataset.region;
+            const matchesInd = !indValue || row.cells[1].textContent === indValue; // Assuming IND is in the second column
+            const matchesNativity = !nativityValue || row.cells[2].textContent === nativityValue; // Assuming NATIVITY is in the third column
 
-        const matchesInd = !indValue || rowInd === indValue;
-        const matchesNativity = !nativityValue || rowNativity === nativityValue;
+            if (selectedRegions.has(rowRegion) && matchesInd && matchesNativity) {
+                row.style.display = ''; // Show row
+            } else {
+                row.style.display = 'none'; // Hide row
+            }
+        });
+    } else {
+        // Reset all rows to visible if no regions are selected
+        rows.forEach(row => {
+            const matchesInd = !indValue || row.cells[1].textContent === indValue;
+            const matchesNativity = !nativityValue || row.cells[2].textContent === nativityValue;
 
-        if (row.dataset.region === regionId && matchesInd && matchesNativity) {
-            row.style.display = '';
-        } else {
-            row.style.display = 'none';
-        }
-    });
+            if (matchesInd && matchesNativity) {
+                row.style.display = ''; // Show row
+            } else {
+                row.style.display = 'none'; // Hide row
+            }
+        });
+    }
 
-    applyRowColors(); // Reapply row colors when filtering by region
+    applyRowColors(); // Reapply alternating row colors
 }
+
 
 
     // Define the custom colorscale
