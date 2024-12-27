@@ -1,19 +1,16 @@
-//version check 5
+// Version 6
 
 document.addEventListener('DOMContentLoaded', () => {
     // Setting some defaults to help with operations
     let offsetX = 0;
-    let offsetY = 0;
-    let scale = 1;
-    let isDragging = false;
-    let draggingActive = false;
+    let offsetY = 0;let scale = 1;
+    let isDragging = false;let draggingActive = false;
     let selectedRegion = null;
     let selectedRegions = new Set(); // Store selected region IDs
 
     // Sending to HTML
     const tooltip = document.getElementById('tooltip');
     const svgContainer = document.getElementById('svg-container');
-    const dataTable = document.getElementById('data-table');
     let paths = null;
 
     // Load map paths and dataframe
@@ -24,7 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
             paths = svgContainer.querySelectorAll('path');
             initMap();
         });
-
     fetch('aggregated_data.json')
         .then(response => response.json())
         .then(data => {
@@ -36,7 +32,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize map functionality
     function initMap() {
         const svg = svgContainer.querySelector('svg');
-
         // Dragging
         svgContainer.addEventListener('mousedown', (e) => {
             if (e.button !== 0) return;
@@ -44,14 +39,12 @@ document.addEventListener('DOMContentLoaded', () => {
             draggingActive = true;
             const startX = e.clientX - offsetX;
             const startY = e.clientY - offsetY;
-
             svgContainer.style.cursor = 'grabbing';
             const onMouseMove = (moveEvent) => {
                 offsetX = moveEvent.clientX - startX;
                 offsetY = moveEvent.clientY - startY;
                 svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
             };
-
             const onMouseUp = () => {
                 isDragging = false;
                 draggingActive = false;
@@ -59,7 +52,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.removeEventListener('mousemove', onMouseMove);
                 window.removeEventListener('mouseup', onMouseUp);
             };
-
             window.addEventListener('mousemove', onMouseMove);
             window.addEventListener('mouseup', onMouseUp);
         });
@@ -67,31 +59,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // Zooming functionality for the SVG container
         svgContainer.addEventListener('wheel', (e) => {
             e.preventDefault();
-
-            const MIN_SCALE = 1; // Minimum zoom level
-            const MAX_SCALE = 15; // Maximum zoom level
-
+            const MIN_SCALE = 1; const MAX_SCALE = 15; // Min and Max zoom level
             // Mouse position within the container
-            const rect = svgContainer.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
-
+            const rect = svgContainer.getBoundingClientRect();const mouseX = e.clientX - rect.left;const mouseY = e.clientY - rect.top;
             // Calculate zoom direction and factor
-            const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
-            const newScale = Math.min(Math.max(scale * zoomFactor, MIN_SCALE), MAX_SCALE);
-
+            const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9; const newScale = Math.min(Math.max(scale * zoomFactor, MIN_SCALE), MAX_SCALE);
             // Adjust offsets to zoom relative to the mouse pointer
-            const scaleRatio = newScale / scale;
-            offsetX = mouseX - scaleRatio * (mouseX - offsetX);
-            offsetY = mouseY - scaleRatio * (mouseY - offsetY);
-
-            // Update scale
-            scale = newScale;
-
-            // Apply transformation
-            applyTransform(svg);
+            const scaleRatio = newScale / scale;  offsetX = mouseX - scaleRatio * (mouseX - offsetX);  offsetY = mouseY - scaleRatio * (mouseY - offsetY);
+            // Update scale and apply transformation
+            scale = newScale; applyTransform(svg);
         });
-
         function applyTransform(svg) {
             svg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
             svg.style.transformOrigin = '0 0'; // Ensure zoom origin is at the top-left
@@ -102,11 +79,8 @@ document.addEventListener('DOMContentLoaded', () => {
             path.addEventListener('mouseenter', (e) => {
                 if (!draggingActive) showTooltip(e, path.id);
             });
-
             path.addEventListener('mouseleave', hideTooltip);
-
             path.addEventListener('mousemove', moveTooltip);
-
             path.addEventListener('click', (e) => {
                 handleMapRegionClick(e, path.id);
                 e.stopPropagation();
@@ -122,30 +96,26 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-
-
     // Tooltip functions
     function showTooltip(event, regionId) {
         tooltip.textContent = `Region: ${regionId}`;
         tooltip.style.display = 'block';
         moveTooltip(event);
     }
-
     function hideTooltip() {
         tooltip.style.display = 'none';
     }
-
+    
     function moveTooltip(event) {
         requestAnimationFrame(() => {
             tooltip.style.left = `${event.pageX + 10}px`;
             tooltip.style.top = `${event.pageY + 10}px`;
         });
     }
-
+    
     // Map region click handling
     function handleMapRegionClick(event, regionId) {
         const isMultiSelect = event.ctrlKey || event.metaKey;
-
         if (isMultiSelect) {
             if (selectedRegions.has(regionId)) {
                 selectedRegions.delete(regionId); // Deselect region
@@ -160,28 +130,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 selectedRegions.add(regionId); // Add selected region
             }
         }
-
         highlightSelectedRegions(); // Update map highlights
         filterTableByRegion(regionId);
     }
-
+    
     function highlightSelectedRegions() {
         const paths = document.querySelectorAll('path');
+        const selectedRegionIds = new Set(selectedRegions);
+    
         paths.forEach(path => {
-            if (selectedRegions.size > 0) {
-                // Reduce opacity for unselected regions
-                path.style.opacity = selectedRegions.has(path.id) ? '1' : '0.3';
-            } else {
-                // Reset all regions to full opacity
-                path.style.opacity = '1';
-            }
+            const isSelected = selectedRegionIds.has(path.id);
+            path.style.opacity = isSelected || selectedRegionIds.size === 0 ? '1' : '0.3';
         });
     }
     
-
     function updateRowSelectionFromRegions() {
         const rows = document.querySelectorAll('#data-table tbody tr');
-    
         if (selectedRegions.size > 0) {
             // Highlight selected rows and dim unselected rows
             rows.forEach(row => {
@@ -193,25 +157,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 row.style.opacity = '1';
             });
         }
-    }    
-
+    }
     function deselectAllRegions() {
         selectedRegions.clear(); // Clear all selections
         highlightSelectedRegions(); // Reset map highlights
         filterTableByRegion(); // Reset table to show all rows
     }
-    
-
     // Adding an event listener for clicking on the rows
     function addRowClickListeners() {
         const rows = document.querySelectorAll('#data-table tbody tr');
-    
         rows.forEach(row => {
             row.addEventListener('click', function (event) {
                 const regionId = this.dataset.region;
                 const isMultiSelect = event.ctrlKey || event.metaKey;
-    
-                if (isMultiSelect) {
+                    if (isMultiSelect) {
                     // Multi-select logic: toggle region in selection
                     if (selectedRegions.has(regionId)) {
                         selectedRegions.delete(regionId);
@@ -227,14 +186,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         selectedRegions.add(regionId); // Select this region
                     }
                 }
-    
                 // Update both map and rows after changes
                 highlightSelectedRegions();
                 updateRowSelectionFromRegions();
             });
         });
     }
-
     function resetAllRowsAndRegions() {
         const rows = document.querySelectorAll('#data-table tbody tr');
         rows.forEach(row => {
@@ -246,8 +203,6 @@ document.addEventListener('DOMContentLoaded', () => {
             path.style.opacity = '1'; // Reset map region opacity
         });
     }
-
-
     // Populate table with data
     function populateTable(data) {
         const table = document.getElementById('data-table').getElementsByTagName('tbody')[0];
@@ -300,12 +255,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${item.ID || ""}</td>
                 <td>${item.COUNTIES || ""}</td>
             `;
-
             table.appendChild(row);
         });
         addRowClickListeners();
     }
-
     // Populate slicers with options
     function populateSlicers(data) {
         const indSlicer = document.getElementById('ind-slicer');
@@ -322,7 +275,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 indSlicer.appendChild(option);
             }
         });
-
         nativityOptions.forEach(nativity => {
             if (nativity !== 'Domestic') {
                 const option = document.createElement('option');
@@ -332,7 +284,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-
     // Apply alternating row colors
     function applyRowColors(filteredData) {
         const rows = document.querySelectorAll('#data-table tbody tr');
@@ -351,44 +302,24 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-
-// Filter table by region selection
-function filterTableByRegion() {
-    const indValue = document.getElementById('ind-slicer').value;
-    const nativityValue = document.getElementById('nativity-slicer').value;
-    const rows = document.querySelectorAll('#data-table tbody tr');
-
-    if (selectedRegions.size > 0) {
-        // Show rows matching any of the selected regions
+    // Filter table by region selection
+    function filterTableByRegion() {
+        const indValue = document.getElementById('ind-slicer').value;
+        const nativityValue = document.getElementById('nativity-slicer').value;
+        const rows = document.querySelectorAll('#data-table tbody tr');
+        const selectedRegionIds = new Set(selectedRegions);
+    
         rows.forEach(row => {
             const rowRegion = row.dataset.region;
-            const matchesInd = !indValue || row.cells[1].textContent === indValue; // Assuming IND is in the second column
-            const matchesNativity = !nativityValue || row.cells[2].textContent === nativityValue; // Assuming NATIVITY is in the third column
-
-            if (selectedRegions.has(rowRegion) && matchesInd && matchesNativity) {
-                row.style.display = ''; // Show row
-            } else {
-                row.style.display = 'none'; // Hide row
-            }
-        });
-    } else {
-        // Reset all rows to visible if no regions are selected
-        rows.forEach(row => {
             const matchesInd = !indValue || row.cells[1].textContent === indValue;
             const matchesNativity = !nativityValue || row.cells[2].textContent === nativityValue;
-
-            if (matchesInd && matchesNativity) {
-                row.style.display = ''; // Show row
-            } else {
-                row.style.display = 'none'; // Hide row
-            }
+            const isVisible = selectedRegionIds.size === 0 || selectedRegionIds.has(rowRegion);
+    
+            row.style.display = (isVisible && matchesInd && matchesNativity) ? '' : 'none';
         });
+    
+        applyRowColors(); // Reapply alternating row colors
     }
-
-    applyRowColors(); // Reapply alternating row colors
-}
-
-
     // Define the custom colorscale
     const colorscale = [
         [0 / 11, "#fde725"],
@@ -407,22 +338,8 @@ function filterTableByRegion() {
 
     // Create colors between predefined colorscale
     function interpolateColor(color1, color2, factor) {
-        const c1 = parseInt(color1.slice(1), 16);
-        const c2 = parseInt(color2.slice(1), 16);
-
-        const r1 = (c1 >> 16) & 0xFF;
-        const g1 = (c1 >> 8) & 0xFF;
-        const b1 = c1 & 0xFF;
-
-        const r2 = (c2 >> 16) & 0xFF;
-        const g2 = (c2 >> 8) & 0xFF;
-        const b2 = c2 & 0xFF;
-
-        const r = Math.round(r1 + factor * (r2 - r1));
-        const g = Math.round(g1 + factor * (g2 - g1));
-        const b = Math.round(b1 + factor * (b2 - b1));
-
-        return `rgb(${r}, ${g}, ${b})`;
+        const c1 = parseInt(color1.slice(1), 16);const c2 = parseInt(color2.slice(1), 16);const r1 = (c1 >> 16) & 0xFF;const g1 = (c1 >> 8) & 0xFF;const b1 = c1 & 0xFF;const r2 = (c2 >> 16) & 0xFF;const g2 = (c2 >> 8) & 0xFF;const b2 = c2 & 0xFF;const r = Math.round(r1 + factor * (r2 - r1));const g = Math.round(g1 + factor * (g2 - g1));const b = Math.round(b1 + factor * (b2 - b1));
+    return `rgb(${r}, ${g}, ${b})`;
     }
 
     // Update SVG path colors based on UNDEREMPLOYMENT_LEVEL using the new colorscale
@@ -488,7 +405,6 @@ function filterTableByRegion() {
 
     document.getElementById('ind-slicer').addEventListener('change', filterTable);
     document.getElementById('nativity-slicer').addEventListener('change', filterTable);
-
 
     const table = document.getElementById('data-table');
     const headers = table.querySelectorAll('th');

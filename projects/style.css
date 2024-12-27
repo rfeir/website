@@ -1,11 +1,10 @@
-
-/* version check 5 */
+/* Version 6 */
 
 body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
-    font-size: 14px;
+    font-size: 12px;
 }
 
 .container {
@@ -22,6 +21,12 @@ body {
     max-width: 50%;
 }
 
+/* Ensure the .right container can scroll horizontally if the table is wider than 50% */
+.container .right {
+    overflow-x: auto;
+}
+
+/* SVG container styles */
 #svg-container {
     flex: 1;
     min-width: 300px;
@@ -56,23 +61,42 @@ body {
     pointer-events: none;
 }
 
+/* Base table style (no longer forcing width: 100%) */
 table {
-    width: 100%;
     border-collapse: collapse;
     margin: 0;
-    overflow-x: auto;
-    max-height: 600px;
-    display: block;
-    overflow-y: auto;
+    table-layout: fixed; /* If you want ALL tables to have fixed layout */
 }
 
+/* The specific #data-table with a fixed width (1200px).
+   This ensures horizontal scrolling if the container is narrower than 1200px. */
+#data-table {
+    width: 1200px;        /* or however wide you want the entire table */
+    table-layout: fixed;  /* ensures column widths are respected */
+    display: block;       
+    overflow-x: auto;     /* allows horizontal scrolling if needed */
+    max-height: 600px;    
+    overflow-y: auto; 
+}
+
+/* Make the 12th column (Counties) wider */
+#data-table th:nth-child(12),
+#data-table td:nth-child(12) {
+    width: 250px;  /* adjust to your desired width */
+    min-width: 250px;
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+/* Table cells */
 th, td {
     padding: 8px 12px;
     text-align: left;
 }
 
+/* Sticky header styling */
 th {
-    box-shadow: inset 0 -1.5px rgb(30, 155, 138); /* Serves as a bottom border. Inset keeps from disappearing on scroll */
+    box-shadow: inset 0 -1.5px rgb(30, 155, 138); /* Serves as a bottom border */
     cursor: pointer;
     font-weight: normal;
     position: sticky;
@@ -87,18 +111,20 @@ th:hover {
 
 tr:hover {
     filter: brightness(90%); /* Reduce brightness for the row on hover */
-    z-index: 1; /* allows the scrolled highlighted row to stay behind*/
+    z-index: 1; /* ensures the hovered row is visually on top */
 }
 
 td:hover {
     background-color: rgba(155, 155, 155, 0.15);
 }
 
+/* Sorting icon styles */
 .sort-icon {
     margin-left: 5px;
     font-size: 0.8em;
 }
 
+/* Optional styling for any <select> inside a table */
 table select {
     margin: 10px;
     padding: 5px;
