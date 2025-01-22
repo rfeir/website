@@ -1,184 +1,119 @@
-/* 1) Fluid base font size via clamp:
-   - Minimum 12px, "preferred" is 1.3vw, maximum 18px.
-   - So on small screens, font doesn't go below 12px;
-     on huge screens, it doesn't exceed 18px.
-*/
+/* version check 5 */
+
 html {
-    font-size: clamp(12px, 1.3vw, 18px);
+    /* This ensures the base font size grows/shrinks within a range,
+       preventing it from getting too tiny or huge on different screens. */
+    font-size: clamp(2px, 1vw, 30px);
   }
   
-  body {
+body {
+    font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
-    font-family: Arial, sans-serif;
-    /* 1rem now = whatever `html` calculates.
-       So it will scale as the viewport changes. */
     font-size: 1rem;
-  }
-  
-  /* The main container that holds the left (map) and right (table) columns */
-  .container {
+}
+
+.container {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
-    gap: 1rem;  /* gap in "rem" so it scales with font size */
-    margin: 1rem;
-  }
-  
-  .container {
-    display: flex;
-    align-items: stretch;
-    height: 80vh; /* or a fixed px, like 800px, or use a max-height */
-  }
-  
-  .left,
-  .right {
-    flex: 1 1 0; 
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-  
-/* Keep aspect ratio for #svg-container but also ensure it doesn't exceed parent's height. */
+    margin: 10px;
+    gap: 10px;
+}
+
+.container .left,
+.container .right {
+    flex: 1;
+    max-width: 50%;
+}
+
 #svg-container {
-    aspect-ratio: 16 / 9;
+    flex: 1;
+    min-width: 300px;
     max-width: 100%;
-    max-height: 100%;
-    width: 100%; 
-    margin: auto;      /* center if there's leftover space */
+    height: 600px;
+    background: #ffffff;
+    display: block;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
     position: relative;
-  }
-  
-  /* 3) The actual <svg> should fit #svg-container. 
-     - With aspect-ratio, we can do 100% width/height 
-       or let the SVG keep its native ratio. 
-  */
-  #svg-container svg {
-    width: 100%;
-    height: 100%;
-    transform-origin: 0 0; /* your original transforms still apply on zoom, etc. */
+    cursor: grab;
+    user-select: none;
+}
+
+#svg-container svg {
+    transform-origin: 0 0;
     cursor: pointer;
-    overflow: visible;     /* or auto, as needed */
-  }
-  
-  /* 4) The color bar is absolutely positioned inside #svg-container, 
-     using percentages so it resizes with #svg-container. 
-  */
-  #color-key {
-    position: absolute;
-    bottom: 5%;     /* 5% from bottom of #svg-container */
-    left: 5%;       /* 5% from left of #svg-container */
-    width: 40%;     /* 40% of #svg-container's width */
-    height: 6%;     /* 6% of #svg-container's height */
-    
-    /* background gradient, border, etc. (same as before) */
-    background: linear-gradient(to right, 
-      #fde725, #c2df23, #86d549, #52c569, 
-      #2ab07f, #1e9b8a, #25858e, #2d708e, 
-      #38588c, #433e85, #482173, #440154
-    );
-    border: 1px solid #ddd;
-    border-radius: 0.3rem; /* in rem, so corners scale slightly with font size */
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.1);
-    padding: 0.5rem; 
-    font-size: 0.8rem;      /* can tweak smaller/larger; it scales with root anyway */
-    z-index: 10;            /* stays on top of the SVG */
-    box-sizing: border-box;
-  }
-  
-  /* The numeric labels inside #color-key. 
-     Place them absolutely if you like the above/below style.
-     But let's do something simpler: place them inline or spaced horizontally. 
-     If you want them absolutely positioned, also use % or rem. 
-  */
-  #color-key .label-min,
-  #color-key .label-mid,
-  #color-key .label-max {
-    position: absolute;
-    bottom: -1.5rem; /* or a % below the color-key's box */
-    transform: translateY(100%);
-  }
-  
-  #color-key .label-min  { left: 0; }
-  #color-key .label-mid  { left: 50%; transform: translate(-50%, 100%); }
-  #color-key .label-max  { right: 0; }
-  
-  /* 5) The tooltip */
-  #tooltip {
+    height: 100%;
+    width: 200%;
+    align-items: center;
+    overflow: auto;
+}
+
+#tooltip {
     position: absolute;
     background-color: rgba(0, 0, 0, 0.7);
     color: white;
-    padding: 0.4rem;
-    border-radius: 0.25rem;
+    padding: 5px;
+    border-radius: 3px;
     display: none;
     pointer-events: none;
-    font-size: 0.8rem; /* slightly smaller if desired */
-  }
-  
-  /* 6) Table styling, but remove any hard-coded height 
-     so it can grow or shrink inside .right column. 
-  */
-  table {
+}
+
+table {
     width: 100%;
     border-collapse: collapse;
     margin: 0;
     overflow-x: auto;
-    display: block;  /* keep block + overflow for horizontal/vertical scroll if needed */
-  }
-  
-  thead, tbody {
-    display: table;  /* so headings and body still align */
-    width: 100%;
-  }
-  
-  th, td {
-    padding: 0.6rem;
+    max-height: 600px;
+    display: block;
+    overflow-y: auto;
+}
+
+/* Make the 12th column (Counties) wider */
+#data-table th:nth-child(12),
+#data-table td:nth-child(12) {
+    width: 250px;  /* adjust to your desired width */
+    min-width: 250px;
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+th, td {
+    padding: 8px 12px;
     text-align: left;
-    box-sizing: border-box;
-    font-size: 0.9rem; /* or 1rem. Everything is relative anyway. */
-  }
-  
-  th {
-    box-shadow: inset 0 -1.5px rgb(30, 155, 138);
+}
+
+th {
+    box-shadow: inset 0 -1.5px rgb(30, 155, 138); /* Serves as a bottom border. Inset keeps from disappearing on scroll */
+    cursor: pointer;
+    font-weight: normal;
     position: sticky;
     top: 0;
     background-color: white;
-    cursor: pointer;
-    font-weight: normal;
-    z-index: 2;
-  }
-  
-  th:hover {
+    z-index: 2; /* allows the scrolled highlighted row to stay behind*/
+}
+
+th:hover {
     background-color: rgb(240, 240, 240);
-  }
-  
-  tr:hover {
-    filter: brightness(90%);
-    z-index: 1;
-  }
-  
-  td:hover {
+}
+
+tr:hover {
+    filter: brightness(90%); /* Reduce brightness for the row on hover */
+    z-index: 1; /* allows the scrolled highlighted row to stay behind*/
+}
+
+td:hover {
     background-color: rgba(155, 155, 155, 0.15);
-  }
-  
-  /* 12th column wider (Counties) */
-  #data-table th:nth-child(12),
-  #data-table td:nth-child(12) {
-    width: 15rem; /* in rem, so it scales, but not as drastically as a % might */
-    min-width: 15rem; 
-    white-space: normal;
-    word-wrap: break-word;
-  }
-  
-  /* The sort icon bigger or smaller to taste. */
-  .sort-icon {
-    margin-left: 0.4rem;
-    font-size: 1rem;
-  }
-  
-  table select {
-    margin: 0.5rem;
-    padding: 0.25rem;
-    font-size: 1rem;
-  }
-  
+}
+
+.sort-icon {
+    margin-left: 5px;
+    font-size: .8rem;
+}
+
+table select {
+    margin: 10px;
+    padding: 5px;
+}
