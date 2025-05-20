@@ -15,7 +15,7 @@
     <select id="ind-slicer">
       <option value="Utilities" selected>Utilities</option>
     </select>
-  
+
     <label for="nativity-slicer">Nativity:</label>
     <select id="nativity-slicer">
       <option value="Domestic" selected>Domestic</option>
@@ -25,9 +25,8 @@
   <div class="container">
     <div class="left">
       <div id="svg-container">
-        <svg id="map"></svg>
+        <svg id="paths2"></svg>
       </div>
-      <!-- Continuous Color Key placed outside of SVG container -->
       <div
         id="color-key"
         style="
@@ -56,7 +55,7 @@
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
           font-size: 1.2rem;
           padding: 5px;
-          z-index: 10; /* Ensure it stays on top */
+          z-index: 10;
         "
       >
         <span style="position: absolute; left: 0; bottom: -20px;">0</span>
@@ -70,18 +69,10 @@
       <table id="data-table">
         <thead>
           <tr>
-            <th><span>State</span><span class="sort-icon"></span></th>
-            <th><span>Industry</span><span class="sort-icon"></span></th>
-            <th><span>Nativity</span><span class="sort-icon"></span></th>
-            <th><span>Mean Wage</span><span class="sort-icon"></span></th>
-            <th><span>Mean Other Income</span><span class="sort-icon"></span></th>
-            <th><span>Mean Age</span><span class="sort-icon"></span></th>
-            <th><span>Underemployment Level</span><span class="sort-icon"></span></th>
-            <th><span>Education Level</span><span class="sort-icon"></span></th>
-            <th><span>Required Education Level</span><span class="sort-icon"></span></th>
-            <th><span>Nativity Percentage</span><span class="sort-icon"></span></th>
             <th><span>ID</span><span class="sort-icon"></span></th>
-            <th><span>Counties</span><span class="sort-icon"></span></th>
+            <th><span>Total Population</span><span class="sort-icon"></span></th>
+            <th><span>Overeducation Percentage</span><span class="sort-icon"></span></th>
+            <th><span>Median Wage</span><span class="sort-icon"></span></th>
           </tr>
         </thead>
         <tbody></tbody>
