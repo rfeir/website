@@ -14,14 +14,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let paths = null;
 
     // Load map paths and dataframe
-    fetch('paths.svg')
+    fetch('pumas.svg')
         .then(response => response.text())
         .then(svgContent => {
             svgContainer.innerHTML = svgContent;
             paths = svgContainer.querySelectorAll('path');
             initMap();
         });
-    fetch('aggregated_data.json')
+    fetch('aggregated_data_3.json')
         .then(response => response.json())
         .then(data => {
             populateTable(data);
@@ -98,10 +98,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     // Tooltip functions
     function showTooltip(event, regionId) {
-        tooltip.textContent = `Region: ${regionId}`;
+        tooltip.innerHTML = `Region: ${regionId}<br><span style="font-size: 0.9em; color: #666;">Hold Shift + click to explore</span>`;
         tooltip.style.display = 'block';
         moveTooltip(event);
     }
+
     function hideTooltip() {
         tooltip.style.display = 'none';
     }
@@ -115,7 +116,24 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Map region click handling
     function handleMapRegionClick(event, regionId) {
+        // Shift+Click → open URL link in new tab
+        if (event.shiftKey) {
+            // Find the row for this region
+            const matchingRow = Array.from(document.querySelectorAll('#data-table tbody tr'))
+                .find(row => row.dataset.region === regionId);
+
+            if (matchingRow) {
+                const url = matchingRow.dataset.url; // We stored this in populateTable
+                if (url) {
+                    window.open(url, '_blank');
+                }
+            }
+            return; // Do not continue with selection if Shift-clicked
+        }
+
+        // Ctrl/Cmd → multi-select regions
         const isMultiSelect = event.ctrlKey || event.metaKey;
+
         if (isMultiSelect) {
             if (selectedRegions.has(regionId)) {
                 selectedRegions.delete(regionId); // Deselect region
@@ -130,6 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 selectedRegions.add(regionId); // Add selected region
             }
         }
+
         highlightSelectedRegions(); // Update map highlights
         filterTableByRegion(regionId);
     }
@@ -212,7 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const row = document.createElement('tr');
             row.dataset.region = item.ID;
             row.dataset.index = index; // Add the hidden index here
-
+	    row.dataset.url = item.URL || "";
             row.innerHTML = `
                 <td>${item.STATE || ""}</td>
                 <td>${item.IND || ""}</td>
