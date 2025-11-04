@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>State Choropleth</title>
+  <style>
+    body { font-family: sans-serif; margin: 0; padding: 1rem; text-align: center; }
+    svg { max-width: 100%; height: auto; }
+    .controls { margin-bottom: 1rem; flex-wrap: wrap; }
+    input[type="color"] { margin: 0 .5rem; }
+    .legend {
+      display: inline-flex;
+      align-items: center;
+      margin: 1rem auto;
+      width: 200px;
+      height: 20px;
+      background: linear-gradient(to right, var(--low-color), var(--high-color));
+      border: 1px solid #aaa;
+      position: relative;
+    }
+    .legend-label {
+      font-size: 0.8rem;
+      position: absolute;
+      top: 24px;
+      color: #333;
+    }
+    #tooltip {
+      position: fixed;
+      padding: 4px 8px;
+      background: rgba(0,0,0,0.75);
+      color: white;
+      font-size: 0.8rem;
+      border-radius: 4px;
+      pointer-events: none;
+      visibility: hidden;
+      z-index: 1000;
+    }
+    button { margin: 0.2rem; }
+  </style>
+</head>
+<body>
+  <h2>Velmapper</h2>
+
+  <div class="controls">
+    <label>Low Color: <input type="color" id="lowColor" value="#e0f3f8" /></label>
+    <label>High Color: <input type="color" id="highColor" value="#081d58" /></label>
+    <label>Border Stroke (pt):
+      <input type="number" id="borderWidth" value="0.5" step="0.1" min="0" style="width:60px;">
+      <button id="applyBorder">Apply</button>
+    </label>
+    <input type="file" id="csvFile" accept=".csv" />
+    <button id="updateMap">Update Map</button>
+    <button id="downloadSVG">Download SVG</button>
+    <button id="downloadPNG">Download PNG</button>
+    <button id="downloadPDF">Download PDF</button>
+
+    <!-- 🆕 New font controls -->
+    <label>Font:
+      <select id="fontSelect">
+        <option value="Arial">Arial</option>
+        <option value="Verdana">Verdana</option>
+        <option value="Georgia">Georgia</option>
+        <option value="Courier New">Courier New</option>
+        <option value="Times New Roman">Times New Roman</option>
+      </select>
+    </label>
+    <label>Size:
+      <input type="number" id="fontSize" value="12" min="6" max="40" step="0.5" style="width:60px;">
+    </label>
+  </div>
+
+  <div id="legendContainer"></div>
+
+  <object id="usMap" type="image/svg+xml" data="state1.svg" style="width:90vw; height:70vh;"></object>
+
+  <div id="tooltip"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/svg2pdf.js@2.2.1/dist/svg2pdf.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
+
