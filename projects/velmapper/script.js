@@ -97,7 +97,8 @@ document.getElementById("updateMap").addEventListener("click", () => {
     if (ext === "xlsx" || ext === "xls") {
       const workbook = XLSX.read(e.target.result, { type: "binary" });
       const sheetName = workbook.SheetNames[0];
-      const json = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 });
+      const json = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], 
+        { header: 1 });
       dataText = json.map(row => row.join(",")).join("\n");
     } else {
       dataText = e.target.result;
@@ -113,7 +114,8 @@ document.getElementById("updateMap").addEventListener("click", () => {
     const tooltip = document.getElementById("tooltip");
     svgDoc.querySelectorAll("path").forEach(p => {
       p.addEventListener("mousemove", e => {
-        const name = Object.keys(stateMap).find(k => stateMap[k] === p.id && k.length === 2 && k === k.toUpperCase());
+        const name = Object.keys(stateMap).find(k => stateMap[k] === 
+          p.id && k.length === 2 && k === k.toUpperCase());
         tooltip.style.visibility = "visible";
         tooltip.style.left = e.pageX + 10 + "px";
         tooltip.style.top = e.pageY + 10 + "px";
