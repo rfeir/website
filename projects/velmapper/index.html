@@ -5,35 +5,44 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>State Choropleth</title>
     
-	<!-- Favicon -->
-	<link rel="icon" type="image/x-icon" href="velmapper_favicon/favicon.ico">
-	<link rel="icon" type="image/png" sizes="32x32" href="velmapper_favicon/favicon-32x32.png">
-	<link rel="icon" type="image/png" sizes="16x16" href="velmapper_favicon/favicon-16x16.png">
-	<link rel="apple-touch-icon" sizes="180x180" href="velmapper_favicon/apple-touch-icon.png">
-	<link rel="manifest" href="velmapper_favicon/site.webmanifest">
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="velmapper_favicon/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="velmapper_favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="velmapper_favicon/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="velmapper_favicon/apple-touch-icon.png">
+  <link rel="manifest" href="velmapper_favicon/site.webmanifest">
   <meta name="theme-color" content="#5ccbb2">
 
   <style>
     body { font-family: sans-serif; margin: 0; padding: 1rem; text-align: center; }
     svg { max-width: 100%; height: auto; }
     .controls { margin-bottom: 1rem; flex-wrap: wrap; }
+
     input[type="color"] { margin: 0 .5rem; }
+
     .legend {
       display: inline-flex;
       align-items: center;
       margin: 1rem auto;
-      width: 200px;
+      width: 240px;
       height: 20px;
-      background: linear-gradient(to right, var(--low-color), var(--high-color));
+      background: linear-gradient(
+        to right,
+        var(--low-color) 0%,
+        var(--mid-color) 50%,
+        var(--high-color) 100%
+      );
       border: 1px solid #aaa;
       position: relative;
     }
+
     .legend-label {
       font-size: 0.8rem;
       position: absolute;
       top: 24px;
       color: #333;
     }
+
     #tooltip {
       position: fixed;
       padding: 4px 8px;
@@ -45,27 +54,63 @@
       visibility: hidden;
       z-index: 1000;
     }
+
     button { margin: 0.2rem; }
   </style>
 </head>
+
 <body>
 
   <h2>Velmapper</h2>
 
   <div class="controls">
-    <label>Low Color: <input type="color" id="lowColor" value="#e0f3f8" /></label>
-    <label>High Color: <input type="color" id="highColor" value="#081d58" /></label>
+
+    <!-- SCALE MODE -->
+    <label>Scale Mode:
+      <select id="scaleMode">
+        <option value="prebuilt" selected>Prebuilt Scale</option>
+        <option value="custom">Custom 2-Color</option>
+      </select>
+    </label>
+
+    <!-- PREBUILT SCALES -->
+    <label>Prebuilt:
+      <select id="prebuiltScale">
+        <option value="ndsuEmrld" selected>NDSU Emerald</option>
+        <option value="viridis">Viridis</option>
+        <option value="cividis">Cividis</option>
+      </select>
+    </label>
+
+    <!-- CUSTOM COLORS (Only used if Custom selected) -->
+    <label>Low:
+      <input type="color" id="lowColor" value="#E8F5F1" />
+    </label>
+
+    <label>High:
+      <input type="color" id="highColor" value="#0A5640" />
+    </label>
+
+    <!-- BORDER -->
     <label>Border Stroke (pt):
       <input type="number" id="borderWidth" value="0.5" step="0.1" min="0" style="width:60px;">
       <button id="applyBorder">Apply</button>
     </label>
-    <input type="file" id="csvFile" accept=".csv" />
+
+    <label>Border Color:
+      <input type="color" id="borderColor" value="#000000">
+    </label>
+    
+    <!-- DATA -->
+    <input type="file" id="csvFile" accept=".csv,.xlsx,.xls" />
     <button id="updateMap">Update Map</button>
+
+    <!-- EXPORT -->
     <button id="downloadSVG">Download SVG</button>
     <button id="downloadPNG">Download PNG</button>
     <button id="downloadPDF">Download PDF</button>
 
-    <!-- New font controls -->
+    <!-- LABEL CONTROLS -->
     <label>Font:
       <select id="fontSelect">
         <option value="Arial">Arial</option>
@@ -75,21 +120,45 @@
         <option value="Times New Roman">Times New Roman</option>
       </select>
     </label>
+
     <label>Size:
       <input type="number" id="fontSize" value="12" min="6" max="40" step="0.5" style="width:60px;">
     </label>
+
+    <label>Value Format:
+      <select id="valueFormat">
+        <option value="number">Raw Number</option>
+        <option value="integer">Integer</option>
+        <option value="percent">Percent</option>
+        <option value="currency">$ Currency</option>
+        <option value="none">No Value</option>
+      </select>
+    </label>
+
+    <label>Decimals:
+      <input type="number" id="decimalPlaces" value="0" min="0" max="6" step="1" style="width:60px;">
+    </label>
+
   </div>
 
   <div id="legendContainer"></div>
 
-  <object id="usMap" type="image/svg+xml" data="state1.svg" style="width:90vw; height:70vh;"></object>
+  <object id="usMap"
+          type="image/svg+xml"
+          data="state1.svg"
+          style="width:90vw; height:70vh;">
+  </object>
 
   <div id="tooltip"></div>
 
+  <!-- Libraries -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/svg2pdf.js@2.2.1/dist/svg2pdf.min.js"></script>
+
+  <!-- Your main JS -->
   <script src="script.js"></script>
+
 </body>
 </html>
 

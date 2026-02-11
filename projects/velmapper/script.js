@@ -53,7 +53,6 @@ const stateMap = {
   "56":"56","wy":"56","WY":"56","wyoming":"56","Wyoming":"56"
 };
 
-// Abbreviation lookup by FIPS
 const stateAbbrevMap = {
   "01":"AL","02":"AK","04":"AZ","05":"AR","06":"CA","08":"CO","09":"CT",
   "10":"DE","11":"DC","12":"FL","13":"GA","15":"HI","16":"ID","17":"IL",
@@ -64,6 +63,27 @@ const stateAbbrevMap = {
   "47":"TN","48":"TX","49":"UT","50":"VT","51":"VA","53":"WA","54":"WV",
   "55":"WI","56":"WY"
 };
+
+// ---------- PREBUILT SCALES ----------
+const PREBUILT_SCALES = {
+  ndsuEmrld: [
+    "#E8F5F1",
+    "#BFE3D6",
+    "#7FC6AD",
+    "#3E9E80",
+    "#0A5640"
+  ],
+  viridis: [
+    "#440154","#3b528b","#21918c","#5ec962","#fde725"
+  ],
+  cividis: [
+    "#00204c","#424086","#7c7b78","#bcbf59","#ffffe0"
+  ]
+};
+
+let CURRENT_SCALE = [];
+let CURRENT_MIN = null;
+let CURRENT_MAX = null;
 
 // ---------- HELPERS ----------
 function parseCSV(text) {
@@ -81,11 +101,19 @@ function interpolateColor(c1, c2, t) {
   return `#${c.map(x=>x.toString(16).padStart(2,"0")).join("")}`;
 }
 
+function interpolateMultiStop(colors, t) {
+  const n = colors.length - 1;
+  const scaled = t * n;
+  const index = Math.floor(scaled);
+  const localT = scaled - index;
+  if (index >= n) return colors[n];
+  return interpolateColor(colors[index], colors[index + 1], localT);
+}
+
 // ---------- MAIN ----------
 document.getElementById("updateMap").addEventListener("click", () => {
+
   const fileInput = document.getElementById("csvFile");
-  const lowColor = document.getElementById("lowColor").value;
-  const highColor = document.getElementById("highColor").value;
   if (!fileInput.files.length) return alert("Please select a data file.");
 
   const file = fileInput.files[0];
@@ -93,51 +121,59 @@ document.getElementById("updateMap").addEventListener("click", () => {
   const ext = file.name.split(".").pop().toLowerCase();
 
   reader.onload = (e) => {
+
     let dataText = "";
+
     if (ext === "xlsx" || ext === "xls") {
       const workbook = XLSX.read(e.target.result, { type: "binary" });
       const sheetName = workbook.SheetNames[0];
-      const json = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], 
-        { header: 1 });
+      const json = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 });
       dataText = json.map(row => row.join(",")).join("\n");
     } else {
       dataText = e.target.result;
     }
 
-    const data = parseCSV(dataText);
+    const data = parseCSV(dataText).filter(d => !isNaN(d.value));
     const values = data.map(d => d.value);
     const min = Math.min(...values);
     const max = Math.max(...values);
+
     const svgDoc = document.getElementById("usMap").contentDocument;
     if (!svgDoc) return alert("SVG not loaded yet.");
 
-    const tooltip = document.getElementById("tooltip");
-    svgDoc.querySelectorAll("path").forEach(p => {
-      p.addEventListener("mousemove", e => {
-        const name = Object.keys(stateMap).find(k => stateMap[k] === 
-          p.id && k.length === 2 && k === k.toUpperCase());
-        tooltip.style.visibility = "visible";
-        tooltip.style.left = e.pageX + 10 + "px";
-        tooltip.style.top = e.pageY + 10 + "px";
-        tooltip.textContent = `${name || p.id}`;
-      });
-      p.addEventListener("mouseleave", () => tooltip.style.visibility = "hidden");
-    });
+    const scaleMode = document.getElementById("scaleMode").value;
+    let activeScale;
 
+    if (scaleMode === "prebuilt") {
+      activeScale = PREBUILT_SCALES[
+        document.getElementById("prebuiltScale").value
+      ];
+    } else {
+      activeScale = [
+        document.getElementById("lowColor").value,
+        document.getElementById("highColor").value
+      ];
+    }
+
+    CURRENT_SCALE = activeScale;
+    CURRENT_MIN = min;
+    CURRENT_MAX = max;
+    
     data.forEach(d => {
       const id = stateMap[d.state];
       const el = id && svgDoc.getElementById(id);
       if (el) {
         const t = (d.value - min) / (max - min || 1);
-        el.style.fill = interpolateColor(lowColor, highColor, t);
+        el.style.fill = interpolateMultiStop(activeScale, t);
         el.dataset.value = d.value;
       }
     });
 
+    // ---------- LEGEND ----------
     const legend = document.createElement("div");
     legend.className = "legend";
-    legend.style.setProperty("--low-color", lowColor);
-    legend.style.setProperty("--high-color", highColor);
+    legend.style.background =
+      `linear-gradient(to right, ${activeScale.join(",")})`;
 
     const minLabel = document.createElement("div");
     minLabel.className = "legend-label";
@@ -157,14 +193,70 @@ document.getElementById("updateMap").addEventListener("click", () => {
     container.appendChild(legend);
 
     plotStateLabels(data);
+
+    // Auto-apply border after update
+    document.getElementById("applyBorder").click();
   };
 
-  if (ext === "xlsx" || ext === "xls") reader.readAsBinaryString(file);
-  else reader.readAsText(file);
+  if (ext === "xlsx" || ext === "xls")
+    reader.readAsBinaryString(file);
+  else
+    reader.readAsText(file);
+});
+
+// ---------- BORDER STROKE ----------
+document.getElementById("applyBorder").addEventListener("click", () => {
+
+  const svgDoc = document.getElementById("usMap").contentDocument;
+  if (!svgDoc) return alert("SVG not loaded yet.");
+
+  const widthPt =
+    parseFloat(document.getElementById("borderWidth").value) || 0;
+
+  const borderColor =
+    document.getElementById("borderColor")?.value || "#000000";
+
+  svgDoc.querySelectorAll("path[id]").forEach(path => {
+    if (/^[0-9]{2}$/.test(path.id)) {
+      path.style.strokeWidth = `${widthPt}pt`;
+      path.style.stroke = borderColor;
+      path.style.vectorEffect = "non-scaling-stroke";
+    }
+  });
 });
 
 // ---------- TEXT LABEL PLOTTING ----------
+
+function formatValue(val) {
+  const format = document.getElementById("valueFormat")?.value || "number";
+  const decimals = parseInt(document.getElementById("decimalPlaces")?.value || 2);
+
+  if (val === "" || val === null || isNaN(val)) return "";
+
+  switch (format) {
+
+    case "integer":
+      return Math.round(val);
+
+    case "percent":
+      return (val * 100).toFixed(decimals) + "%";
+
+    case "currency":
+      return "$" + Number(val).toLocaleString(undefined, {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+      });
+
+    case "none":
+      return "";
+
+    default:
+      return Number(val).toFixed(decimals);
+  }
+}
+
 function plotStateLabels(data) {
+
   const svgDoc = document.getElementById("usMap").contentDocument;
   if (!svgDoc) return alert("SVG not loaded yet.");
 
@@ -177,6 +269,7 @@ function plotStateLabels(data) {
   svgDoc.querySelectorAll(".state-label").forEach(el => el.remove());
 
   data.forEach(d => {
+
     const id = stateMap[d.state];
     if (!id) return;
 
@@ -186,93 +279,158 @@ function plotStateLabels(data) {
 
     const cx = parseFloat(point.getAttribute("cx"));
     const cy = parseFloat(point.getAttribute("cy"));
-    const val = (typeof d.value === "number" && !isNaN(d.value))
-      ? (Number.isInteger(d.value) ? d.value : d.value.toFixed(2))
-      : "";
+    const val = formatValue(d.value);
 
     const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
     group.classList.add("state-label");
 
     const lineSpacing = baseSize * 1;
 
-    // LEFT-ALIGNED (NH–DC)
+    // LEFT-ALIGNED STATES
     if (leftAlign.includes(abbrev)) {
+
       const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+
       text.setAttribute("font-family", font);
       text.setAttribute("font-size", baseSize);
-      text.setAttribute("text-anchor", "start"); // text grows rightward
+      text.setAttribute("text-anchor", "start");
       text.setAttribute("alignment-baseline", "middle");
-    
-      // Position so dot is at left-center of text box
+
       text.setAttribute("x", cx + baseSize * 0.5);
       text.setAttribute("y", cy);
+
       text.textContent = `${abbrev}  ${val}`;
       group.appendChild(text);
     }
-    
-    // VT — bottom-right anchored (dot at bottom-right of text)
+
+    // VERMONT SPECIAL CASE
     else if (bottomRight.includes(abbrev)) {
+
       const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+
       text.setAttribute("font-family", font);
       text.setAttribute("font-size", baseSize);
-      text.setAttribute("text-anchor", "end"); // text grows leftward
+      text.setAttribute("text-anchor", "end");
       text.setAttribute("alignment-baseline", "bottom");
-    
-      // Position so dot is bottom-right of text box
+
       text.setAttribute("x", cx - baseSize * 0.2);
       text.setAttribute("y", cy - baseSize * 0.2);
+
       text.textContent = `${abbrev}  ${val}`;
       group.appendChild(text);
     }
-    
-    // DEFAULT center-center two-line
+
+    // DEFAULT TWO-LINE CENTER
     else {
+
       const text1 = document.createElementNS("http://www.w3.org/2000/svg", "text");
       const text2 = document.createElementNS("http://www.w3.org/2000/svg", "text");
+
       [text1, text2].forEach(t => {
         t.setAttribute("font-family", font);
         t.setAttribute("text-anchor", "middle");
         t.setAttribute("alignment-baseline", "middle");
       });
+
       text1.setAttribute("x", cx);
       text2.setAttribute("x", cx);
+
       text1.setAttribute("y", cy - lineSpacing / 2);
       text2.setAttribute("y", cy + lineSpacing / 2);
+
       text1.setAttribute("font-size", baseSize);
       text2.setAttribute("font-size", baseSize - 0.5);
+
       text1.textContent = abbrev;
       text2.textContent = val;
+
       group.appendChild(text1);
       group.appendChild(text2);
     }
-    
+
     svgDoc.documentElement.appendChild(group);
   });
 }
 
-// ---------- BORDER STROKE ADJUSTMENT ----------
-document.getElementById("applyBorder").addEventListener("click", () => {
-  const svgDoc = document.getElementById("usMap").contentDocument;
-  if (!svgDoc) return alert("SVG not loaded yet.");
+function appendLegendToSVG(svgEl) {
 
-  const widthPt = parseFloat(document.getElementById("borderWidth").value) || 0;
+  if (!CURRENT_SCALE.length) return;
 
-  // Apply stroke width to all state paths (interior borders)
-  svgDoc.querySelectorAll("path").forEach(path => {
-    if (path.id && /^[0-9]{2}$/.test(path.id)) {
-      path.style.strokeWidth = `${widthPt}pt`;
-      path.style.stroke = "#000000"; // consistent interior border color
-    }
+  const legendWidth = 240;
+  const legendHeight = 20;
+  const legendX = 30;
+  const legendY = 30;
+
+  const legendGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  legendGroup.setAttribute("id", "exportLegend");
+
+  // ---- Gradient Definition ----
+  const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+  const linearGradient = document.createElementNS("http://www.w3.org/2000/svg", "linearGradient");
+
+  linearGradient.setAttribute("id", "legendGradient");
+  linearGradient.setAttribute("x1", "0%");
+  linearGradient.setAttribute("x2", "100%");
+  linearGradient.setAttribute("y1", "0%");
+  linearGradient.setAttribute("y2", "0%");
+
+  CURRENT_SCALE.forEach((color, i) => {
+    const stop = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+    stop.setAttribute("offset", `${(i/(CURRENT_SCALE.length-1))*100}%`);
+    stop.setAttribute("stop-color", color);
+    linearGradient.appendChild(stop);
   });
-});
 
+  defs.appendChild(linearGradient);
+  svgEl.appendChild(defs);
+
+  // ---- Gradient Rectangle ----
+  const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  rect.setAttribute("x", legendX);
+  rect.setAttribute("y", legendY);
+  rect.setAttribute("width", legendWidth);
+  rect.setAttribute("height", legendHeight);
+  rect.setAttribute("fill", "url(#legendGradient)");
+  rect.setAttribute("stroke", "#000");
+  rect.setAttribute("stroke-width", "0.5");
+
+  legendGroup.appendChild(rect);
+
+  // ---- Min Label ----
+  const minText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  minText.setAttribute("x", legendX);
+  minText.setAttribute("y", legendY + legendHeight + 15);
+  minText.setAttribute("font-size", "12");
+  minText.setAttribute("text-anchor", "start");
+  minText.textContent = CURRENT_MIN.toFixed(2);
+
+  legendGroup.appendChild(minText);
+
+  // ---- Max Label ----
+  const maxText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  maxText.setAttribute("x", legendX + legendWidth);
+  maxText.setAttribute("y", legendY + legendHeight + 15);
+  maxText.setAttribute("font-size", "12");
+  maxText.setAttribute("text-anchor", "end");
+  maxText.textContent = CURRENT_MAX.toFixed(2);
+
+  legendGroup.appendChild(maxText);
+
+  svgEl.appendChild(legendGroup);
+}
 // ---------- EXPORTS ----------
+
 function downloadSVG() {
   const svgDoc = document.getElementById("usMap").contentDocument;
   if (!svgDoc) return;
+
   const svgEl = svgDoc.documentElement.cloneNode(true);
+
+  appendLegendToSVG(svgEl);
+
   const svgData = new XMLSerializer().serializeToString(svgEl);
   const blob = new Blob([svgData], {type: "image/svg+xml"});
+
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
   link.download = "map.svg";
@@ -282,19 +440,27 @@ function downloadSVG() {
 function downloadPNG() {
   const svgDoc = document.getElementById("usMap").contentDocument;
   if (!svgDoc) return;
-  const svgEl = svgDoc.documentElement;
+
+  const svgEl = svgDoc.documentElement.cloneNode(true);
+  appendLegendToSVG(svgEl);
+
   const svgData = new XMLSerializer().serializeToString(svgEl);
+
   const targetDPI = 600;
   const baseDPI = 96;
   const scale = targetDPI / baseDPI;
+
   const vb = svgEl.viewBox.baseVal;
   const width = vb.width * scale;
   const height = vb.height * scale;
+
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
+
   const ctx = canvas.getContext("2d");
   const img = new Image();
+
   img.onload = function() {
     ctx.drawImage(img, 0, 0, width, height);
     const a = document.createElement("a");
@@ -302,25 +468,41 @@ function downloadPNG() {
     a.href = canvas.toDataURL("image/png");
     a.click();
   };
+
   img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
 }
 
 async function downloadPDF() {
   const svgDoc = document.getElementById("usMap").contentDocument;
   if (!svgDoc) return;
+
   const svgEl = svgDoc.documentElement.cloneNode(true);
+  appendLegendToSVG(svgEl);
+
   const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+
+  const pdf = new jsPDF({
+    orientation: "landscape",
+    unit: "pt",
+    format: "a4"
+  });
+
   const width = pdf.internal.pageSize.getWidth();
   const height = pdf.internal.pageSize.getHeight();
+
   await svg2pdf(svgEl, pdf, {
     xOffset: 10,
     yOffset: 10,
-    scale: Math.min(width / svgEl.viewBox.baseVal.width, height / svgEl.viewBox.baseVal.height)
+    scale: Math.min(
+      width / svgEl.viewBox.baseVal.width,
+      height / svgEl.viewBox.baseVal.height
+    )
   });
+
   pdf.save("map_vector.pdf");
 }
 
+// Attach buttons
 document.getElementById("downloadSVG").onclick = downloadSVG;
 document.getElementById("downloadPNG").onclick = downloadPNG;
 document.getElementById("downloadPDF").onclick = downloadPDF;
