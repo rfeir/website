@@ -53,7 +53,7 @@ const stateMap = {
   "56":"56","wy":"56","WY":"56","wyoming":"56","Wyoming":"56"
 };
 
-// ✅ Abbreviation lookup by FIPS
+// Abbreviation lookup by FIPS
 const stateAbbrevMap = {
   "01":"AL","02":"AK","04":"AZ","05":"AR","06":"CA","08":"CO","09":"CT",
   "10":"DE","11":"DC","12":"FL","13":"GA","15":"HI","16":"ID","17":"IL",
