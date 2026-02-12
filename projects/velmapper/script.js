@@ -81,9 +81,24 @@ const PREBUILT_SCALES = {
   ]
 };
 
+let CURRENT_DATA = [];
+let MANUAL_MIN = null;
+let MANUAL_MAX = null;
+
 let CURRENT_SCALE = [];
 let CURRENT_MIN = null;
 let CURRENT_MAX = null;
+
+// ---------- MANUAL RANGE BUTTON ----------
+document.getElementById("applyMinMax").addEventListener("click", () => {
+  const minInput = document.getElementById("manualMin").value;
+  const maxInput = document.getElementById("manualMax").value;
+
+  MANUAL_MIN = minInput !== "" ? parseFloat(minInput) : null;
+  MANUAL_MAX = maxInput !== "" ? parseFloat(maxInput) : null;
+
+  document.getElementById("updateMap").click();
+});
 
 // ---------- HELPERS ----------
 function parseCSV(text) {
@@ -110,6 +125,21 @@ function interpolateMultiStop(colors, t) {
   return interpolateColor(colors[index], colors[index + 1], localT);
 }
 
+// ---------- WHITE TEXT THRESHOLD ----------
+function getWhiteThresholdValue(data) {
+
+  const percentile = (
+    parseFloat(document.getElementById("whiteThreshold")?.value || 87)
+  ) / 100;
+
+  const sorted = [...data.map(d => d.value)].sort((a,b)=>a-b);
+
+  const index = Math.floor(percentile * (sorted.length - 1));
+
+  return sorted[index];
+}
+
+
 // ---------- MAIN ----------
 document.getElementById("updateMap").addEventListener("click", () => {
 
@@ -135,9 +165,13 @@ document.getElementById("updateMap").addEventListener("click", () => {
 
     const data = parseCSV(dataText).filter(d => !isNaN(d.value));
     const values = data.map(d => d.value);
-    const min = Math.min(...values);
-    const max = Math.max(...values);
 
+    let autoMin = Math.min(...values);
+    let autoMax = Math.max(...values);
+    
+    let min = MANUAL_MIN !== null ? MANUAL_MIN : autoMin;
+    let max = MANUAL_MAX !== null ? MANUAL_MAX : autoMax;
+    
     const svgDoc = document.getElementById("usMap").contentDocument;
     if (!svgDoc) return alert("SVG not loaded yet.");
 
@@ -175,15 +209,24 @@ document.getElementById("updateMap").addEventListener("click", () => {
     legend.style.background =
       `linear-gradient(to right, ${activeScale.join(",")})`;
 
+    const borderWidth =
+      parseFloat(document.getElementById("borderWidth").value) || 0;
+    
+    const borderColor =
+      document.getElementById("borderColor")?.value || "#000000";
+    
+    legend.style.border = `${borderWidth}px solid ${borderColor}`;
+    
+
     const minLabel = document.createElement("div");
     minLabel.className = "legend-label";
     minLabel.style.left = "0";
-    minLabel.textContent = min.toFixed(2);
+    minLabel.textContent = formatValue(min);
 
     const maxLabel = document.createElement("div");
     maxLabel.className = "legend-label";
     maxLabel.style.right = "0";
-    maxLabel.textContent = max.toFixed(2);
+    maxLabel.textContent = formatValue(max);
 
     legend.appendChild(minLabel);
     legend.appendChild(maxLabel);
@@ -260,6 +303,8 @@ function plotStateLabels(data) {
   const svgDoc = document.getElementById("usMap").contentDocument;
   if (!svgDoc) return alert("SVG not loaded yet.");
 
+  const whiteCutoff = getWhiteThresholdValue(data);
+
   const font = document.getElementById("fontSelect")?.value || "sans-serif";
   const baseSize = parseFloat(document.getElementById("fontSize")?.value || 10);
 
@@ -300,6 +345,11 @@ function plotStateLabels(data) {
       text.setAttribute("y", cy);
 
       text.textContent = `${abbrev}  ${val}`;
+
+      if (d.value >= whiteCutoff) {
+        text.setAttribute("fill", "#FFFFFF");
+      }
+      
       group.appendChild(text);
     }
 
@@ -317,7 +367,13 @@ function plotStateLabels(data) {
       text.setAttribute("y", cy - baseSize * 0.2);
 
       text.textContent = `${abbrev}  ${val}`;
+      
+      if (d.value >= whiteCutoff) {
+        text.setAttribute("fill", "#FFFFFF");
+      }
+      
       group.appendChild(text);
+      
     }
 
     // DEFAULT TWO-LINE CENTER
@@ -340,12 +396,18 @@ function plotStateLabels(data) {
 
       text1.setAttribute("font-size", baseSize);
       text2.setAttribute("font-size", baseSize - 0.5);
-
+      
       text1.textContent = abbrev;
       text2.textContent = val;
-
+      
+      if (d.value >= whiteCutoff) {
+        text1.setAttribute("fill", "#FFFFFF");
+        text2.setAttribute("fill", "#FFFFFF");
+      }
+      
       group.appendChild(text1);
       group.appendChild(text2);
+      
     }
 
     svgDoc.documentElement.appendChild(group);
@@ -358,9 +420,14 @@ function appendLegendToSVG(svgEl) {
 
   const legendWidth = 240;
   const legendHeight = 20;
-  const legendX = 30;
-  const legendY = 30;
-
+  
+  const vb = svgEl.viewBox.baseVal;
+  
+  const margin = 20;
+  
+  const legendX = vb.width - legendWidth - margin;
+  const legendY = vb.height - legendHeight - margin;
+  
   const legendGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
   legendGroup.setAttribute("id", "exportLegend");
 
@@ -391,8 +458,15 @@ function appendLegendToSVG(svgEl) {
   rect.setAttribute("width", legendWidth);
   rect.setAttribute("height", legendHeight);
   rect.setAttribute("fill", "url(#legendGradient)");
-  rect.setAttribute("stroke", "#000");
-  rect.setAttribute("stroke-width", "0.5");
+  const borderWidth =
+    parseFloat(document.getElementById("borderWidth").value) || 0;
+  
+  const borderColor =
+    document.getElementById("borderColor")?.value || "#000000";
+  
+  rect.setAttribute("stroke", borderColor);
+  rect.setAttribute("stroke-width", borderWidth);
+  
 
   legendGroup.appendChild(rect);
 
@@ -402,7 +476,7 @@ function appendLegendToSVG(svgEl) {
   minText.setAttribute("y", legendY + legendHeight + 15);
   minText.setAttribute("font-size", "12");
   minText.setAttribute("text-anchor", "start");
-  minText.textContent = CURRENT_MIN.toFixed(2);
+  minText.textContent = formatValue(CURRENT_MIN);
 
   legendGroup.appendChild(minText);
 
@@ -412,7 +486,7 @@ function appendLegendToSVG(svgEl) {
   maxText.setAttribute("y", legendY + legendHeight + 15);
   maxText.setAttribute("font-size", "12");
   maxText.setAttribute("text-anchor", "end");
-  maxText.textContent = CURRENT_MAX.toFixed(2);
+  maxText.textContent = formatValue(CURRENT_MAX);
 
   legendGroup.appendChild(maxText);
 

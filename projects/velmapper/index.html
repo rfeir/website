@@ -73,6 +73,22 @@
       </select>
     </label>
 
+    <label>Min:
+      <input type="number" id="manualMin" style="width:80px;">
+    </label>
+    
+    <label>Max:
+      <input type="number" id="manualMax" style="width:80px;">
+    </label>
+    
+    <button id="applyMinMax">Apply Range</button>
+
+    <label>White Text Percentile:
+      <input type="number" id="whiteThreshold"
+             value="87" min="0" max="100"
+             step="1" style="width:60px;">
+    </label>
+    
     <!-- PREBUILT SCALES -->
     <label>Prebuilt:
       <select id="prebuiltScale">
@@ -118,6 +134,7 @@
         <option value="Georgia">Georgia</option>
         <option value="Courier New">Courier New</option>
         <option value="Times New Roman">Times New Roman</option>
+        <option value="Calibri">Calibri</option>
       </select>
     </label>
 
