@@ -73,6 +73,27 @@ const PREBUILT_SCALES = {
     "#3E9E80",
     "#0A5640"
   ],
+  ndsuGold: [
+    "#FFFDF0",
+    "#FFF6B8",
+    "#FEF389",
+    "#FEDD4B",
+    "#FFC425"
+  ],
+  ndsuBlue: [
+    "#E6F6FE",
+    "#9DD9F7",
+    "#5BBEE6",
+    "#1F8CB8",
+    "#0F374B" 
+  ],
+  academicGray: [
+    "#F5F5F5",
+    "#D9D9D9",
+    "#B3B3B3",
+    "#808080",
+    "#3F3F3F"
+  ],
   viridis: [
     "#440154","#3b528b","#21918c","#5ec962","#fde725"
   ],
@@ -126,17 +147,90 @@ function interpolateMultiStop(colors, t) {
 }
 
 // ---------- WHITE TEXT THRESHOLD ----------
-function getWhiteThresholdValue(data) {
+function parseColorToRGB(color) {
+  if (!color) return null;
 
-  const percentile = (
-    parseFloat(document.getElementById("whiteThreshold")?.value || 87)
-  ) / 100;
+  // If it's like "rgb(12, 34, 56)"
+  const rgbMatch = color.match(/^rgb\s*\(\s*([0-9]+)\s*,\s*([0-9]+)\s*,\s*([0-9]+)\s*\)\s*$/i);
+  if (rgbMatch) {
+    return { r: +rgbMatch[1], g: +rgbMatch[2], b: +rgbMatch[3] };
+  }
 
-  const sorted = [...data.map(d => d.value)].sort((a,b)=>a-b);
+  // If it's hex: #RGB or #RRGGBB
+  let hex = color.trim();
+  if (hex[0] === "#") hex = hex.slice(1);
 
-  const index = Math.floor(percentile * (sorted.length - 1));
+  if (hex.length === 3) {
+    hex = hex.split("").map(ch => ch + ch).join("");
+  }
 
-  return sorted[index];
+  if (hex.length === 6) {
+    const r = parseInt(hex.slice(0, 2), 16);
+    const g = parseInt(hex.slice(2, 4), 16);
+    const b = parseInt(hex.slice(4, 6), 16);
+    if ([r, g, b].some(n => Number.isNaN(n))) return null;
+    return { r, g, b };
+  }
+
+  return null;
+}
+
+
+// ---------- DARK TEXT  ----------
+
+function darkenColor(hex, percent = 30) {
+  const rgb = parseColorToRGB(hex);
+  if (!rgb) return hex;
+
+  const factor = 1 - percent / 100;
+
+  const r = Math.round(rgb.r * factor);
+  const g = Math.round(rgb.g * factor);
+  const b = Math.round(rgb.b * factor);
+
+  return "#" + [r, g, b].map(v => v.toString(16).padStart(2, "0")).join("");
+}
+
+// WCAG-style contrast choice: returns "white" or "black"
+function getContrastTextColor(fillColor) {
+  const rgb = parseColorToRGB(fillColor);
+  if (!rgb) return "black";
+
+  const { r, g, b } = rgb;
+
+  // Relative luminance
+  const srgb = [r, g, b].map(v => {
+    v /= 255;
+    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  });
+  const L = 0.2126 * srgb[0] + 0.7152 * srgb[1] + 0.0722 * srgb[2];
+
+  // Contrast ratios vs white/black
+  const whiteContrast = (1.05) / (L + 0.05);
+  const blackContrast = (L + 0.05) / 0.05;
+
+  return whiteContrast >= blackContrast ? "white" : "black";
+}
+
+function getStateFillColor(svgDoc, id) {
+  const el = svgDoc.getElementById(id);
+  if (!el) return null;
+
+  // Prefer inline style set by your map update
+  const inline = el.style?.fill;
+  if (inline) return inline;
+
+  // Fallbacks
+  const attr = el.getAttribute("fill");
+  if (attr) return attr;
+
+  // Last resort: computed style (works if fill comes from CSS)
+  try {
+    const computed = svgDoc.defaultView?.getComputedStyle(el)?.fill;
+    return computed || null;
+  } catch {
+    return null;
+  }
 }
 
 
@@ -303,7 +397,7 @@ function plotStateLabels(data) {
   const svgDoc = document.getElementById("usMap").contentDocument;
   if (!svgDoc) return alert("SVG not loaded yet.");
 
-  const whiteCutoff = getWhiteThresholdValue(data);
+  // Automatic label color based on each state's fill color
 
   const font = document.getElementById("fontSelect")?.value || "sans-serif";
   const baseSize = parseFloat(document.getElementById("fontSize")?.value || 10);
@@ -312,6 +406,17 @@ function plotStateLabels(data) {
   const leftAlign = ["NH","MA","RI","CT","NJ","DE","MD","DC"];
 
   svgDoc.querySelectorAll(".state-label").forEach(el => el.remove());
+
+  const manualDark = document.getElementById("darkTextColor")?.value;
+    
+  // Palette darkest
+  const paletteDarkest = CURRENT_SCALE[CURRENT_SCALE.length - 1];
+    
+  // Auto-derived dark text
+  const autoDarkText = darkenColor(paletteDarkest, 30);
+    
+  // Final dark text color
+  const darkTextColor = manualDark || autoDarkText;
 
   data.forEach(d => {
 
@@ -322,6 +427,11 @@ function plotStateLabels(data) {
     const point = svgDoc.getElementById(id + "p");
     if (!point) return;
 
+    const fillColor = getStateFillColor(svgDoc, id);
+    const contrast = getContrastTextColor(fillColor);
+    
+    let textColor = contrast === "white" ? "white" : darkTextColor;
+        
     const cx = parseFloat(point.getAttribute("cx"));
     const cy = parseFloat(point.getAttribute("cy"));
     const val = formatValue(d.value);
@@ -346,10 +456,8 @@ function plotStateLabels(data) {
 
       text.textContent = `${abbrev}  ${val}`;
 
-      if (d.value >= whiteCutoff) {
-        text.setAttribute("fill", "#FFFFFF");
-      }
-      
+      text.setAttribute("fill", textColor);
+
       group.appendChild(text);
     }
 
@@ -368,10 +476,8 @@ function plotStateLabels(data) {
 
       text.textContent = `${abbrev}  ${val}`;
       
-      if (d.value >= whiteCutoff) {
-        text.setAttribute("fill", "#FFFFFF");
-      }
-      
+      text.setAttribute("fill", textColor);      
+
       group.appendChild(text);
       
     }
@@ -400,11 +506,9 @@ function plotStateLabels(data) {
       text1.textContent = abbrev;
       text2.textContent = val;
       
-      if (d.value >= whiteCutoff) {
-        text1.setAttribute("fill", "#FFFFFF");
-        text2.setAttribute("fill", "#FFFFFF");
-      }
-      
+      text1.setAttribute("fill", textColor);
+      text2.setAttribute("fill", textColor);      
+
       group.appendChild(text1);
       group.appendChild(text2);
       
@@ -430,6 +534,11 @@ function appendLegendToSVG(svgEl) {
   
   const legendGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
   legendGroup.setAttribute("id", "exportLegend");
+
+  // ---- Get shared legend styling ----
+  const font = document.getElementById("fontSelect")?.value || "sans-serif";
+  const baseSize = parseFloat(document.getElementById("fontSize")?.value || 10);
+  const legendColor = getCurrentDarkTextColor();
 
   // ---- Gradient Definition ----
   const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
@@ -458,6 +567,7 @@ function appendLegendToSVG(svgEl) {
   rect.setAttribute("width", legendWidth);
   rect.setAttribute("height", legendHeight);
   rect.setAttribute("fill", "url(#legendGradient)");
+
   const borderWidth =
     parseFloat(document.getElementById("borderWidth").value) || 0;
   
@@ -467,14 +577,15 @@ function appendLegendToSVG(svgEl) {
   rect.setAttribute("stroke", borderColor);
   rect.setAttribute("stroke-width", borderWidth);
   
-
   legendGroup.appendChild(rect);
 
   // ---- Min Label ----
   const minText = document.createElementNS("http://www.w3.org/2000/svg", "text");
   minText.setAttribute("x", legendX);
-  minText.setAttribute("y", legendY + legendHeight + 15);
-  minText.setAttribute("font-size", "12");
+  minText.setAttribute("y", legendY + legendHeight + baseSize * 1.2);
+  minText.setAttribute("font-family", font);
+  minText.setAttribute("font-size", baseSize * 0.9);
+  minText.setAttribute("fill", legendColor);
   minText.setAttribute("text-anchor", "start");
   minText.textContent = formatValue(CURRENT_MIN);
 
@@ -483,8 +594,10 @@ function appendLegendToSVG(svgEl) {
   // ---- Max Label ----
   const maxText = document.createElementNS("http://www.w3.org/2000/svg", "text");
   maxText.setAttribute("x", legendX + legendWidth);
-  maxText.setAttribute("y", legendY + legendHeight + 15);
-  maxText.setAttribute("font-size", "12");
+  maxText.setAttribute("y", legendY + legendHeight + baseSize * 1.2);
+  maxText.setAttribute("font-family", font);
+  maxText.setAttribute("font-size", baseSize * 0.9);
+  maxText.setAttribute("fill", legendColor);
   maxText.setAttribute("text-anchor", "end");
   maxText.textContent = formatValue(CURRENT_MAX);
 
@@ -492,6 +605,14 @@ function appendLegendToSVG(svgEl) {
 
   svgEl.appendChild(legendGroup);
 }
+
+function getCurrentDarkTextColor() {
+  const manualDark = document.getElementById("darkTextColor")?.value;
+  const paletteDarkest = CURRENT_SCALE[CURRENT_SCALE.length - 1];
+  const autoDarkText = darkenColor(paletteDarkest, 30);
+  return manualDark && manualDark !== "" ? manualDark : autoDarkText;
+}
+
 // ---------- EXPORTS ----------
 
 function downloadSVG() {
@@ -580,4 +701,3 @@ async function downloadPDF() {
 document.getElementById("downloadSVG").onclick = downloadSVG;
 document.getElementById("downloadPNG").onclick = downloadPNG;
 document.getElementById("downloadPDF").onclick = downloadPDF;
-
