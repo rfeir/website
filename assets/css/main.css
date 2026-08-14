@@ -3297,3 +3297,34 @@ body.is-touch .tiles article .content {
 .text-content {
     flex: 1; /* Allow the text content to take remaining space */
 }
+
+/* Google Doc embed */
+.document-embed {
+	width: 100%;
+	max-width: 1000px;
+	margin: 0 auto;
+	background: #fff;
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+}
+
+.document-embed iframe {
+	display: block;
+	width: 100%;
+	height: 85vh;
+	min-height: 700px;
+	border: 0;
+	background: #fff;
+}
+
+@media screen and (max-width: 736px) {
+	.document-embed {
+		border-radius: 4px;
+	}
+
+	.document-embed iframe {
+		height: 80vh;
+		min-height: 600px;
+	}
+}
